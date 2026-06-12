@@ -1,0 +1,34 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.cmendezs/mcp-nfe-br",
+  "description": "MCP server for Brazilian e-invoicing: NF-e and NFC-e (modelo 55/65), schema 4.00, SEFAZ.",
+  "repository": {
+    "url": "https://github.com/cmendezs/mcp-nfe-br",
+    "source": "github"
+  },
+  "version": "0.1.0",
+  "packages": [
+    {
+      "registryType": "pypi",
+      "identifier": "mcp-nfe-br",
+      "version": "0.1.0",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "SEFAZ_ENV",
+          "description": "SEFAZ environment: 'producao' (default) or 'homologacao'",
+          "isRequired": false,
+          "format": "string"
+        },
+        {
+          "name": "LOG_LEVEL",
+          "description": "Logging level: DEBUG, INFO (default), WARNING, or ERROR",
+          "isRequired": false,
+          "format": "string"
+        }
+      ]
+    }
+  ]
+}

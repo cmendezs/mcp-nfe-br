@@ -58,6 +58,11 @@ coverage.xml
 tests/fixtures/*.xml
 tests/fixtures/*.pdf
 
+# Normative source material (large PDFs/ZIPs) — not published; kept locally only.
+# See specs/nfe/MANIFEST.md for the inventory and retrieval dates.
+specs/**/*.pdf
+specs/**/*.zip
+
 # IDE
 .vscode/
 .idea/
