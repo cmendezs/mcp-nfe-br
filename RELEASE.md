@@ -64,6 +64,26 @@ Expected output:
 
 ## Changelog
 
+### [0.2.0] - 2026-06-13
+- NF-e/NFC-e (modelo 55/65, schema 4.00) **generation and XSD validation**
+  (Phase 1 of the roadmap): unsigned `<NFe><infNFe>…</infNFe></NFe>` document
+  generation (`br__generate_nfe`), validation against the bundled PL_010d XSD
+  set (`br__validate_nfe_xml`), and 44-character `chNFe` access-key assembly
+  with mod-11 check digit (`br__build_access_key`).
+- Covers ICMS (CST `00` / CSOSN `102`), PIS/COFINS (CST `01`/`02`/`04`-`09`),
+  and IPI (CST `00`/`49`/`50`/`99` or NT) tax groups; other codes raise a
+  `DocumentGenerationError` with a Portuguese message — see
+  `context-library/countries/br.md` for the full coverage table.
+- ICP-Brasil XML-DSig signing and SEFAZ webservice submission are **not**
+  implemented — generated documents are unsigned and must be signed and
+  transmitted by a separate process. Both tools surface this in their
+  responses.
+- XSD validation uses a locally derived "unsigned" variant of the official
+  `nfe_v4.00.xsd`/`leiauteNFe_v4.00.xsd` (PL_010d), with `<ds:Signature>`
+  changed from mandatory to optional — `[Inference]`, see
+  `src/mcp_nfe_br/validators/nfe_xsd.py` docstring. Signed documents (a later
+  phase) should validate against the unmodified official schema.
+
 ### [0.1.0] - 2026-06-12
 - Initial scaffold: NF-e / NFC-e (modelo 55/65, schema 4.00) party-identifier
   validation tools (`br__validate_cpf`, `br__validate_cnpj`). Phase 1 of the

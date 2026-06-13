@@ -12,13 +12,13 @@
 
 `mcp-nfe-br` é um servidor [MCP (Model Context Protocol)](https://modelcontextprotocol.io) que fornece ferramentas para a emissão e validação de documentos fiscais eletrônicos brasileiros: **NF-e (modelo 55)** e **NFC-e (modelo 65)**, conforme o leiaute XML versão 4.00 da SEFAZ. Este servidor faz parte da família `mcp-einvoicing-*` / `mcp-*-*`, construída sobre [`mcp-einvoicing-core`](https://github.com/cmendezs/mcp-einvoicing-core), que fornece o modelo de dados base, utilitários HTTP/OAuth2, e a infraestrutura comum de servidores MCP.
 
-**Status atual (v0.1.0):** fase 1 do roadmap — ferramentas de validação de CPF/CNPJ. Geração e validação de XML NF-e/NFC-e, assinatura digital ICP-Brasil, e integração com os webservices da SEFAZ estão planejados para versões futuras. NFS-e (nota fiscal de serviços) e CT-e (conhecimento de transporte) são fases posteriores, fora do escopo desta versão.
+**Status atual (v0.2.0):** fase 1 do roadmap — validação de CPF/CNPJ, **geração de XML NF-e/NFC-e (não assinado)** e **validação contra o XSD oficial (PL_010d, variante sem assinatura)**. Assinatura digital ICP-Brasil e integração com os webservices da SEFAZ estão planejadas para versões futuras — os documentos gerados são **não assinados** e não são transmitidos à SEFAZ por este servidor. NFS-e (nota fiscal de serviços) e CT-e (conhecimento de transporte) são fases posteriores, fora do escopo desta versão.
 
 ## English summary
 
 `mcp-nfe-br` is an [MCP (Model Context Protocol)](https://modelcontextprotocol.io) server providing tools for Brazilian electronic fiscal documents: **NF-e (modelo 55)** and **NFC-e (modelo 65)**, per SEFAZ XML schema 4.00. It is part of the `mcp-*-*` family built on [`mcp-einvoicing-core`](https://github.com/cmendezs/mcp-einvoicing-core).
 
-**Current status (v0.1.0):** Phase 1 of the roadmap — CPF/CNPJ tax-ID validation tools only. NF-e/NFC-e XML generation and validation, ICP-Brasil digital signing, and SEFAZ webservice integration are planned for future releases. NFS-e and CT-e are later phases, out of scope for this version.
+**Current status (v0.2.0):** Phase 1 of the roadmap — CPF/CNPJ tax-ID validation, **unsigned NF-e/NFC-e XML generation**, and **XSD validation** against the official PL_010d schema (unsigned variant). ICP-Brasil digital signing and SEFAZ webservice submission are planned for future releases — generated documents are **unsigned** and are not transmitted to SEFAZ by this server. NFS-e and CT-e are later phases, out of scope for this version.
 
 ---
 
@@ -117,6 +117,64 @@ Retorna um `TaxIdValidationResult` com `valid=True` e o valor limpo (14 caracter
 
 ---
 
+### `br__generate_nfe`
+
+Gera um documento NF-e/NFC-e 4.00 **não assinado** (`<NFe><infNFe>…</infNFe></NFe>`) a partir de um objeto `BRInvoice`.
+
+| Parâmetro | Tipo | Obrigatório | Descrição |
+|---|---|---|---|
+| `invoice` | `object` | sim | Documento `BRInvoice` (modelo 55 ou 65, grupos `ide`/`emit`/`dest`/`det`/`total`/`transp`/`pag`) |
+
+Retorna `{"xml": ..., "chave_acesso": ..., "warnings": [...]}`. Os avisos em português lembram que o documento **não está assinado** (ICP-Brasil) e **não foi transmitido à SEFAZ** — ambas as etapas ficam a cargo de um processo separado.
+
+Cobertura da fase 1 para os grupos de tributos por item:
+
+| Tributo | Códigos suportados | Comportamento |
+|---|---|---|
+| ICMS | CST `00` (regime normal) ou CSOSN `102` (Simples Nacional) | outros códigos geram `DocumentGenerationError` |
+| PIS/COFINS | CST `01`/`02` (alíquota) ou `04`-`09` (não tributado) | grupo omitido se `pis_cst`/`cofins_cst` forem `None` |
+| IPI | CST `00`/`49`/`50`/`99` (tributado) ou outro (não tributado) | grupo omitido se `ipi_cst` for `None` |
+
+`[NEED: IBS/CBS/Imposto Seletivo — Grupo UB/W03 (NT 2025.002-RTC) ainda não modelado, ver context-library/countries/br.md "Known gaps"]`.
+
+---
+
+### `br__validate_nfe_xml`
+
+Valida um XML NF-e/NFC-e 4.00 contra o XSD oficial PL_010d (variante local "sem assinatura" — veja nota abaixo).
+
+| Parâmetro | Tipo | Obrigatório | Descrição |
+|---|---|---|---|
+| `xml_content` | `string` | não* | XML como string |
+| `xml_base64` | `string` | não* | XML codificado em base64 |
+
+\* Exatamente um de `xml_content`/`xml_base64` deve ser informado.
+
+Retorna `{"valid": bool, "errors": [...], "metadata": {"schema_version": ...}}`.
+
+> **[Inference]**: o XSD oficial (`nfe_v4.00.xsd`/`leiauteNFe_v4.00.xsd`, PL_010d) exige `<ds:Signature>` como filho obrigatório de `<NFe>`. Como a fase 1 gera documentos não assinados, esta ferramenta valida contra uma cópia derivada local (`nfe_v4.00_unsigned.xsd`) onde `<ds:Signature>` passou a ser opcional (`minOccurs="0"`). A validação de documentos **assinados** (fase futura) deve usar o XSD oficial sem modificações.
+
+---
+
+### `br__build_access_key`
+
+Monta uma chave de acesso (`chNFe`, 44 caracteres) com dígito verificador módulo 11, a partir dos componentes `cUF`, `dhEmi`, CNPJ do emitente, modelo, série e número do documento.
+
+| Parâmetro | Tipo | Obrigatório | Descrição |
+|---|---|---|---|
+| `c_uf` | `string` | sim | Código IBGE da UF (2 dígitos) |
+| `dh_emi` | `string` | sim | Data/hora de emissão (ISO 8601) |
+| `cnpj` | `string` | sim | CNPJ do emitente (numérico ou alfanumérico PL_010d) |
+| `modelo` | `string` | sim | `55` (NF-e) ou `65` (NFC-e) |
+| `serie` | `string` | sim | Série do documento |
+| `nnf` | `string` | sim | Número do documento |
+| `tp_emis` | `string` | não | Forma de emissão (padrão `"1"`) |
+| `c_nf` | `string` | não | Código numérico aleatório (cNF, 8 dígitos); gerado automaticamente se omitido |
+
+Retorna `{"chave_acesso": ..., "cnf": ...}`.
+
+---
+
 ## Arquitetura
 
 ```
@@ -128,17 +186,33 @@ mcp-nfe-br/
 │       ├── models/
 │       │   ├── __init__.py
 │       │   └── invoice.py         # BRInvoice, BRInvoiceLine, NFeModelo, TipoOperacao
+│       ├── standards/
+│       │   ├── __init__.py
+│       │   └── nfe_generator.py   # NFeGenerator — gera NF-e/NFC-e 4.00 não assinada
+│       ├── validators/
+│       │   ├── __init__.py
+│       │   └── nfe_xsd.py         # NFeXSDValidator — valida contra XSD PL_010d (variante sem assinatura)
+│       ├── schemas/nfe/           # XSDs bundled (oficiais + variantes "_unsigned")
 │       ├── tools/
 │       │   ├── __init__.py
-│       │   └── validation.py      # br__validate_cpf, br__validate_cnpj
+│       │   ├── validation.py      # br__validate_cpf, br__validate_cnpj
+│       │   └── generation.py      # br__generate_nfe, br__validate_nfe_xml, br__build_access_key
 │       └── utils/
 │           ├── __init__.py
-│           └── document_ids.py    # validate_cpf, validate_cnpj
+│           ├── document_ids.py    # validate_cpf, validate_cnpj
+│           └── access_key.py      # build_access_key, access_key_check_digit
 ├── tests/
 │   ├── conftest.py
 │   ├── fixtures/
-│   └── test_tools/
-│       └── test_validation.py
+│   ├── test_tools/
+│   │   ├── test_validation.py
+│   │   └── test_generation.py
+│   ├── test_standards/
+│   │   └── test_nfe_generator.py
+│   ├── test_validators/
+│   │   └── test_nfe_xsd.py
+│   └── test_utils/
+│       └── test_access_key.py
 ├── specs/nfe/                     # material normativo (XSDs, MOC, Notas Técnicas — não publicado)
 ├── audit/
 │   ├── audit_vs_core.py

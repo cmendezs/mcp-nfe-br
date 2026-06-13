@@ -4,6 +4,11 @@ from typing import Any
 
 from mcp_einvoicing_core import EInvoicingMCPServer
 
+from mcp_nfe_br.tools.generation import (
+    br__build_access_key,
+    br__generate_nfe,
+    br__validate_nfe_xml,
+)
 from mcp_nfe_br.tools.validation import br__validate_cnpj, br__validate_cpf
 
 
@@ -11,6 +16,9 @@ def _register_br_tools(mcp: Any) -> None:
     """Register all Brazilian NF-e/NFC-e tools onto the shared FastMCP instance."""
     mcp.tool()(br__validate_cnpj)
     mcp.tool()(br__validate_cpf)
+    mcp.tool()(br__generate_nfe)
+    mcp.tool()(br__validate_nfe_xml)
+    mcp.tool()(br__build_access_key)
 
 
 mcp = EInvoicingMCPServer(

@@ -50,9 +50,8 @@ _PRIMARY_INVOICE_CLASS: tuple[str, str] | None = (
 _INTENTIONAL_OVERRIDES: dict[str, set[str]] = {
     "mcp_einvoicing_core.base_server": {
         # OVERRIDE-REASON: no document parser implemented yet — Phase 1 scope is
-        # party-ID validation only, not full XML generation/parsing
+        # generation and XSD validation only, not parsing of received documents
         "BaseDocumentParser",
-        "BaseDocumentGenerator",
         # OVERRIDE-REASON: no session-based lifecycle API; SEFAZ webservice
         # integration (autorização, distribuição) is a later phase
         "BaseLifecycleManager",
@@ -60,12 +59,8 @@ _INTENTIONAL_OVERRIDES: dict[str, set[str]] = {
         # validate_cnpj helpers, not via the ABC party validator pattern
         "BasePartyValidator",
         # OVERRIDE-REASON: no submission flow implemented yet (Phase 1 is
-        # validation tools only)
+        # generation and validation tools only)
         "SubmitResult",
-        # OVERRIDE-REASON: no document validator implemented yet — XSD-based
-        # XML validation is a later phase
-        "BaseDocumentValidator",
-        "DocumentValidationResult",
         # OVERRIDE-REASON: mcp-nfe-br uses EInvoicingMCPServer directly; the
         # raw FastMCP handle is not imported in package code
         "FastMCP",
@@ -128,14 +123,15 @@ _INTENTIONAL_OVERRIDES: dict[str, set[str]] = {
         "model_validator",
     },
     "mcp_einvoicing_core.exceptions": {
-        # OVERRIDE-REASON: validation tools return TaxIdValidationResult with
-        # error strings; base exception hierarchy not yet raised at tool layer
-        "EInvoicingError",
+        # OVERRIDE-REASON: CPF/CNPJ validation tools return TaxIdValidationResult
+        # with error strings; PartyValidationError not raised at tool layer
         "PartyValidationError",
+        # OVERRIDE-REASON: NF-e/NFC-e use XSD-based validation; the Schematron
+        # exception hierarchy is not used
         "XSDValidationError",
         "SchematronValidationError",
+        # OVERRIDE-REASON: Phase 1 has no SEFAZ webservice client (SOAP/mTLS)
         "AuthenticationError",
-        "DocumentGenerationError",
         "PlatformError",
         "ValidationError",
     },
@@ -231,16 +227,10 @@ _INTENTIONAL_OVERRIDES: dict[str, set[str]] = {
         "safe_parser",
     },
     "mcp_einvoicing_core.xml_utils": {
-        # OVERRIDE-REASON: Phase 1 is party-ID validation only; XML
-        # generation/serialization helpers are not yet used
-        "format_amount",
-        "format_quantity",
-        "xml_element",
-        "xml_optional",
+        # OVERRIDE-REASON: not used by the NF-e/NFC-e generator or validator
         "xml_escape",
         "format_error",
         "filter_empty_values",
-        "resolve_xml_input",
         "validate_date_iso",
         "mark_untrusted",
         "mark_untrusted_fields",
@@ -249,8 +239,6 @@ _INTENTIONAL_OVERRIDES: dict[str, set[str]] = {
         "validate_iban",
         "Any",
         "Decimal",
-        "safe_fromstring",
-        "safe_parser",
     },
 }
 
@@ -259,7 +247,11 @@ _BR_MODULES: list[str] = [
     "mcp_nfe_br.models.invoice",
     "mcp_nfe_br.server",
     "mcp_nfe_br.tools.validation",
+    "mcp_nfe_br.tools.generation",
     "mcp_nfe_br.utils.document_ids",
+    "mcp_nfe_br.utils.access_key",
+    "mcp_nfe_br.standards.nfe_generator",
+    "mcp_nfe_br.validators.nfe_xsd",
 ]
 
 _PYPROJECT = Path(__file__).parent.parent / "pyproject.toml"
@@ -272,18 +264,27 @@ _PYPROJECT = Path(__file__).parent.parent / "pyproject.toml"
 _REQUIRED_TOOL_CATEGORIES: dict[str, str] = {
     "br__validate_cpf": "Validate a Brazilian CPF (individual taxpayer ID)",
     "br__validate_cnpj": "Validate a Brazilian CNPJ (company tax ID)",
+    "br__generate_nfe": "Generate an unsigned NF-e/NFC-e 4.00 XML document",
+    "br__validate_nfe_xml": "Validate NF-e/NFC-e 4.00 XML against the bundled PL_010d XSD",
+    "br__build_access_key": "Assemble and check-digit a 44-character chNFe access key",
 }
+
+_TOOL_MODULES: tuple[str, ...] = (
+    "mcp_nfe_br.tools.validation",
+    "mcp_nfe_br.tools.generation",
+)
 
 
 def _collect_registered_tools() -> set[str]:
     """Detect tool functions registered via mcp.tool() in the BR server."""
     registered: set[str] = set()
 
-    val_mod, _ = _try_import("mcp_nfe_br.tools.validation")
-    if val_mod:
-        for fn_name in _REQUIRED_TOOL_CATEGORIES:
-            if hasattr(val_mod, fn_name):
-                registered.add(fn_name)
+    for mod_path in _TOOL_MODULES:
+        mod, _ = _try_import(mod_path)
+        if mod:
+            for fn_name in _REQUIRED_TOOL_CATEGORIES:
+                if hasattr(mod, fn_name):
+                    registered.add(fn_name)
 
     return registered
 
