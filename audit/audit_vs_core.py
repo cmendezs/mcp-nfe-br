@@ -84,6 +84,12 @@ _INTENTIONAL_OVERRIDES: dict[str, set[str]] = {
         "BaseDocumentSigner",
         "XAdESSignerConfig",
         "XAdESEPESSigner",
+        # OVERRIDE-REASON: XMLDSigSigner/XMLDSigSignerConfig (core v1.4.0) is
+        # the enveloped XML-DSig-over-infNFe signer built for NF-e/NFC-e, but
+        # is not yet wired into mcp-nfe-br — adoption is v0.3.0 item 1
+        # (standards/nfe_signer.py, br__sign_nfe tool)
+        "XMLDSigSigner",
+        "XMLDSigSignerConfig",
         "ABC",
         "abstractmethod",
         "dataclass",
