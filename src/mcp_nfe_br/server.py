@@ -10,6 +10,11 @@ from mcp_nfe_br.tools.generation import (
     br__sign_nfe,
     br__validate_nfe_xml,
 )
+from mcp_nfe_br.tools.sefaz import (
+    br__consult_sefaz_status,
+    br__distribute_dfe,
+    br__submit_nfe,
+)
 from mcp_nfe_br.tools.validation import br__validate_cnpj, br__validate_cpf
 
 
@@ -21,6 +26,9 @@ def _register_br_tools(mcp: Any) -> None:
     mcp.tool()(br__sign_nfe)
     mcp.tool()(br__validate_nfe_xml)
     mcp.tool()(br__build_access_key)
+    mcp.tool()(br__submit_nfe)
+    mcp.tool()(br__consult_sefaz_status)
+    mcp.tool()(br__distribute_dfe)
 
 
 mcp = EInvoicingMCPServer(

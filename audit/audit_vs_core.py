@@ -52,14 +52,20 @@ _INTENTIONAL_OVERRIDES: dict[str, set[str]] = {
         # OVERRIDE-REASON: no document parser implemented yet — Phase 1 scope is
         # generation and XSD validation only, not parsing of received documents
         "BaseDocumentParser",
-        # OVERRIDE-REASON: no session-based lifecycle API; SEFAZ webservice
-        # integration (autorização, distribuição) is a later phase
+        # OVERRIDE-REASON: SEFAZ NFeAutorizacao4 (v0.3.1, standards/sefaz_client.py
+        # + tools/sefaz.py) is a stateless synchronous SOAP call returning a
+        # protNFe/protocolo de autorização directly — it does not fit the
+        # session-based submit/get_status/search lifecycle (KSeF, FR FlowClient,
+        # BE AS4) that BaseLifecycleManager models. Mirrors the ES SII precedent
+        # (also a direct SOAP client, not a BaseLifecycleManager subclass).
         "BaseLifecycleManager",
         # OVERRIDE-REASON: party validation is performed inline via validate_cpf/
         # validate_cnpj helpers, not via the ABC party validator pattern
         "BasePartyValidator",
-        # OVERRIDE-REASON: no submission flow implemented yet (Phase 1 is
-        # generation and validation tools only)
+        # OVERRIDE-REASON: br__submit_nfe returns the parsed protNFe dict
+        # directly (NFeAutorizacao4 is synchronous, no session_ref) rather than
+        # the session-oriented SubmitResult shape — see BaseLifecycleManager
+        # override reason above
         "SubmitResult",
         # OVERRIDE-REASON: mcp-nfe-br uses EInvoicingMCPServer directly; the
         # raw FastMCP handle is not imported in package code
@@ -73,7 +79,6 @@ _INTENTIONAL_OVERRIDES: dict[str, set[str]] = {
         # imported from pydantic directly in mcp-nfe-br models
         "BaseModel",
         "Field",
-        "assert_not_read_only",
         "scrub",
         "InvoiceParty",
     },
@@ -131,22 +136,21 @@ _INTENTIONAL_OVERRIDES: dict[str, set[str]] = {
         # exception hierarchy is not used
         "XSDValidationError",
         "SchematronValidationError",
-        # OVERRIDE-REASON: Phase 1 has no SEFAZ webservice client (SOAP/mTLS)
+        # OVERRIDE-REASON: SefazClient raises PlatformError directly (now used,
+        # v0.3.1); 401-retry/AuthenticationError path is not reached by
+        # AuthMode.MTLS (no bearer token to invalidate)
         "AuthenticationError",
-        "PlatformError",
         "ValidationError",
     },
     "mcp_einvoicing_core.http_client": {
-        # OVERRIDE-REASON: Phase 1 has no SEFAZ webservice client (SOAP/mTLS);
-        # OAuth2/token-cache infrastructure not used yet
+        # OVERRIDE-REASON: SefazClient (v0.3.1) uses AuthMode.MTLS only;
+        # OAuth2/token-cache infrastructure (OAuthConfig/OAuthValues/TokenCache)
+        # is not applicable to ICP-Brasil certificate auth
         "OAuthConfig",
         "OAuthValues",
         "BaseEInvoicingConfig",
-        "BaseEInvoicingClient",
         "TokenCache",
         "AuthenticationError",
-        "AuthMode",
-        "PlatformError",
         "Any",
         "BaseModel",
         "BaseSettings",
@@ -249,10 +253,12 @@ _BR_MODULES: list[str] = [
     "mcp_nfe_br.server",
     "mcp_nfe_br.tools.validation",
     "mcp_nfe_br.tools.generation",
+    "mcp_nfe_br.tools.sefaz",
     "mcp_nfe_br.utils.document_ids",
     "mcp_nfe_br.utils.access_key",
     "mcp_nfe_br.standards.nfe_generator",
     "mcp_nfe_br.standards.nfe_signer",
+    "mcp_nfe_br.standards.sefaz_client",
     "mcp_nfe_br.validators.nfe_xsd",
 ]
 
@@ -269,11 +275,15 @@ _REQUIRED_TOOL_CATEGORIES: dict[str, str] = {
     "br__generate_nfe": "Generate an unsigned NF-e/NFC-e 4.00 XML document",
     "br__validate_nfe_xml": "Validate NF-e/NFC-e 4.00 XML against the bundled PL_010d XSD",
     "br__build_access_key": "Assemble and check-digit a 44-character chNFe access key",
+    "br__submit_nfe": "Submit a signed NF-e/NFC-e to SEFAZ NFeAutorizacao4 (autorização)",
+    "br__consult_sefaz_status": "Check SEFAZ webservice availability (NFeStatusServico4)",
+    "br__distribute_dfe": "Query/distribute DF-e via SEFAZ NFeDistribuicaoDFe",
 }
 
 _TOOL_MODULES: tuple[str, ...] = (
     "mcp_nfe_br.tools.validation",
     "mcp_nfe_br.tools.generation",
+    "mcp_nfe_br.tools.sefaz",
 )
 
 
