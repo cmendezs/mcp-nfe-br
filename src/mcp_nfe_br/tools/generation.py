@@ -10,6 +10,7 @@ from mcp_einvoicing_core.xml_utils import resolve_xml_input
 
 from mcp_nfe_br.models.invoice import BRInvoice
 from mcp_nfe_br.standards.nfe_generator import NFeGenerator
+from mcp_nfe_br.standards.nfe_signer import build_nfe_signer
 from mcp_nfe_br.utils.access_key import build_access_key
 from mcp_nfe_br.validators.nfe_xsd import NFeXSDValidator
 
@@ -23,8 +24,8 @@ def br__generate_nfe(
     """Generate an unsigned NF-e/NFC-e XML (modelo 55/65, schema 4.00).
 
     The returned `<NFe><infNFe>…</infNFe></NFe>` document does not include
-    `<Signature>` — ICP-Brasil XML-DSig signing and SEFAZ webservice
-    submission are not implemented in this phase.
+    `<Signature>` — sign it with `br__sign_nfe` before SEFAZ submission.
+    SEFAZ webservice submission itself is not implemented in this phase.
 
     Returns a dict with:
     - ``xml``: the generated NF-e/NFC-e XML string
@@ -41,7 +42,7 @@ def br__generate_nfe(
     chave_acesso = xml_string.split('Id="NFe', 1)[1].split('"', 1)[0]
 
     warnings: list[str] = [
-        "Documento não assinado (ICP-Brasil XML-DSig não implementado nesta fase).",
+        "Documento não assinado (use br__sign_nfe com um certificado ICP-Brasil A1 antes da submissão à SEFAZ).",
         "Documento não transmitido à SEFAZ (submissão via webservice não implementada nesta fase).",
     ]
 
@@ -58,9 +59,10 @@ def br__validate_nfe_xml(
 ) -> dict[str, object]:
     """Validate an NF-e/NFC-e XML (modelo 55/65, schema 4.00) against the bundled PL_010d XSD.
 
-    Validates the unsigned `<NFe><infNFe>…</infNFe></NFe>` structure (the
-    `<Signature>` element, if present, is not required by the bundled
-    schema variant — see ``NFeXSDValidator``).
+    `NFeXSDValidator` selects the schema automatically: documents without a
+    `<ds:Signature>` are validated against the unsigned derivative; signed
+    documents (produced by `br__sign_nfe`) are validated against the
+    unmodified official schema, which requires `<ds:Signature>`.
 
     Returns a dict with ``valid``, ``errors``, ``warnings``, and ``schema_version``.
     """
@@ -70,6 +72,45 @@ def br__validate_nfe_xml(
         return {"valid": False, "errors": [str(exc)]}
 
     return NFeXSDValidator().validate(xml_bytes).to_dict()
+
+
+def br__sign_nfe(
+    cert_path: Annotated[
+        str, "Caminho local para o certificado ICP-Brasil A1 (.p12/.pfx)"
+    ],
+    xml_content: Annotated[
+        str | None, "XML NF-e/NFC-e não assinado. Informe xml_content ou xml_base64."
+    ] = None,
+    xml_base64: Annotated[
+        str | None, "XML NF-e/NFC-e não assinado, codificado em base64."
+    ] = None,
+    cert_password: Annotated[
+        str | None, "Senha do certificado A1, se houver"
+    ] = None,
+) -> dict[str, object]:
+    """Apply an ICP-Brasil enveloped XML-DSig signature to an NF-e/NFC-e XML.
+
+    Signs `<infNFe>` per MOC 7.0 Table 4-2 (RSA-SHA1 / SHA-1, enveloped
+    transform, `ds:Signature` appended as the last child of `<NFe>`) using
+    `mcp_nfe_br.standards.nfe_signer.build_nfe_signer`.
+
+    Only ICP-Brasil A1 (PKCS#12 file-based) certificates are supported.
+    A3 (hardware token/HSM) certificates `[NEED: not modeled]`.
+
+    Returns a dict with ``xml`` (the signed document) or ``error``.
+    """
+    try:
+        xml_bytes = resolve_xml_input(xml_content, xml_base64)
+    except (ValueError, EInvoicingError) as exc:
+        return {"error": str(exc)}
+
+    signer = build_nfe_signer(cert_path, cert_password)
+    try:
+        signed_xml = signer.sign(xml_bytes)
+    except (ImportError, ValueError, OSError) as exc:
+        return {"error": str(exc)}
+
+    return {"xml": signed_xml.decode("utf-8")}
 
 
 def br__build_access_key(

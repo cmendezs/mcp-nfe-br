@@ -1,10 +1,13 @@
-"""Tests for br__generate_nfe, br__validate_nfe_xml, and br__build_access_key."""
+"""Tests for br__generate_nfe, br__sign_nfe, br__validate_nfe_xml, and br__build_access_key."""
 
 from __future__ import annotations
+
+from pathlib import Path
 
 from mcp_nfe_br.tools.generation import (
     br__build_access_key,
     br__generate_nfe,
+    br__sign_nfe,
     br__validate_nfe_xml,
 )
 from tests.conftest import make_nfce, make_nfe
@@ -28,6 +31,35 @@ def test_generate_unsupported_tax_code_returns_error() -> None:
     data = make_nfe().model_dump(mode="json")
     data["lines"][0]["icms_cst"] = "21"
     result = br__generate_nfe(data)
+    assert "error" in result
+
+
+def test_sign_nfe_returns_signed_xml(p12_path: Path) -> None:
+    gen_result = br__generate_nfe(make_nfe().model_dump(mode="json"))
+    sign_result = br__sign_nfe(
+        cert_path=str(p12_path), xml_content=gen_result["xml"], cert_password="test"
+    )
+    assert "<ds:Signature" in sign_result["xml"]
+
+
+def test_sign_then_validate_nfe_uses_signed_schema(p12_path: Path) -> None:
+    gen_result = br__generate_nfe(make_nfe().model_dump(mode="json"))
+    sign_result = br__sign_nfe(
+        cert_path=str(p12_path), xml_content=gen_result["xml"], cert_password="test"
+    )
+    val_result = br__validate_nfe_xml(xml_content=sign_result["xml"])
+    assert val_result["valid"] is True
+    assert "official signed schema" in val_result["schema_version"]
+
+
+def test_sign_nfe_missing_cert_returns_error() -> None:
+    gen_result = br__generate_nfe(make_nfe().model_dump(mode="json"))
+    result = br__sign_nfe(cert_path="/nonexistent/cert.p12", xml_content=gen_result["xml"])
+    assert "error" in result
+
+
+def test_sign_nfe_requires_xml_input(p12_path: Path) -> None:
+    result = br__sign_nfe(cert_path=str(p12_path))
     assert "error" in result
 
 

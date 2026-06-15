@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import datetime
 from pathlib import Path
 
+import pytest
 from mcp_einvoicing_core.models import InvoiceParty, TaxIdentifier
 
 from mcp_nfe_br.models.invoice import (
@@ -108,6 +110,53 @@ def make_nfe(**overrides: object) -> BRInvoice:
     }
     data.update(overrides)
     return BRInvoice.model_validate(data)
+
+
+def _generate_test_p12(path: Path, password: bytes | None = b"test") -> None:
+    """Write a minimal self-signed RSA cert as PKCS#12 to *path*."""
+    from cryptography import x509
+    from cryptography.hazmat.primitives import hashes, serialization
+    from cryptography.hazmat.primitives.asymmetric import rsa
+    from cryptography.hazmat.primitives.serialization import pkcs12
+    from cryptography.x509.oid import NameOID
+
+    key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+    subject = issuer = x509.Name(
+        [x509.NameAttribute(NameOID.COMMON_NAME, "Test Signer")]
+    )
+    cert = (
+        x509.CertificateBuilder()
+        .subject_name(subject)
+        .issuer_name(issuer)
+        .public_key(key.public_key())
+        .serial_number(x509.random_serial_number())
+        .not_valid_before(datetime.datetime.now(datetime.UTC))
+        .not_valid_after(
+            datetime.datetime.now(datetime.UTC)
+            + datetime.timedelta(days=365)
+        )
+        .sign(key, hashes.SHA256())
+    )
+    p12_bytes = pkcs12.serialize_key_and_certificates(
+        name=b"test",
+        key=key,
+        cert=cert,
+        cas=None,
+        encryption_algorithm=(
+            serialization.BestAvailableEncryption(password)
+            if password
+            else serialization.NoEncryption()
+        ),
+    )
+    path.write_bytes(p12_bytes)
+
+
+@pytest.fixture()
+def p12_path(tmp_path: Path) -> Path:
+    """Path to a self-signed PKCS#12 test certificate, password ``"test"``."""
+    p = tmp_path / "cert.p12"
+    _generate_test_p12(p, password=b"test")
+    return p
 
 
 def make_nfce(**overrides: object) -> BRInvoice:

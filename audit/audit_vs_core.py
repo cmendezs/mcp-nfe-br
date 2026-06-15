@@ -78,18 +78,13 @@ _INTENTIONAL_OVERRIDES: dict[str, set[str]] = {
         "InvoiceParty",
     },
     "mcp_einvoicing_core.digital_signature": {
-        # OVERRIDE-REASON: NF-e/NFC-e use ICP-Brasil A1/A3 certificates and
-        # XML-DSig per the SEFAZ schema, not the XAdES-EPES envelope; signing
-        # is a later phase
+        # OVERRIDE-REASON: NF-e/NFC-e use ICP-Brasil A1 certificates and plain
+        # enveloped XML-DSig (XMLDSigSigner/XMLDSigSignerConfig, wired in
+        # standards/nfe_signer.py and br__sign_nfe, v0.3.0 item 1), not the
+        # XAdES-EPES envelope (ES Facturae/TicketBAI)
         "BaseDocumentSigner",
         "XAdESSignerConfig",
         "XAdESEPESSigner",
-        # OVERRIDE-REASON: XMLDSigSigner/XMLDSigSignerConfig (core v1.4.0) is
-        # the enveloped XML-DSig-over-infNFe signer built for NF-e/NFC-e, but
-        # is not yet wired into mcp-nfe-br — adoption is v0.3.0 item 1
-        # (standards/nfe_signer.py, br__sign_nfe tool)
-        "XMLDSigSigner",
-        "XMLDSigSignerConfig",
         "ABC",
         "abstractmethod",
         "dataclass",
@@ -257,6 +252,7 @@ _BR_MODULES: list[str] = [
     "mcp_nfe_br.utils.document_ids",
     "mcp_nfe_br.utils.access_key",
     "mcp_nfe_br.standards.nfe_generator",
+    "mcp_nfe_br.standards.nfe_signer",
     "mcp_nfe_br.validators.nfe_xsd",
 ]
 

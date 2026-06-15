@@ -7,6 +7,7 @@ from mcp_einvoicing_core import EInvoicingMCPServer
 from mcp_nfe_br.tools.generation import (
     br__build_access_key,
     br__generate_nfe,
+    br__sign_nfe,
     br__validate_nfe_xml,
 )
 from mcp_nfe_br.tools.validation import br__validate_cnpj, br__validate_cpf
@@ -17,6 +18,7 @@ def _register_br_tools(mcp: Any) -> None:
     mcp.tool()(br__validate_cnpj)
     mcp.tool()(br__validate_cpf)
     mcp.tool()(br__generate_nfe)
+    mcp.tool()(br__sign_nfe)
     mcp.tool()(br__validate_nfe_xml)
     mcp.tool()(br__build_access_key)
 
