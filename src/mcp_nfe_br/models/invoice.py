@@ -13,9 +13,14 @@ Field-level structure (groups `ide`, `emit`, `dest`, `det`, `total`,
 `transp`, `pag`) is `[Verified locally]` against
 `schemas/nfe/leiauteNFe_v4.00.xsd` (PL_010d).
 
-IBS/CBS/Imposto Seletivo (Grupo UB/W03, NT 2025.002-RTC) are
-`[NEED: not yet modeled — field-level detail and mandatory date pending,
-see br.md "Known gaps"]`.
+IBS/CBS/Imposto Seletivo (Grupo UB/W03, NT 2025.002-RTC) item-level
+(`BRGrupoImpostoSeletivo`/`BRGrupoIBSCBS`) and document-level
+(`BRGrupoIBSCBSTot`) field groups are modeled as `Optional` per
+`[Verified locally]` against `NT_2025.002_v1.50_RTC_NF-e_IBS_CBS_IS.pdf`.
+Several monofásico/diferimento/devolução/redução/Suframa subgroups remain
+`[NEED: not yet modeled, see br.md "Known gaps"]`, and the mandatory-validation
+activation date (rule UB12-10) is `[NEED: still "Implementação futura" with no
+concrete date as of NT 2025.002 v1.50 — do not hardcode]`.
 """
 
 from __future__ import annotations
@@ -165,6 +170,193 @@ class BRPagamento(BaseModel):
     uf_pag: str | None = Field(default=None, description="UF do pagamento")
 
 
+class BRGrupoImpostoSeletivo(BaseModel):
+    """Imposto Seletivo (Grupo UB, subgrupo IS — UB01-UB11), item-level.
+
+    `[Verified locally]` field set against
+    ``NT_2025.002_v1.50_RTC_NF-e_IBS_CBS_IS.pdf`` (table "Grupo UB", #324.01-324.11).
+    Activation: `[NEED: rule UB12-10 ("Não informado grupo de imposto IBS e
+    CBS") is listed in v1.50 as "Implementação futura" with no concrete date
+    after multiple revisions (v1.30-v1.40) — do not hardcode a mandatory date]`.
+    """
+
+    cst_is: str | None = Field(
+        default=None, description="Código de Situação Tributária do Imposto Seletivo (UB02)"
+    )
+    c_class_trib_is: str | None = Field(
+        default=None, description="Código de Classificação Tributária do Imposto Seletivo (UB03)"
+    )
+    v_bc_is: str | None = Field(
+        default=None, description="Valor da Base de Cálculo do Imposto Seletivo (UB05)"
+    )
+    p_is: str | None = Field(default=None, description="Alíquota do Imposto Seletivo, % (UB06)")
+    p_is_espec: str | None = Field(
+        default=None,
+        description="Alíquota específica por unidade de medida apropriada, % (UB07)",
+    )
+    v_is: str | None = Field(default=None, description="Valor do Imposto Seletivo (UB11)")
+
+
+class BRGrupoIBSUF(BaseModel):
+    """IBS de competência da UF (Grupo UB, subgrupo gIBSUF — UB17-UB35).
+
+    Only the rate/value pair is modeled; `gDif` (diferimento), `gDevTrib`
+    (devolução de tributos) and `gRed` (redução de alíquota) subgroups are
+    `[NEED: not modeled — out of scope for v0.3.0, see br.md "Known gaps"]`.
+    """
+
+    p_ibs_uf: str | None = Field(
+        default=None, description="Alíquota do IBS de competência da UF, % (UB18)"
+    )
+    v_ibs_uf: str | None = Field(
+        default=None, description="Valor do IBS de competência da UF (UB35)"
+    )
+
+
+class BRGrupoIBSMun(BaseModel):
+    """IBS de competência do Município (Grupo UB, subgrupo gIBSMun — UB36-UB54).
+
+    Only the rate/value pair is modeled; `gDif`, `gDevTrib` and `gRed`
+    subgroups are `[NEED: not modeled — out of scope for v0.3.0, see br.md
+    "Known gaps"]`.
+    """
+
+    p_ibs_mun: str | None = Field(
+        default=None, description="Alíquota do IBS de competência do Município, % (UB37)"
+    )
+    v_ibs_mun: str | None = Field(
+        default=None, description="Valor do IBS de competência do Município (UB54)"
+    )
+
+
+class BRGrupoCBS(BaseModel):
+    """CBS (Grupo UB, subgrupo gCBS — UB55-UB67).
+
+    Only the rate/value pair is modeled; `gDif`, `gDevTrib`, `gRed` and
+    `gALCZFMCBS` subgroups are `[NEED: not modeled — out of scope for v0.3.0,
+    see br.md "Known gaps"]`.
+    """
+
+    p_cbs: str | None = Field(default=None, description="Alíquota da CBS, % (UB56)")
+    v_cbs: str | None = Field(default=None, description="Valor da CBS (UB67)")
+
+
+class BRGrupoIBSCBS(BaseModel):
+    """IBS/CBS (Grupo UB, subgrupo IBSCBS — UB12-UB67), item-level.
+
+    `[Verified locally]` field set against
+    ``NT_2025.002_v1.50_RTC_NF-e_IBS_CBS_IS.pdf`` (table "Grupo UB", #324.12-324.67).
+    The `gTribRegular`, `gCompraGov`, `gMonoAdValorem`/monofásico, and
+    `gEstornoCred` subgroups are `[NEED: not modeled — out of scope for
+    v0.3.0, see br.md "Known gaps"]`.
+    """
+
+    cst: str | None = Field(
+        default=None, description="Código de Situação Tributária do IBS e CBS (UB13)"
+    )
+    c_class_trib: str | None = Field(
+        default=None, description="Código de Classificação Tributária do IBS e CBS (UB14)"
+    )
+    ind_doacao: str | None = Field(
+        default=None,
+        description="Indicador de natureza de operação de doação: '1' quando doação (UB14a)",
+    )
+    v_bc: str | None = Field(default=None, description="Base de cálculo do IBS e CBS (UB16)")
+    ibs_uf: BRGrupoIBSUF | None = Field(
+        default=None, description="Grupo de informações do IBS para a UF (UB17)"
+    )
+    ibs_mun: BRGrupoIBSMun | None = Field(
+        default=None, description="Grupo de informações do IBS para o município (UB36)"
+    )
+    v_ibs: str | None = Field(
+        default=None,
+        description="Valor do IBS, soma de vIBSUF e vIBSMun (UB54a)",
+    )
+    cbs: BRGrupoCBS | None = Field(
+        default=None, description="Grupo de informações da CBS (UB55)"
+    )
+
+
+class BRGrupoIBSUFTot(BaseModel):
+    """Totais do IBS da UF (Grupo W03, subgrupo gIBSUF — W37-W41), document-level."""
+
+    v_dif: str | None = Field(
+        default=None, description="Valor total do diferimento do IBS UF (W38)"
+    )
+    v_dev_trib: str | None = Field(
+        default=None, description="Valor total de devolução de tributos do IBS UF (W39)"
+    )
+    v_ibs_uf: str | None = Field(default=None, description="Valor total do IBS da UF (W41)")
+
+
+class BRGrupoIBSMunTot(BaseModel):
+    """Totais do IBS do Município (Grupo W03, subgrupo gIBSMun — W42-W46), document-level."""
+
+    v_dif: str | None = Field(
+        default=None, description="Valor total do diferimento do IBS Municipal (W43)"
+    )
+    v_dev_trib: str | None = Field(
+        default=None, description="Valor total de devolução de tributos do IBS Municipal (W44)"
+    )
+    v_ibs_mun: str | None = Field(
+        default=None, description="Valor total do IBS do Município (W46)"
+    )
+
+
+class BRGrupoIBSTot(BaseModel):
+    """Totais do IBS (Grupo W03, subgrupo gIBS — W36-W49), document-level.
+
+    `gMono` (monofasia) and `gEstornoCred` totals subgroups are `[NEED: not
+    modeled — out of scope for v0.3.0, see br.md "Known gaps"]`.
+    """
+
+    ibs_uf: BRGrupoIBSUFTot | None = Field(
+        default=None, description="Grupo total do IBS da UF (W37)"
+    )
+    ibs_mun: BRGrupoIBSMunTot | None = Field(
+        default=None, description="Grupo total do IBS do Município (W42)"
+    )
+    v_ibs: str | None = Field(default=None, description="Valor total do IBS (W47)")
+    v_cred_pres: str | None = Field(
+        default=None, description="Valor total do crédito presumido do IBS (W48)"
+    )
+    v_cred_pres_cond_sus: str | None = Field(
+        default=None,
+        description="Valor total do crédito presumido do IBS em condição suspensiva (W49)",
+    )
+
+
+class BRGrupoCBSTot(BaseModel):
+    """Totais da CBS (Grupo W03, subgrupo gCBS — W50-W56b), document-level."""
+
+    v_dif: str | None = Field(default=None, description="Valor total do diferimento da CBS (W53)")
+    v_dev_trib: str | None = Field(
+        default=None, description="Valor total de devolução de tributos da CBS (W54)"
+    )
+    v_cbs: str | None = Field(default=None, description="Valor total da CBS (W56)")
+    v_cred_pres: str | None = Field(
+        default=None, description="Valor total do crédito presumido da CBS (W56a)"
+    )
+    v_cred_pres_cond_sus: str | None = Field(
+        default=None,
+        description="Valor total do crédito presumido da CBS em condição suspensiva (W56b)",
+    )
+
+
+class BRGrupoIBSCBSTot(BaseModel):
+    """Totais da NF-e com IBS e CBS (Grupo W03, subgrupo IBSCBSTot — W34-W49), document-level.
+
+    `[Verified locally]` field set against
+    ``NT_2025.002_v1.50_RTC_NF-e_IBS_CBS_IS.pdf`` (table "Grupo W03", #355.4-355.19).
+    """
+
+    v_bc_ibscbs: str | None = Field(
+        default=None, description="Valor total da BC do IBS e da CBS (W35)"
+    )
+    ibs: BRGrupoIBSTot | None = Field(default=None, description="Grupo total do IBS (W36)")
+    cbs: BRGrupoCBSTot | None = Field(default=None, description="Grupo total da CBS (W50)")
+
+
 class BRInvoiceLine(InvoiceLineItem):  # type: ignore[misc]
     """NF-e/NFC-e invoice line (Grupo I — Produtos e Serviços).
 
@@ -229,6 +421,14 @@ class BRInvoiceLine(InvoiceLineItem):  # type: ignore[misc]
         default=None, description="Código de Situação Tributária do COFINS"
     )
     cofins_amount: str | None = Field(default=None, description="Valor do COFINS")
+
+    imposto_seletivo: BRGrupoImpostoSeletivo | None = Field(
+        default=None, description="Informações do Imposto Seletivo (Grupo UB, subgrupo IS)"
+    )
+    ibs_cbs: BRGrupoIBSCBS | None = Field(
+        default=None,
+        description="Informações do IBS e da CBS (Grupo UB, subgrupo IBSCBS)",
+    )
 
 
 class BRInvoice(InvoiceDocument):  # type: ignore[misc]
@@ -298,6 +498,22 @@ class BRInvoice(InvoiceDocument):  # type: ignore[misc]
     )
 
     lines: list[BRInvoiceLine] = Field(default_factory=list, min_length=1)  # type: ignore[assignment]
+
+    # Grupo W03 — Total da NF-e com IBS / CBS / IS (NT 2025.002-RTC)
+    v_is_tot: str | None = Field(
+        default=None, description="Total do Imposto Seletivo, soma dos vIS dos itens (W33)"
+    )
+    ibscbs_tot: BRGrupoIBSCBSTot | None = Field(
+        default=None, description="Totais da NF-e com IBS e CBS (W34)"
+    )
+    v_nf_tot: str | None = Field(
+        default=None,
+        description=(
+            "Valor total da NF-e considerando os impostos por fora IBS, CBS e "
+            "IS (W60). `[NEED: rule W60-05/W60-10 listed as 'Implementação "
+            "futura' in NT 2025.002 v1.50 — do not treat as mandatory]`."
+        ),
+    )
 
     @model_validator(mode="after")
     def check_modelo_requirements(self) -> BRInvoice:
