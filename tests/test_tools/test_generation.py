@@ -26,7 +26,7 @@ def test_generate_nfce_returns_xml() -> None:
 
 def test_generate_unsupported_tax_code_returns_error() -> None:
     data = make_nfe().model_dump(mode="json")
-    data["lines"][0]["icms_cst"] = "20"
+    data["lines"][0]["icms_cst"] = "21"
     result = br__generate_nfe(data)
     assert "error" in result
 

@@ -9,17 +9,35 @@ ICP-Brasil XML-DSig signing is a later phase — no `<Signature>` element is
 emitted. The seam is the returned XML string: a signer would parse it,
 insert `<Signature>` as the last child of `<infNFe>`, and re-serialize.
 
-Phase 1 tax-code coverage is intentionally narrow:
+Tax-code coverage (v0.3.0):
 
-- ICMS: CST "00" (`ICMS00`, regime normal) or CSOSN "102" (`ICMSSN102`,
-  Simples Nacional). Other codes raise `DocumentGenerationError`
-  `[NEED: extend ICMS group coverage]`.
+- ICMS (regime normal): CST "00" (`ICMS00`), "10" (`ICMS10`, com ST),
+  "20" (`ICMS20`, redução de BC), "30" (`ICMS30`, isenta/NT com ST),
+  "40"/"41"/"50" (`ICMS40`, isenta/não tributada/suspensão), "51"
+  (`ICMS51`, diferimento — emitted with only `orig`/`CST`, all other
+  fields `minOccurs="0"` per schema), "60" (`ICMS60`, ICMS cobrado
+  anteriormente por ST), "70" (`ICMS70`, redução de BC com ST), "90"
+  (`ICMS90`, outras — vBC/vICMS and ST sub-groups emitted only when the
+  corresponding model fields are set).
+- ICMS (Simples Nacional): CSOSN "101" (`ICMSSN101`, com crédito), "102"/
+  "103"/"300" (`ICMSSN102`), "201" (`ICMSSN201`, ST com crédito), "202"/
+  "203" (`ICMSSN202`, ST sem crédito), "500" (`ICMSSN500`, ICMS cobrado
+  anteriormente por ST), "900" (`ICMSSN900`, outras).
+- Other ICMS CST/CSOSN codes raise `DocumentGenerationError`
+  `[NEED: extend ICMS group coverage further]`. FCP (`vBCFCP`/`pFCP`/
+  `vFCP`/`*FCPST`) and desoneração (`vICMSDeson`/`motDesICMS`) sub-groups
+  are `[NEED: not modeled]` across all ICMS variants.
+- ICMS ST defaults: `modBCST` defaults to "4" (MVA) `[Unverified]` when
+  `icms_mod_bc_st` is not set.
 - PIS/COFINS: CST "01"/"02" (`*Aliq`) or "04"-"09" (`*NT`). The group is
   omitted entirely when `pis_cst`/`cofins_cst` is `None` (both are
   `minOccurs="0"` in the schema).
-- IPI: CST "00"/"49"/"50"/"99" (`IPITrib`, `cEnq` placeholder "999"
-  `[Unverified]`) or any other code (`IPINT`). Omitted when `ipi_cst` is
-  `None` (`minOccurs="0"`).
+- IPI: CST "00"/"49"/"50"/"99" (`IPITrib`, `cEnq` placeholder "999") or
+  any other code (`IPINT`). `cEnq="999"` = "Outros / Tributação normal
+  IPI" per MOC 7.0 Tabela 8-6 (Código de Enquadramento Legal do IPI)
+  `[Verified locally]` — a generic, schema-valid placeholder, but the
+  correct product-specific `cEnq` from the TIPI table is `[NEED: per-NCM
+  cEnq lookup]`. Omitted when `ipi_cst` is `None` (`minOccurs="0"`).
 
 IBS/CBS/Imposto Seletivo (Grupo UB/W03, NT 2025.002-RTC) are
 `[NEED: not yet modeled]` and not emitted.
@@ -43,9 +61,22 @@ from mcp_nfe_br.utils.access_key import build_access_key
 _NAMESPACE = "http://www.portalfiscal.inf.br/nfe"
 _VERSAO = "4.00"
 
-# Tax-code coverage tables — Phase 1 (see module docstring).
+# Tax-code coverage tables (see module docstring).
 _ICMS_CST_NORMAL = {"00"}
-_ICMS_CSOSN_SIMPLES = {"102"}
+_ICMS_CST_TRIB_ST = {"10"}
+_ICMS_CST_REDUCAO_BC = {"20"}
+_ICMS_CST_ISENTA_ST = {"30"}
+_ICMS_CST_ISENTA_NT_SUSPENSAO = {"40", "41", "50"}
+_ICMS_CST_DIFERIMENTO = {"51"}
+_ICMS_CST_ST_ANTERIOR = {"60"}
+_ICMS_CST_REDUCAO_BC_ST = {"70"}
+_ICMS_CST_OUTRAS = {"90"}
+_ICMS_CSOSN_CREDITO = {"101"}
+_ICMS_CSOSN_SIMPLES = {"102", "103", "300"}
+_ICMS_CSOSN_ST_CREDITO = {"201"}
+_ICMS_CSOSN_ST_SEM_CREDITO = {"202", "203"}
+_ICMS_CSOSN_ST_ANTERIOR = {"500"}
+_ICMS_CSOSN_OUTRAS = {"900"}
 _PIS_COFINS_ALIQ = {"01", "02"}
 _PIS_COFINS_NT = {"04", "05", "06", "07", "08", "09"}
 _IPI_TRIBUTADO = {"00", "49", "50", "99"}
@@ -128,15 +159,75 @@ def _dest_block(invoice: BRInvoice) -> str:
     return xml_element("dest", "".join(p for p in parts if p), unsafe=True)
 
 
+def _icms_st_extra(line: BRInvoiceLine) -> str:
+    """ST sub-group (modBCST..vICMSST) shared by ICMS10/30/70/90 and CSOSN 201/202/900."""
+    return "".join(
+        [
+            xml_element("modBCST", line.icms_mod_bc_st or "4"),
+            xml_optional(
+                "pMVAST", _percent(line.icms_p_mva_st) if line.icms_p_mva_st else None
+            ),
+            xml_optional(
+                "pRedBCST", _percent(line.icms_p_red_bc_st) if line.icms_p_red_bc_st else None
+            ),
+            xml_element("vBCST", _d2(line.icms_v_bc_st or "0")),
+            xml_element("pICMSST", _percent(line.icms_p_icms_st or "0")),
+            xml_element("vICMSST", _d2(line.icms_v_icms_st or "0")),
+        ]
+    )
+
+
+def _icms_st_anterior_extra(line: BRInvoiceLine) -> str:
+    """Optional 'ICMS cobrado anteriormente por ST' sub-group for ICMS60/ICMSSN500."""
+    if line.icms_v_bc_st_ret is None and line.icms_v_icms_st_ret is None:
+        return ""
+    return "".join(
+        [
+            xml_element("vBCSTRet", _d2(line.icms_v_bc_st_ret or "0")),
+            xml_element("pST", _percent(line.icms_p_st or "0")),
+            xml_optional(
+                "vICMSSubstituto",
+                _d2(line.icms_v_icms_subst) if line.icms_v_icms_subst else None,
+            ),
+            xml_element("vICMSSTRet", _d2(line.icms_v_icms_st_ret or "0")),
+        ]
+    )
+
+
+def _icms_outras_extra(line: BRInvoiceLine, v_prod: Decimal) -> str:
+    """Optional vBC/pICMS/vICMS + ST + crédito-SN sub-groups shared by ICMS90/ICMSSN900."""
+    parts = []
+    if line.icms_rate is not None or line.icms_amount is not None:
+        parts += [
+            xml_element("modBC", line.icms_mod_bc or "3"),
+            xml_element("vBC", _d2(v_prod)),
+            xml_optional(
+                "pRedBC", _percent(line.icms_p_red_bc) if line.icms_p_red_bc else None
+            ),
+            xml_element("pICMS", _percent(line.icms_rate or "0")),
+            xml_element("vICMS", _d2(line.icms_amount or "0")),
+        ]
+    if line.icms_v_bc_st is not None or line.icms_v_icms_st is not None:
+        parts.append(_icms_st_extra(line))
+    if line.icms_p_cred_sn is not None or line.icms_v_cred_icms_sn is not None:
+        parts += [
+            xml_element("pCredSN", _percent(line.icms_p_cred_sn or "0")),
+            xml_element("vCredICMSSN", _d2(line.icms_v_cred_icms_sn or "0")),
+        ]
+    return "".join(parts)
+
+
 def _icms_block(line: BRInvoiceLine) -> str:
     cst = line.icms_cst
+    v_prod = Decimal(line.v_prod)
+    orig = xml_element("orig", line.icms_orig)
+
     if cst in _ICMS_CST_NORMAL:
-        v_prod = Decimal(line.v_prod)
         inner = "".join(
             [
-                xml_element("orig", line.icms_orig),
+                orig,
                 xml_element("CST", cst),
-                xml_element("modBC", "3"),
+                xml_element("modBC", line.icms_mod_bc or "3"),
                 xml_element("vBC", _d2(v_prod)),
                 xml_element("pICMS", _percent(line.icms_rate or "0")),
                 xml_element("vICMS", _d2(line.icms_amount or "0")),
@@ -145,18 +236,121 @@ def _icms_block(line: BRInvoiceLine) -> str:
             ]
         )
         return xml_element("ICMS", xml_element("ICMS00", inner, unsafe=True), unsafe=True)
-    if cst in _ICMS_CSOSN_SIMPLES:
+    if cst in _ICMS_CST_TRIB_ST:
         inner = "".join(
             [
-                xml_element("orig", line.icms_orig),
-                xml_element("CSOSN", cst),
+                orig,
+                xml_element("CST", cst),
+                xml_element("modBC", line.icms_mod_bc or "3"),
+                xml_element("vBC", _d2(v_prod)),
+                xml_element("pICMS", _percent(line.icms_rate or "0")),
+                xml_element("vICMS", _d2(line.icms_amount or "0")),
+                _icms_st_extra(line),
             ]
         )
+        return xml_element("ICMS", xml_element("ICMS10", inner, unsafe=True), unsafe=True)
+    if cst in _ICMS_CST_REDUCAO_BC:
+        inner = "".join(
+            [
+                orig,
+                xml_element("CST", cst),
+                xml_element("modBC", line.icms_mod_bc or "3"),
+                xml_element("pRedBC", _percent(line.icms_p_red_bc or "0")),
+                xml_element("vBC", _d2(v_prod)),
+                xml_element("pICMS", _percent(line.icms_rate or "0")),
+                xml_element("vICMS", _d2(line.icms_amount or "0")),
+            ]
+        )
+        return xml_element("ICMS", xml_element("ICMS20", inner, unsafe=True), unsafe=True)
+    if cst in _ICMS_CST_ISENTA_ST:
+        inner = "".join([orig, xml_element("CST", cst), _icms_st_extra(line)])
+        return xml_element("ICMS", xml_element("ICMS30", inner, unsafe=True), unsafe=True)
+    if cst in _ICMS_CST_ISENTA_NT_SUSPENSAO:
+        inner = "".join([orig, xml_element("CST", cst)])
+        return xml_element("ICMS", xml_element("ICMS40", inner, unsafe=True), unsafe=True)
+    if cst in _ICMS_CST_DIFERIMENTO:
+        # All fields beyond orig/CST are minOccurs="0" for ICMS51; the
+        # diferimento details are left to the contributor (`vBC`, `pICMS`,
+        # `vICMSOp`, `pDif`, `vICMSDif`) `[NEED: not modeled]`.
+        inner = "".join([orig, xml_element("CST", cst)])
+        return xml_element("ICMS", xml_element("ICMS51", inner, unsafe=True), unsafe=True)
+    if cst in _ICMS_CST_ST_ANTERIOR:
+        inner = "".join([orig, xml_element("CST", cst), _icms_st_anterior_extra(line)])
+        return xml_element("ICMS", xml_element("ICMS60", inner, unsafe=True), unsafe=True)
+    if cst in _ICMS_CST_REDUCAO_BC_ST:
+        inner = "".join(
+            [
+                orig,
+                xml_element("CST", cst),
+                xml_element("modBC", line.icms_mod_bc or "3"),
+                xml_element("pRedBC", _percent(line.icms_p_red_bc or "0")),
+                xml_element("vBC", _d2(v_prod)),
+                xml_element("pICMS", _percent(line.icms_rate or "0")),
+                xml_element("vICMS", _d2(line.icms_amount or "0")),
+                _icms_st_extra(line),
+            ]
+        )
+        return xml_element("ICMS", xml_element("ICMS70", inner, unsafe=True), unsafe=True)
+    if cst in _ICMS_CST_OUTRAS:
+        inner = "".join([orig, xml_element("CST", cst), _icms_outras_extra(line, v_prod)])
+        return xml_element("ICMS", xml_element("ICMS90", inner, unsafe=True), unsafe=True)
+    if cst in _ICMS_CSOSN_CREDITO:
+        inner = "".join(
+            [
+                orig,
+                xml_element("CSOSN", cst),
+                xml_element("pCredSN", _percent(line.icms_p_cred_sn or "0")),
+                xml_element("vCredICMSSN", _d2(line.icms_v_cred_icms_sn or "0")),
+            ]
+        )
+        return xml_element("ICMS", xml_element("ICMSSN101", inner, unsafe=True), unsafe=True)
+    if cst in _ICMS_CSOSN_SIMPLES:
+        inner = "".join([orig, xml_element("CSOSN", cst)])
         return xml_element("ICMS", xml_element("ICMSSN102", inner, unsafe=True), unsafe=True)
+    if cst in _ICMS_CSOSN_ST_CREDITO:
+        inner = "".join(
+            [
+                orig,
+                xml_element("CSOSN", cst),
+                _icms_st_extra(line),
+                xml_element("pCredSN", _percent(line.icms_p_cred_sn or "0")),
+                xml_element("vCredICMSSN", _d2(line.icms_v_cred_icms_sn or "0")),
+            ]
+        )
+        return xml_element("ICMS", xml_element("ICMSSN201", inner, unsafe=True), unsafe=True)
+    if cst in _ICMS_CSOSN_ST_SEM_CREDITO:
+        inner = "".join([orig, xml_element("CSOSN", cst), _icms_st_extra(line)])
+        return xml_element("ICMS", xml_element("ICMSSN202", inner, unsafe=True), unsafe=True)
+    if cst in _ICMS_CSOSN_ST_ANTERIOR:
+        inner = "".join([orig, xml_element("CSOSN", cst), _icms_st_anterior_extra(line)])
+        return xml_element("ICMS", xml_element("ICMSSN500", inner, unsafe=True), unsafe=True)
+    if cst in _ICMS_CSOSN_OUTRAS:
+        inner = "".join([orig, xml_element("CSOSN", cst), _icms_outras_extra(line, v_prod)])
+        return xml_element("ICMS", xml_element("ICMSSN900", inner, unsafe=True), unsafe=True)
+
+    _supported_cst = sorted(
+        _ICMS_CST_NORMAL
+        | _ICMS_CST_TRIB_ST
+        | _ICMS_CST_REDUCAO_BC
+        | _ICMS_CST_ISENTA_ST
+        | _ICMS_CST_ISENTA_NT_SUSPENSAO
+        | _ICMS_CST_DIFERIMENTO
+        | _ICMS_CST_ST_ANTERIOR
+        | _ICMS_CST_REDUCAO_BC_ST
+        | _ICMS_CST_OUTRAS
+    )
+    _supported_csosn = sorted(
+        _ICMS_CSOSN_CREDITO
+        | _ICMS_CSOSN_SIMPLES
+        | _ICMS_CSOSN_ST_CREDITO
+        | _ICMS_CSOSN_ST_SEM_CREDITO
+        | _ICMS_CSOSN_ST_ANTERIOR
+        | _ICMS_CSOSN_OUTRAS
+    )
     raise DocumentGenerationError(
-        f"Código de situação tributária do ICMS não suportado na Fase 1: {cst!r} "
-        f"(item {line.c_prod}). Suportados: CST {sorted(_ICMS_CST_NORMAL)} "
-        f"(ICMS00) ou CSOSN {sorted(_ICMS_CSOSN_SIMPLES)} (ICMSSN102)."
+        f"Código de situação tributária do ICMS não suportado: {cst!r} "
+        f"(item {line.c_prod}). CST suportados: {_supported_cst}. "
+        f"CSOSN suportados: {_supported_csosn}."
     )
 
 
@@ -246,14 +440,38 @@ def _det_block(line: BRInvoiceLine, n_item: int) -> str:
     return xml_element("det", prod + imposto, attrs={"nItem": str(n_item)}, unsafe=True)
 
 
+# ICMS variants whose group always carries a vBC/vICMS pair (CST 90 / CSOSN 900
+# only carry it when icms_rate/icms_amount are set, handled separately below).
+_ICMS_CST_COM_BC = (
+    _ICMS_CST_NORMAL | _ICMS_CST_TRIB_ST | _ICMS_CST_REDUCAO_BC | _ICMS_CST_REDUCAO_BC_ST
+)
+_ICMS_OUTRAS_COM_BC_OPCIONAL = _ICMS_CST_OUTRAS | _ICMS_CSOSN_OUTRAS
+
+
 def _icms_tot_block(invoice: BRInvoice) -> str:
     v_prod = sum((Decimal(line.v_prod) for line in invoice.lines), Decimal("0"))
     v_bc = sum(
-        (Decimal(line.v_prod) for line in invoice.lines if line.icms_cst in _ICMS_CST_NORMAL),
+        (
+            Decimal(line.v_prod)
+            for line in invoice.lines
+            if line.icms_cst in _ICMS_CST_COM_BC
+            or (
+                line.icms_cst in _ICMS_OUTRAS_COM_BC_OPCIONAL
+                and (line.icms_rate is not None or line.icms_amount is not None)
+            )
+        ),
         Decimal("0"),
     )
     v_icms = sum(
         (Decimal(line.icms_amount or "0") for line in invoice.lines if line.icms_amount),
+        Decimal("0"),
+    )
+    v_bc_st = sum(
+        (Decimal(line.icms_v_bc_st or "0") for line in invoice.lines if line.icms_v_bc_st),
+        Decimal("0"),
+    )
+    v_st = sum(
+        (Decimal(line.icms_v_icms_st or "0") for line in invoice.lines if line.icms_v_icms_st),
         Decimal("0"),
     )
     v_ipi = sum(
@@ -275,8 +493,8 @@ def _icms_tot_block(invoice: BRInvoice) -> str:
         "vICMS": v_icms,
         "vICMSDeson": Decimal("0"),
         "vFCP": Decimal("0"),
-        "vBCST": Decimal("0"),
-        "vST": Decimal("0"),
+        "vBCST": v_bc_st,
+        "vST": v_st,
         "vFCPST": Decimal("0"),
         "vFCPSTRet": Decimal("0"),
         "vProd": v_prod,

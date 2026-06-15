@@ -406,12 +406,89 @@ class BRInvoiceLine(InvoiceLineItem):  # type: ignore[misc]
         description=(
             "Código de Situação Tributária do ICMS (CST, regime normal) ou "
             "Código de Situação da Operação no Simples Nacional (CSOSN). "
-            "Phase 1 supports CST '00' (ICMS00) and CSOSN '102' (ICMSSN102) only; "
-            "other codes raise DocumentGenerationError [NEED: extend coverage]."
+            "v0.3.0 supports CST '00'/'10'/'20'/'30'/'40'/'41'/'50'/'51'/'60'/'70'/'90' "
+            "and CSOSN '101'/'102'/'103'/'201'/'202'/'203'/'300'/'500'/'900'; other "
+            "codes raise DocumentGenerationError [NEED: extend coverage]."
         ),
     )
     icms_rate: str | None = Field(default=None, description="Alíquota do ICMS (%)")
     icms_amount: str | None = Field(default=None, description="Valor do ICMS")
+    icms_mod_bc: str | None = Field(
+        default=None,
+        description=(
+            "Modalidade de determinação da BC do ICMS (modBC): 0=MVA, 1=Pauta, "
+            "2=Preço Tabelado, 3=Valor da Operação. Padrão '3' quando omitido."
+        ),
+    )
+    icms_p_red_bc: str | None = Field(
+        default=None,
+        description="Percentual de redução da BC do ICMS (pRedBC) — CST 20/51/70.",
+    )
+    icms_mod_bc_st: str | None = Field(
+        default=None,
+        description=(
+            "Modalidade de determinação da BC do ICMS ST (modBCST): 0=Preço "
+            "tabelado, 1-3=Lista, 4=MVA, 5=Pauta, 6=Valor da operação. "
+            "Padrão '4' (MVA) quando omitido `[Unverified]`."
+        ),
+    )
+    icms_p_mva_st: str | None = Field(
+        default=None,
+        description="Percentual da Margem de Valor Agregado do ICMS ST (pMVAST).",
+    )
+    icms_p_red_bc_st: str | None = Field(
+        default=None,
+        description="Percentual de redução da BC do ICMS ST (pRedBCST).",
+    )
+    icms_v_bc_st: str | None = Field(
+        default=None, description="Valor da BC do ICMS ST (vBCST)."
+    )
+    icms_p_icms_st: str | None = Field(
+        default=None, description="Alíquota do ICMS ST (pICMSST)."
+    )
+    icms_v_icms_st: str | None = Field(
+        default=None, description="Valor do ICMS ST (vICMSST)."
+    )
+    icms_v_bc_st_ret: str | None = Field(
+        default=None,
+        description=(
+            "Valor da BC do ICMS ST retido anteriormente (vBCSTRet) — "
+            "CST 60 / CSOSN 500."
+        ),
+    )
+    icms_p_st: str | None = Field(
+        default=None,
+        description=(
+            "Alíquota suportada pelo consumidor final (pST) — CST 60 / CSOSN 500."
+        ),
+    )
+    icms_v_icms_subst: str | None = Field(
+        default=None,
+        description=(
+            "Valor do ICMS próprio do substituto cobrado em operação anterior "
+            "(vICMSSubstituto) — CST 60 / CSOSN 500."
+        ),
+    )
+    icms_v_icms_st_ret: str | None = Field(
+        default=None,
+        description=(
+            "Valor do ICMS ST retido anteriormente (vICMSSTRet) — CST 60 / CSOSN 500."
+        ),
+    )
+    icms_p_cred_sn: str | None = Field(
+        default=None,
+        description=(
+            "Alíquota aplicável de cálculo do crédito do Simples Nacional "
+            "(pCredSN) — CSOSN 101/201."
+        ),
+    )
+    icms_v_cred_icms_sn: str | None = Field(
+        default=None,
+        description=(
+            "Valor do crédito do ICMS do Simples Nacional (vCredICMSSN) — "
+            "CSOSN 101/201."
+        ),
+    )
     ipi_cst: str | None = Field(default=None, description="Código de Situação Tributária do IPI")
     ipi_rate: str | None = Field(default=None, description="Alíquota do IPI (%)")
     ipi_amount: str | None = Field(default=None, description="Valor do IPI")

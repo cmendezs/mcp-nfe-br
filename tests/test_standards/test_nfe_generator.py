@@ -51,7 +51,7 @@ def test_generate_rejects_non_br_invoice() -> None:
 
 
 def test_generate_rejects_unsupported_icms_cst() -> None:
-    invoice = make_nfe(lines=[make_line(icms_cst="20")])
+    invoice = make_nfe(lines=[make_line(icms_cst="21")])
     with pytest.raises(DocumentGenerationError, match="ICMS"):
         NFeGenerator().generate(invoice)
 
