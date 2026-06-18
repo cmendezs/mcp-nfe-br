@@ -64,6 +64,69 @@ Expected output:
 
 ## Changelog
 
+### [0.4.0] - 2026-06-18
+#### Added / Fixed
+- **[BR-TL-3 MEDIUM]** Grupo UB per-line emission: `_imposto_seletivo_block` emits `<IS>`
+  (UB01–UB11); `_ibs_cbs_block` emits `<IBSCBS>` (`<gIBSUF>`, `<gIBSMun>`, `<gCBS>`,
+  UB12–UB67); partial-population guard raises `DocumentGenerationError("BR-TL-3: …")`.
+  `_icms_tot_block` extended to emit `<vISTot>` (W33) and `<IBSCBSTot>` (W34–W56b).
+- **[BR-SH-3 MEDIUM]** `tests/test_standards/test_nfe_generator_escape.py`:
+  parametrised XML-escape parity tests for `xNome`, `xLgr`, `xMun`, `xProd`,
+  `natOp`, `xPag`.
+- **[BR-SC-3 LOW]** `BRInvoice.chave_acesso`: `min_length=44` and PL_010d
+  `@field_validator`; regex `^[0-9]{6}[0-9A-Z]{14}[0-9]{24}$`.
+- **[BR-LC-2 LOW]** Replaced `SEFAZ_ENV` with `BR_READ_ONLY` in `server.json`;
+  `README.md` env-var table updated; drift-detection test added.
+- **[BR-SC-4 LOW]** Dropped hardcoded `pFCP`/`vFCP` zeros from ICMS00 branch
+  (`minOccurs="0"` in XSD; omission matches "FCP not modeled" docstring).
+- Audit gate: PASS (0 blocking / 0 warnings); 181 tests pass.
+
+### [0.3.2] - 2026-06-18
+#### Fixed
+- **[BR-SC-1 BLOCKING]** Aligned `__version__` (was `"0.2.0"`) with `pyproject.toml`
+  and `server.json`; added `tests/test_metadata.py` version-slot and `server.json`
+  consistency regression tests.
+- **[BR-TL-1 HIGH]** Removed emitente-CNPJ fallback in `_pag_block`; added
+  `_TPAG_REQUIRES_CNPJ` frozenset; raises `DocumentGenerationError("BR-TL-1: …")`
+  when `cnpj_pag` absent for electronic payment methods; `<CNPJPag>` and `<UFPag>`
+  emitted only when set.
+- **[BR-LC-1 HIGH]** Completed `_CUF_AUTORIZADOR` (all 27 UFs) and
+  `_SEFAZ_ENDPOINTS` (added SP, MG, PR, MS, MT, GO, BA, CE, PE, AM, SVAN).
+- **[BR-SC-2 MEDIUM]** Rewrote `NFeGenerator` module docstring IBS/CBS block to
+  reflect that Grupo UB/W03 fields are modeled but not yet emitted.
+- Audit gate: PASS (0 blocking / 0 warnings); 155 tests pass.
+
+### [0.3.1] - 2026-06-15
+#### Added
+- `mcp_nfe_br.standards.sefaz_client.SefazClient`: SOAP 1.2 envelope builders,
+  namespace-agnostic response parser, and UF to endpoint routing table, posting via
+  `BaseEInvoicingClient(auth_mode=AuthMode.MTLS)`.
+- New tools: `br__consult_sefaz_status` (`NFeStatusServico4`, read-only),
+  `br__submit_nfe` (`NFeAutorizacao4`, returns `protNFe`),
+  `br__distribute_dfe` (`NFeDistribuicaoDFe`, per NT2014.002_v1.30). The latter two
+  gated with `assert_not_read_only` and `ConfirmationGate`.
+- UF to endpoint routing populated for Ambiente Nacional (distribuição) and SVRS/cUF=43;
+  other UFs raise `ValueError` with `endpoint_override` escape hatch.
+- Unit tests cover envelope shapes, endpoint routing, response parsing, and
+  mocked-mTLS-transport round trips.
+- Audit gate: PASS (0 blocking / 0 warnings).
+
+### [0.3.0] - 2026-06-15
+#### Added
+- `br__sign_nfe` tool (`mcp_nfe_br.standards.nfe_signer`) wrapping
+  `mcp_einvoicing_core.XMLDSigSigner` for enveloped XML-DSig over `infNFe`
+  (RSA-SHA1/SHA-1, per MOC 7.0 Table 4-2). ICP-Brasil A1 (PKCS#12) only;
+  A3/HSM not modeled.
+- `NFeXSDValidator`/`br__validate_nfe_xml` now auto-selects between the unsigned
+  derivative schema and the unmodified official `nfe_v4.00.xsd` based on presence
+  of `ds:Signature`.
+- CPF/CNPJ validators re-pointed at `mcp_einvoicing_core.models.TaxIdentifier`.
+- Extended ICMS/PIS/COFINS/IPI generator tax-code coverage.
+- IBS/CBS/Imposto Seletivo (Grupo UB/W03, NT 2025.002-RTC) fields modeled in
+  `BRInvoiceLine`.
+- Core dependency pin raised to `>=1.5.1,<2.0.0`.
+- Audit gate: PASS (0 blocking / 0 warnings).
+
 ### [0.2.0] - 2026-06-13
 - NF-e/NFC-e (modelo 55/65, schema 4.00) **generation and XSD validation**
   (Phase 1 of the roadmap): unsigned `<NFe><infNFe>…</infNFe></NFe>` document
