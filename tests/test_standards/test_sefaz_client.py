@@ -116,7 +116,22 @@ def test_get_endpoint_svrs() -> None:
 
 def test_get_endpoint_unconfigured_cuf_raises() -> None:
     with pytest.raises(ValueError):
-        get_endpoint("status_servico", cuf="35", tp_amb=TipoAmbiente.PRODUCAO)
+        get_endpoint("status_servico", cuf="99", tp_amb=TipoAmbiente.PRODUCAO)
+
+
+# BR-LC-1: all 27 UFs must resolve to a non-empty https:// URL.
+_ALL_CUFS = [
+    "12", "27", "16", "13", "29", "23", "53", "32", "52", "21",
+    "15", "25", "26", "33", "28", "17", "35", "31", "41", "43",
+    "50", "51", "22", "24", "11", "14", "42",
+]
+
+
+@pytest.mark.parametrize("cuf", _ALL_CUFS)
+def test_all_cufs_resolve_status_servico_homologacao(cuf: str) -> None:
+    url = get_endpoint("status_servico", cuf=cuf, tp_amb=TipoAmbiente.HOMOLOGACAO)
+    assert url, f"Empty URL for cUF={cuf}"
+    assert url.startswith("https://"), f"Non-https URL for cUF={cuf}: {url}"
 
 
 # ---------------------------------------------------------------------------

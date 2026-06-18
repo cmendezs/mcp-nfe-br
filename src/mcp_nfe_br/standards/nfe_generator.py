@@ -39,8 +39,10 @@ Tax-code coverage (v0.3.0):
   correct product-specific `cEnq` from the TIPI table is `[NEED: per-NCM
   cEnq lookup]`. Omitted when `ipi_cst` is `None` (`minOccurs="0"`).
 
-IBS/CBS/Imposto Seletivo (Grupo UB/W03, NT 2025.002-RTC) are
-`[NEED: not yet modeled]` and not emitted.
+IBS/CBS/Imposto Seletivo (NT 2025.002-RTC): Grupo UB (`imposto_seletivo`,
+`ibs_cbs`) and Grupo W03 (`ibscbs_tot`) fields are modeled on
+`BRInvoiceLine` / `BRInvoice` but are not yet emitted by this generator
+— see BR-TL-3 in the v0.3.1 audit and roadmap-2026.md.
 """
 
 from __future__ import annotations
@@ -517,21 +519,28 @@ def _transp_block(invoice: BRInvoice) -> str:
     return xml_element("transp", xml_element("modFrete", invoice.mod_frete), unsafe=True)
 
 
-def _pag_block(invoice: BRInvoice) -> str:
-    emit = invoice.emitente
-    fallback_cnpj = emit.cnpj or (emit.cpf or "").zfill(14)
-    fallback_uf = emit.ender_emit.uf
+# tPag codes that require CNPJPag per PL_010d (credit, debit, PIX, transferência,
+# voucher, and related electronic payment methods).
+_TPAG_REQUIRES_CNPJ: frozenset[str] = frozenset(
+    {"03", "04", "10", "11", "12", "13", "15", "16", "17", "18"}
+)
 
+
+def _pag_block(invoice: BRInvoice) -> str:
     det_pags = []
     for pag in invoice.pagamentos:
+        if pag.t_pag in _TPAG_REQUIRES_CNPJ and pag.cnpj_pag is None:
+            raise DocumentGenerationError(
+                f"BR-TL-1: cnpj_pag is required when tPag={pag.t_pag}"
+            )
         parts = [
             xml_optional("indPag", pag.ind_pag),
             xml_element("tPag", pag.t_pag),
             xml_optional("xPag", pag.x_pag),
             xml_element("vPag", _d2(pag.v_pag)),
             xml_optional("dPag", pag.d_pag),
-            xml_element("CNPJPag", pag.cnpj_pag or fallback_cnpj),
-            xml_element("UFPag", pag.uf_pag or fallback_uf),
+            xml_optional("CNPJPag", pag.cnpj_pag),
+            xml_optional("UFPag", pag.uf_pag),
         ]
         det_pags.append(xml_element("detPag", "".join(p for p in parts if p), unsafe=True))
 

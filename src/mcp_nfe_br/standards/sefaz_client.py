@@ -21,12 +21,10 @@ UF -> endpoint routing table
 SEFAZ NF-e webservices are not hosted centrally: each UF either runs its own
 webservice or delegates ("autorizador") to a shared virtual SEFAZ (SVRS —
 Sefaz Virtual Rio Grande do Sul, or SVAN — Sefaz Virtual Ambiente Nacional).
-`_SEFAZ_ENDPOINTS` below is `[NEED: verify the full cUF -> autorizador mapping
-and all endpoint URLs against https://www.nfe.fazenda.gov.br/portal/webServices.aspx
-("Consulta Web Services Disponibilizados") before production use]`. Only the
-Ambiente Nacional (`NFeDistribuicaoDFe`, centralised regardless of UF) and SVRS
-entries are populated as a starting point; all other `cUFAutor` codes must be
-supplied via `endpoint_override` until the table is completed.
+`_SEFAZ_ENDPOINTS` and `_CUF_AUTORIZADOR` cover all 27 UFs.
+Source: https://www.nfe.fazenda.gov.br/portal/webServices.aspx ("Consulta Web
+Services Disponibilizados"), captured 2026-06-18.
+`[Unverified — source: nfe.fazenda.gov.br/portal/webServices.aspx, captured 2026-06-18]`
 """
 
 from __future__ import annotations
@@ -53,18 +51,20 @@ _WSDL_OPERATION = {
     "distribuicao_dfe": "nfeDistDFeInteresse",
 }
 
-# [NEED: verify cUF -> autorizador mapping and URLs — see module docstring]
+# Endpoint table: autorizador key -> service -> tpAmb value -> URL.
+# Source: https://www.nfe.fazenda.gov.br/portal/webServices.aspx ("Consulta Web Services
+# Disponibilizados"), captured 2026-06-18.
+# [Unverified — source: nfe.fazenda.gov.br/portal/webServices.aspx, captured 2026-06-18]
 _SEFAZ_ENDPOINTS: dict[str, dict[str, dict[str, str]]] = {
     # Ambiente Nacional — NFeDistribuicaoDFe is centralised regardless of cUFAutor.
-    # `[Unverified]`
     "AN": {
         "distribuicao_dfe": {
             "1": "https://www1.nfe.fazenda.gov.br/NFeDistribuicaoDFe/NFeDistribuicaoDFe.asmx",
             "2": "https://hom1.nfe.fazenda.gov.br/NFeDistribuicaoDFe/NFeDistribuicaoDFe.asmx",
         },
     },
-    # SEFAZ Virtual Rio Grande do Sul (SVRS) — autorizador for several UFs.
-    # `[Unverified]`
+    # SEFAZ Virtual Rio Grande do Sul (SVRS) — autorizador for AC, AL, AP, DF, ES, PA,
+    # PB, RJ, RN, RO, RR, SC, SE, TO, PI, RS.
     "SVRS": {
         "status_servico": {
             "1": "https://nfe.svrs.rs.gov.br/ws/NfeStatusServico/NFeStatusServico4.asmx",
@@ -75,12 +75,160 @@ _SEFAZ_ENDPOINTS: dict[str, dict[str, dict[str, str]]] = {
             "2": "https://nfe-homologacao.svrs.rs.gov.br/ws/NfeAutorizacao/NFeAutorizacao4.asmx",
         },
     },
+    # SEFAZ Virtual Ambiente Nacional (SVAN) — autorizador for MA.
+    "SVAN": {
+        "status_servico": {
+            "1": "https://www.sefazvirtual.fazenda.gov.br/NFeStatusServico4/NFeStatusServico4.asmx",
+            "2": "https://hom.sefazvirtual.fazenda.gov.br/NFeStatusServico4/NFeStatusServico4.asmx",
+        },
+        "autorizacao": {
+            "1": "https://www.sefazvirtual.fazenda.gov.br/NFeAutorizacao4/NFeAutorizacao4.asmx",
+            "2": "https://hom.sefazvirtual.fazenda.gov.br/NFeAutorizacao4/NFeAutorizacao4.asmx",
+        },
+    },
+    # São Paulo
+    "SP": {
+        "status_servico": {
+            "1": "https://nfe.fazenda.sp.gov.br/ws/nfestatusservico4.asmx",
+            "2": "https://homologacao.nfe.fazenda.sp.gov.br/ws/nfestatusservico4.asmx",
+        },
+        "autorizacao": {
+            "1": "https://nfe.fazenda.sp.gov.br/ws/nfeautorizacao4.asmx",
+            "2": "https://homologacao.nfe.fazenda.sp.gov.br/ws/nfeautorizacao4.asmx",
+        },
+    },
+    # Minas Gerais
+    "MG": {
+        "status_servico": {
+            "1": "https://nfe.fazenda.mg.gov.br/nfe2/services/NFeStatusServico4",
+            "2": "https://hnfe.fazenda.mg.gov.br/nfe2/services/NFeStatusServico4",
+        },
+        "autorizacao": {
+            "1": "https://nfe.fazenda.mg.gov.br/nfe2/services/NFeAutorizacao4",
+            "2": "https://hnfe.fazenda.mg.gov.br/nfe2/services/NFeAutorizacao4",
+        },
+    },
+    # Paraná
+    "PR": {
+        "status_servico": {
+            "1": "https://nfe.fazenda.pr.gov.br/nfe/NFeStatusServico4",
+            "2": "https://homologacao.nfe.fazenda.pr.gov.br/nfe/NFeStatusServico4",
+        },
+        "autorizacao": {
+            "1": "https://nfe.fazenda.pr.gov.br/nfe/NFeAutorizacao4",
+            "2": "https://homologacao.nfe.fazenda.pr.gov.br/nfe/NFeAutorizacao4",
+        },
+    },
+    # Mato Grosso do Sul
+    "MS": {
+        "status_servico": {
+            "1": "https://nfe.fazenda.ms.gov.br/ws/NFeStatusServico4",
+            "2": "https://homologacao.nfe.fazenda.ms.gov.br/ws/NFeStatusServico4",
+        },
+        "autorizacao": {
+            "1": "https://nfe.fazenda.ms.gov.br/ws/NFeAutorizacao4",
+            "2": "https://homologacao.nfe.fazenda.ms.gov.br/ws/NFeAutorizacao4",
+        },
+    },
+    # Mato Grosso
+    "MT": {
+        "status_servico": {
+            "1": "https://nfe.sefaz.mt.gov.br/nfews/v2/services/NfeStatusServico4",
+            "2": "https://homologacao.sefaz.mt.gov.br/nfews/v2/services/NfeStatusServico4",
+        },
+        "autorizacao": {
+            "1": "https://nfe.sefaz.mt.gov.br/nfews/v2/services/NfeAutorizacao4",
+            "2": "https://homologacao.sefaz.mt.gov.br/nfews/v2/services/NfeAutorizacao4",
+        },
+    },
+    # Goiás
+    "GO": {
+        "status_servico": {
+            "1": "https://nfe.sefaz.go.gov.br/nfe/services/NFeStatusServico4",
+            "2": "https://homologacao.nfe.sefaz.go.gov.br/nfe/services/NFeStatusServico4",
+        },
+        "autorizacao": {
+            "1": "https://nfe.sefaz.go.gov.br/nfe/services/NFeAutorizacao4",
+            "2": "https://homologacao.nfe.sefaz.go.gov.br/nfe/services/NFeAutorizacao4",
+        },
+    },
+    # Bahia
+    "BA": {
+        "status_servico": {
+            "1": "https://nfe.sefaz.ba.gov.br/webservices/NFeStatusServico4/NFeStatusServico4.asmx",
+            "2": "https://hnfe.sefaz.ba.gov.br/webservices/NFeStatusServico4/NFeStatusServico4.asmx",
+        },
+        "autorizacao": {
+            "1": "https://nfe.sefaz.ba.gov.br/webservices/NFeAutorizacao4/NFeAutorizacao4.asmx",
+            "2": "https://hnfe.sefaz.ba.gov.br/webservices/NFeAutorizacao4/NFeAutorizacao4.asmx",
+        },
+    },
+    # Ceará
+    "CE": {
+        "status_servico": {
+            "1": "https://nfe.sefaz.ce.gov.br/nfe4/services/NFeStatusServico4",
+            "2": "https://nfeh.sefaz.ce.gov.br/nfe4/services/NFeStatusServico4",
+        },
+        "autorizacao": {
+            "1": "https://nfe.sefaz.ce.gov.br/nfe4/services/NFeAutorizacao4",
+            "2": "https://nfeh.sefaz.ce.gov.br/nfe4/services/NFeAutorizacao4",
+        },
+    },
+    # Pernambuco
+    "PE": {
+        "status_servico": {
+            "1": "https://nfe.sefaz.pe.gov.br/nfe-service/services/NFeStatusServico4",
+            "2": "https://nfehomolog.sefaz.pe.gov.br/nfe-service/services/NFeStatusServico4",
+        },
+        "autorizacao": {
+            "1": "https://nfe.sefaz.pe.gov.br/nfe-service/services/NFeAutorizacao4",
+            "2": "https://nfehomolog.sefaz.pe.gov.br/nfe-service/services/NFeAutorizacao4",
+        },
+    },
+    # Amazonas
+    "AM": {
+        "status_servico": {
+            "1": "https://nfe.sefaz.am.gov.br/services2/services/NFeStatusServico4",
+            "2": "https://homnfe.sefaz.am.gov.br/services2/services/NFeStatusServico4",
+        },
+        "autorizacao": {
+            "1": "https://nfe.sefaz.am.gov.br/services2/services/NFeAutorizacao4",
+            "2": "https://homnfe.sefaz.am.gov.br/services2/services/NFeAutorizacao4",
+        },
+    },
 }
 
-# cUF (IBGE) -> autorizador key in `_SEFAZ_ENDPOINTS`. `[NEED: complete for all 27 UFs]`
+# cUF (IBGE) -> autorizador key in `_SEFAZ_ENDPOINTS`.
+# Source: https://www.nfe.fazenda.gov.br/portal/webServices.aspx, captured 2026-06-18.
+# [Unverified — source: nfe.fazenda.gov.br/portal/webServices.aspx, captured 2026-06-18]
 _CUF_AUTORIZADOR: dict[str, str] = {
-    # Rio Grande do Sul issues through its own SVRS infrastructure.
-    "43": "SVRS",
+    "12": "SVRS",  # AC
+    "27": "SVRS",  # AL
+    "16": "SVRS",  # AP
+    "13": "AM",    # AM
+    "29": "BA",    # BA
+    "23": "CE",    # CE
+    "53": "SVRS",  # DF
+    "32": "SVRS",  # ES
+    "52": "GO",    # GO
+    "21": "SVAN",  # MA
+    "15": "SVRS",  # PA
+    "25": "SVRS",  # PB
+    "26": "PE",    # PE
+    "33": "SVRS",  # RJ
+    "28": "SVRS",  # SE
+    "17": "SVRS",  # TO
+    "35": "SP",    # SP
+    "31": "MG",    # MG
+    "41": "PR",    # PR
+    "43": "SVRS",  # RS
+    "50": "MS",    # MS
+    "51": "MT",    # MT
+    "22": "SVRS",  # PI
+    "24": "SVRS",  # RN
+    "11": "SVRS",  # RO
+    "14": "SVRS",  # RR
+    "42": "SVRS",  # SC
 }
 
 

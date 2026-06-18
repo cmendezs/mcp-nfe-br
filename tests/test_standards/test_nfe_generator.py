@@ -6,6 +6,7 @@ import pytest
 from mcp_einvoicing_core import DocumentGenerationError
 from mcp_einvoicing_core.models import InvoiceParty, TaxIdentifier
 
+from mcp_nfe_br.models.invoice import BRPagamento
 from mcp_nfe_br.standards.nfe_generator import NFeGenerator
 from tests.conftest import make_emitente, make_line, make_nfce, make_nfe
 
@@ -98,3 +99,38 @@ def test_generate_requires_at_least_one_line() -> None:
     object.__setattr__(invoice, "lines", [])
     with pytest.raises(DocumentGenerationError, match="item"):
         NFeGenerator().generate(invoice)
+
+
+# ---------------------------------------------------------------------------
+# BR-TL-1: CNPJPag fallback removal
+# ---------------------------------------------------------------------------
+
+# tPag codes that require CNPJPag (must stay in sync with _TPAG_REQUIRES_CNPJ).
+_REQUIRED_TPAG = ["03", "04", "10", "11", "12", "13", "15", "16", "17", "18"]
+# tPag codes that permit omitting CNPJPag.
+_OPTIONAL_TPAG = ["01", "02", "90"]
+
+
+@pytest.mark.parametrize("t_pag", _REQUIRED_TPAG)
+def test_pag_required_tpag_with_cnpj_pag_emits_ok(t_pag: str) -> None:
+    invoice = make_nfe(
+        pagamentos=[
+            BRPagamento(t_pag=t_pag, v_pag="100.00", cnpj_pag="11222333000181", uf_pag="SP")
+        ]
+    )
+    xml = NFeGenerator().generate(invoice)
+    assert "<CNPJPag>11222333000181</CNPJPag>" in xml
+
+
+@pytest.mark.parametrize("t_pag", _REQUIRED_TPAG)
+def test_pag_required_tpag_without_cnpj_pag_raises(t_pag: str) -> None:
+    invoice = make_nfe(pagamentos=[BRPagamento(t_pag=t_pag, v_pag="100.00")])
+    with pytest.raises(DocumentGenerationError, match="BR-TL-1"):
+        NFeGenerator().generate(invoice)
+
+
+@pytest.mark.parametrize("t_pag", _OPTIONAL_TPAG)
+def test_pag_optional_tpag_without_cnpj_pag_omits_element(t_pag: str) -> None:
+    invoice = make_nfe(pagamentos=[BRPagamento(t_pag=t_pag, v_pag="100.00")])
+    xml = NFeGenerator().generate(invoice)
+    assert "<CNPJPag>" not in xml
