@@ -522,6 +522,7 @@ class BRInvoice(InvoiceDocument):  # type: ignore[misc]
     nnf: str = Field(..., description="Número do documento fiscal (nNF)")
     chave_acesso: str | None = Field(
         default=None,
+        min_length=44,
         max_length=44,
         description=(
             "Chave de acesso (44 caracteres). Sob PL_010d (NT 2026.004, "
@@ -530,6 +531,24 @@ class BRInvoice(InvoiceDocument):  # type: ignore[misc]
             "confiada) contra os dados do documento."
         ),
     )
+
+    @field_validator("chave_acesso", mode="after")
+    @classmethod
+    def check_chave_acesso_format(cls, v: str | None) -> str | None:
+        import re
+
+        if v is None:
+            return v
+        # PL_010d structure: 6 digits (cUF+AAMM) + 14 alphanumeric uppercase (CNPJ) +
+        # 24 digits (mod+serie+nNF+tpEmis+cNF+cDV).
+        # [Unverified — element names per NT 2026.004 v1.01; verify before 2026-07-01 cutover]
+        chave_re = re.compile(r"^[0-9]{6}[0-9A-Z]{14}[0-9]{24}$")
+        if not chave_re.match(v):
+            raise ValueError(
+                f"Chave de acesso fora do formato PL_010d (6 dígitos + 14 CNPJ alfanumérico "
+                f"+ 24 dígitos): {v!r}"
+            )
+        return v
     natureza_operacao: str = Field(..., description="Natureza da Operação")
     tipo_operacao: TipoOperacao = Field(..., description="Tipo de Operação: 0=entrada, 1=saída")
     protocolo_autorizacao: str | None = Field(

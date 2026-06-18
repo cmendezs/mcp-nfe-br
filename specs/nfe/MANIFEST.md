@@ -36,4 +36,3 @@ the distilled compliance reference derived from these files.
 
 - Instrução Normativa RFB nº 2.229/2024 (CNPJ alfanumérico, primary text — not yet retrieved)
 - Lei Complementar 214/2025 (Reforma Tributária do Consumo, primary text)
-- Instrução Normativa RFB nº 2.229/2024 (CNPJ alfanumérico, primary text)

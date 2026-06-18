@@ -6,19 +6,19 @@
     "url": "https://github.com/cmendezs/mcp-nfe-br",
     "source": "github"
   },
-  "version": "0.3.2",
+  "version": "0.4.0",
   "packages": [
     {
       "registryType": "pypi",
       "identifier": "mcp-nfe-br",
-      "version": "0.3.2",
+      "version": "0.4.0",
       "transport": {
         "type": "stdio"
       },
       "environmentVariables": [
         {
-          "name": "SEFAZ_ENV",
-          "description": "SEFAZ environment: 'producao' (default) or 'homologacao'",
+          "name": "BR_READ_ONLY",
+          "description": "Set to '1' to disable write-side SEFAZ tools (br__submit_nfe, br__distribute_dfe). Read-only mode for safe exploration.",
           "isRequired": false,
           "format": "string"
         },

@@ -84,7 +84,7 @@ Para uma instalação local de desenvolvimento:
 
 | Variável | Descrição | Padrão |
 |---|---|---|
-| `SEFAZ_ENV` | Ambiente SEFAZ: `producao` ou `homologacao` | `homologacao` |
+| `BR_READ_ONLY` | Defina como `1` para desativar as ferramentas de escrita SEFAZ (`br__submit_nfe`, `br__distribute_dfe`). Modo seguro para exploração. O ambiente SEFAZ (produção/homologação) é selecionado por chamada via o argumento `tp_amb`. | — |
 | `LOG_LEVEL` | Nível de log: `DEBUG`, `INFO`, `WARNING`, `ERROR` | `INFO` |
 
 ---

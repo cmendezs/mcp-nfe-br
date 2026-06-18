@@ -9,6 +9,8 @@ docstring.
 
 from __future__ import annotations
 
+import pytest
+
 from mcp_nfe_br.models.invoice import (
     BRGrupoCBS,
     BRGrupoCBSTot,
@@ -91,3 +93,49 @@ def test_invoice_with_w03_totals() -> None:
     assert nfe.ibscbs_tot.cbs is not None
     assert nfe.ibscbs_tot.cbs.v_cbs == "0.90"
     assert nfe.v_nf_tot == "111.05"
+
+
+# ---------------------------------------------------------------------------
+# BR-SC-3: chave_acesso PL_010d regex (NT 2026.004)
+# ---------------------------------------------------------------------------
+
+
+def test_chave_acesso_valid_numeric_44chars() -> None:
+    import re
+
+    # cUF(35) + AAMM(2606) + CNPJ(11222333000181) + mod(55) + serie(001) +
+    # nNF(000000001) + tpEmis(1) + cNF(23456789) + cDV(1) = 44 chars
+    numeric_key = "35260611222333000181550010000000011234567891"
+    assert len(numeric_key) == 44
+    assert re.match(r"^[0-9]{6}[0-9A-Z]{14}[0-9]{24}$", numeric_key)
+
+
+def test_chave_acesso_valid_alphanumeric_cnpj_segment() -> None:
+    # Alphanumeric CNPJ segment (effective 2026-07-01 per NT 2026.004)
+    # Structure: 6 digits + 14 alphanum (CNPJ) + 24 digits = 44
+    # cUF(35) AAMM(2606) + CNPJ(AB22333000181X) + mod/serie/nNF/tpEmis/cNF/cDV
+    alpha_key = "352606AB22333000181X55001000000001123456789" + "1"
+    # Build a clean 44-char key: 6 + 14 + 24
+    alpha_key = "352606" + "AB22333000181X" + "550010000000011234567891"
+    assert len(alpha_key) == 44
+    import re
+    assert re.match(r"^[0-9]{6}[0-9A-Z]{14}[0-9]{24}$", alpha_key)
+
+
+def test_chave_acesso_rejects_43_chars() -> None:
+    from pydantic import ValidationError
+
+    short_key = "3526061122233300018155001000000001123456789"
+    assert len(short_key) == 43
+    with pytest.raises(ValidationError):
+        make_nfe(chave_acesso=short_key)
+
+
+def test_chave_acesso_rejects_lowercase_in_cnpj_segment() -> None:
+    from pydantic import ValidationError
+
+    # lowercase letters in CNPJ segment position — should be rejected
+    lower_key = "352606" + "ab22333000181x" + "550010000000011234567891"
+    assert len(lower_key) == 44
+    with pytest.raises(ValidationError):
+        make_nfe(chave_acesso=lower_key)

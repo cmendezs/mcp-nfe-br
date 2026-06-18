@@ -260,3 +260,19 @@ def test_icms_tot_includes_vbcst_and_vst() -> None:
     xml = NFeGenerator().generate(invoice)
     assert "<vBCST>118.00</vBCST>" in xml
     assert "<vST>23.60</vST>" in xml
+
+
+# ---------------------------------------------------------------------------
+# BR-SC-4: hardcoded pFCP / vFCP removed from ICMS00
+# ---------------------------------------------------------------------------
+
+
+def test_icms00_omits_fcp_fields() -> None:
+    xml = _generate_and_validate({"icms_cst": "00", "icms_rate": "18", "icms_amount": "18.00"})
+    assert "<ICMS00>" in xml
+    # Extract the per-line ICMS00 sub-element only (not ICMSTot which has <vFCP> totals)
+    start = xml.index("<ICMS00>")
+    end = xml.index("</ICMS00>") + len("</ICMS00>")
+    icms00_block = xml[start:end]
+    assert "<pFCP>" not in icms00_block
+    assert "<vFCP>" not in icms00_block
