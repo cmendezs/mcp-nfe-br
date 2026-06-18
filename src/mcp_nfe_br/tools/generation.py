@@ -44,6 +44,13 @@ def br__generate_nfe(
     warnings: list[str] = [
         "Documento não assinado (use br__sign_nfe com um certificado ICP-Brasil A1 antes da submissão à SEFAZ).",
         "Documento não transmitido à SEFAZ (submissão via webservice não implementada nesta fase).",
+        (
+            "[BR-TL-4] NT 2025.002-RTC v1.50 (2026-06): a data de obrigatoriedade da regra de "
+            "validação UB12-10 (Grupo UB — IBS/CBS/IS item-level) permanece listada como "
+            "'Implementação futura'. Monitore NT 2025.002 v1.51+ para a data de ativação antes "
+            "de emitir NF-e com Grupo UB ausente em produção. "
+            "[NEED: remover este aviso quando BR-TL-3 emitir o Grupo UB e a data for publicada]"
+        ),
     ]
 
     return {"xml": xml_string, "chave_acesso": chave_acesso, "warnings": warnings}

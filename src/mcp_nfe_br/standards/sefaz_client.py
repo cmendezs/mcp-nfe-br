@@ -12,9 +12,17 @@ SEFAZ webservices needed for v0.3.1:
   `mcp-nfe-br/specs/nfe/`) for the `distDFeInt` payload shape (`tpAmb`,
   `cUFAutor`, `CNPJ`/`CPF`, and one of `distNSU`/`consNSU`/`consChNFe`).
 
-The SOAP element/namespace names for `NFeStatusServico4` and `NFeAutorizacao4`
-are `[Unverified]` — they follow the standard SEFAZ WSDL naming convention but
-have not been cross-checked against the MOC 7.0 WSDL annex in this bundle.
+SOAP envelope shapes for ``NFeStatusServico4`` and ``NFeAutorizacao4`` are
+`[Verified locally — MOC 7.0, sections 5.1 (NfeAutorizacao) and 5.5
+(NfeStatusServico), Novembro 2020]`:
+
+- ``NFeAutorizacao4``: method ``nfeAutorizacaoLote``; request root ``enviNFe``
+  (schema ``enviNFe_v4.00.xsd``); fields ``versao`` (attr), ``idLote``,
+  ``indSinc``, ``NFe`` (group). SOAP 1.2 ``Header`` is empty — ``nfeCabecMsg``
+  was eliminated for NF-e layout version 4.0 (MOC 7.0 §4.4.1).
+- ``NFeStatusServico4``: method ``nfeStatusServicoNF``; request root
+  ``consStatServ`` (schema ``consStatServ_v4.00.xsd``); fields ``versao``
+  (attr), ``tpAmb``, ``cUF``, ``xServ`` = "STATUS".
 
 UF -> endpoint routing table
 -----------------------------
@@ -32,7 +40,7 @@ from __future__ import annotations
 from lxml import etree
 from mcp_einvoicing_core.exceptions import PlatformError
 from mcp_einvoicing_core.http_client import AuthMode, BaseEInvoicingClient
-from mcp_einvoicing_core.xml_utils import safe_fromstring
+from mcp_einvoicing_core.xml_utils import mark_untrusted_fields, safe_fromstring
 
 from mcp_nfe_br.models.invoice import TipoAmbiente
 
@@ -295,9 +303,8 @@ def _soap_envelope(service: str, payload: etree._Element) -> bytes:
 def build_status_servico_envelope(cuf: str, tp_amb: TipoAmbiente) -> bytes:
     """Build the `NFeStatusServico4` (`nfeStatusServicoNF`) SOAP envelope.
 
-    `[Unverified]` — `consStatServ` element/attribute names follow the
-    standard SEFAZ webservice convention but are not cross-checked against
-    the MOC 7.0 WSDL annex.
+    `[Verified locally — MOC 7.0 §5.5, Tabela 5-17]` — root ``consStatServ``,
+    fields ``versao`` (attr), ``tpAmb``, ``cUF``, ``xServ``="STATUS".
     """
     cons_stat_serv = etree.Element(
         f"{{{_NFE_NS}}}consStatServ", nsmap={None: _NFE_NS}, versao="4.00"
@@ -323,9 +330,8 @@ def build_autorizacao_envelope(
             `protNFe` directly; `"0"` (asynchronous) returns a receipt
             number for later polling. `[Unverified]`
 
-    `[Unverified]` — `enviNFe` element/attribute names follow the standard
-    SEFAZ webservice convention but are not cross-checked against the MOC 7.0
-    WSDL annex.
+    `[Verified locally — MOC 7.0 §5.1, Tabelas 5-1/5-2]` — root ``enviNFe``,
+    fields ``versao`` (attr), ``idLote``, ``indSinc``, ``NFe`` (group).
     """
     envi_nfe = etree.Element(f"{{{_NFE_NS}}}enviNFe", nsmap={None: _NFE_NS}, versao="4.00")
     etree.SubElement(envi_nfe, f"{{{_NFE_NS}}}idLote").text = id_lote
@@ -396,13 +402,18 @@ def build_dist_dfe_envelope(
 # SOAP response parsing
 # ---------------------------------------------------------------------------
 
+# Free-text and identifier fields from SEFAZ responses that must be treated as
+# untrusted external input to prevent prompt injection.
+_SEFAZ_UNTRUSTED_FIELDS: set[str] = {"xMotivo", "verAplic", "chNFe"}
+
 
 def parse_sefaz_response(response_xml: bytes) -> dict[str, object]:
     """Extract common SEFAZ response fields (`cStat`, `xMotivo`, `protNFe`, etc.).
 
     Uses namespace-agnostic `local-name()` lookups (per the
     `mcp-facturacion-electronica-es` SII precedent) since the response
-    namespace varies by webservice/autorizador.
+    namespace varies by webservice/autorizador. Free-text and identifier fields
+    are wrapped with `mark_untrusted_fields` to prevent prompt injection.
     """
     root = safe_fromstring(response_xml)
 
@@ -414,14 +425,14 @@ def parse_sefaz_response(response_xml: bytes) -> dict[str, object]:
 
     prot_nfe = root.xpath(".//*[local-name()='protNFe']")
     if prot_nfe:
-        prot = {}
+        prot: dict[str, object] = {}
         for field in ("chNFe", "tpAmb", "verAplic", "dhRecbto", "nProt", "digVal", "cStat", "xMotivo"):
             elems = prot_nfe[0].xpath(f".//*[local-name()='{field}']")
             if elems:
                 prot[field] = elems[0].text
-        result["protNFe"] = prot
+        result["protNFe"] = mark_untrusted_fields(prot, _SEFAZ_UNTRUSTED_FIELDS)
 
-    return result
+    return mark_untrusted_fields(result, _SEFAZ_UNTRUSTED_FIELDS)
 
 
 # ---------------------------------------------------------------------------
@@ -474,8 +485,7 @@ class SefazClient(BaseEInvoicingClient):
         if not response.is_success:
             raise PlatformError(
                 response.status_code,
-                f"SEFAZ webservice returned HTTP {response.status_code}: "
-                f"{response.text[:500]}",
+                f"SEFAZ webservice returned HTTP {response.status_code}",
             )
         return {
             "status_code": response.status_code,

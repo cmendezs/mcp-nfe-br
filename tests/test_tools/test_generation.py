@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
+import logging
 from pathlib import Path
+
+import pytest
 
 from mcp_nfe_br.tools.generation import (
     br__build_access_key,
@@ -117,3 +120,33 @@ def test_build_access_key_invalid_input_returns_error() -> None:
         nnf="1",
     )
     assert "error" in result
+
+
+# ---------------------------------------------------------------------------
+# BR-SH-1: wrong PKCS#12 password must not appear in any log record
+# ---------------------------------------------------------------------------
+
+_SENTINEL_PASSWORD = "s3cr3t-do-not-log"
+
+
+def test_sign_nfe_wrong_password_does_not_log_password(
+    p12_path: Path, caplog: pytest.LogCaptureFixture
+) -> None:
+    """BR-SH-1: wrong cert password traceback must not appear in log records."""
+    gen_result = br__generate_nfe(make_nfe().model_dump(mode="json"))
+    with caplog.at_level(logging.DEBUG):
+        result = br__sign_nfe(
+            cert_path=str(p12_path),
+            xml_content=gen_result["xml"],
+            cert_password=_SENTINEL_PASSWORD,
+        )
+    assert "error" in result
+    for record in caplog.records:
+        assert _SENTINEL_PASSWORD not in record.getMessage()
+
+
+def test_generate_nfe_ub12_10_warning_present() -> None:
+    """BR-TL-4: br__generate_nfe must include UB12-10 activation-date warning."""
+    result = br__generate_nfe(make_nfe().model_dump(mode="json"))
+    warnings = result.get("warnings", [])
+    assert any("UB12-10" in w for w in warnings), "UB12-10 warning must appear in br__generate_nfe"

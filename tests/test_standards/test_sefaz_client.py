@@ -155,7 +155,8 @@ def test_parse_sefaz_response_status_servico() -> None:
 </soap:Envelope>"""
     parsed = parse_sefaz_response(response_xml)
     assert parsed["cStat"] == "107"
-    assert parsed["xMotivo"] == "Servico em Operacao"
+    # xMotivo is wrapped by mark_untrusted_fields — check the underlying text is present.
+    assert "Servico em Operacao" in parsed["xMotivo"]
     assert parsed["cUF"] == "43"
 
 
@@ -184,6 +185,9 @@ def test_parse_sefaz_response_prot_nfe() -> None:
     assert parsed["cStat"] == "104"
     assert parsed["protNFe"]["nProt"] == "135250000000001"
     assert parsed["protNFe"]["cStat"] == "100"
+    # xMotivo and chNFe inside protNFe are wrapped by mark_untrusted_fields.
+    assert "Autorizado o uso da NF-e" in parsed["protNFe"]["xMotivo"]
+    assert "35220499999999999999550010020000001240556603" in parsed["protNFe"]["chNFe"]
 
 
 # ---------------------------------------------------------------------------
@@ -235,6 +239,54 @@ async def test_consultar_status_servico_mocked() -> None:
 
 
 @pytest.mark.asyncio
+async def test_autorizar_nfe_mocked() -> None:
+    """BR-LC-3 round-trip: NFeAutorizacao4 envelope shape + protNFe parsing.
+
+    Verifies `[Verified locally — MOC 7.0 §5.1]`: ``enviNFe`` root, method
+    ``nfeAutorizacaoLote``, synchronous ``protNFe`` in the response.
+    """
+    ch_nfe = "35220499999999999999550010020000001240556603"
+    response = httpx.Response(
+        200,
+        content=f"""<?xml version="1.0" encoding="UTF-8"?>
+<soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope">
+  <soap:Body>
+    <nfeResultMsg xmlns="http://www.portalfiscal.inf.br/nfe/wsdl/NFeAutorizacao4">
+      <retEnviNFe xmlns="http://www.portalfiscal.inf.br/nfe" versao="4.00">
+        <tpAmb>2</tpAmb>
+        <cStat>104</cStat>
+        <xMotivo>Lote processado</xMotivo>
+        <protNFe versao="4.00">
+          <infProt>
+            <chNFe>{ch_nfe}</chNFe>
+            <cStat>100</cStat>
+            <xMotivo>Autorizado o uso da NF-e</xMotivo>
+            <nProt>135250000000001</nProt>
+          </infProt>
+        </protNFe>
+      </retEnviNFe>
+    </nfeResultMsg>
+  </soap:Body>
+</soap:Envelope>""".encode(),
+    )
+    signed_xml = b'<NFe xmlns="http://www.portalfiscal.inf.br/nfe"><infNFe Id="NFe12345"/></NFe>'
+    client = _MockTransportClient(
+        cuf="43",
+        tp_amb=TipoAmbiente.HOMOLOGACAO,
+        cert_path="/tmp/does-not-need-to-exist.p12",
+        service="autorizacao",
+        response=response,
+    )
+
+    result = await client.autorizar_nfe(signed_xml, id_lote="1")
+    assert result["status_code"] == 200
+    assert result["cStat"] == "104"
+    assert result["protNFe"]["nProt"] == "135250000000001"
+    assert result["protNFe"]["cStat"] == "100"
+    assert ch_nfe in result["protNFe"]["chNFe"]
+
+
+@pytest.mark.asyncio
 async def test_post_soap_raises_platform_error_on_http_failure() -> None:
     response = httpx.Response(500, content=b"internal error")
     client = _MockTransportClient(
@@ -245,5 +297,7 @@ async def test_post_soap_raises_platform_error_on_http_failure() -> None:
         response=response,
     )
 
-    with pytest.raises(PlatformError):
+    with pytest.raises(PlatformError) as exc_info:
         await client.consultar_status_servico()
+    # BR-SH-2: raw response body must not appear in the PlatformError message.
+    assert "internal error" not in str(exc_info.value)
