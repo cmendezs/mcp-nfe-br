@@ -46,6 +46,11 @@ _PRIMARY_INVOICE_CLASS: tuple[str, str] | None = (
     "mcp_nfe_br.models.invoice",
     "BRInvoice",
 )
+# NFS-e Nacional (ADN) primary model — also InvoiceDocument (non-EN16931 pathway)
+_NFSE_INVOICE_CLASS: tuple[str, str] = (
+    "mcp_nfe_br.models.nfse",
+    "NFSeDocument",
+)
 
 _INTENTIONAL_OVERRIDES: dict[str, set[str]] = {
     "mcp_einvoicing_core.base_server": {
@@ -250,16 +255,21 @@ _INTENTIONAL_OVERRIDES: dict[str, set[str]] = {
 _BR_MODULES: list[str] = [
     "mcp_nfe_br",
     "mcp_nfe_br.models.invoice",
+    "mcp_nfe_br.models.nfse",
     "mcp_nfe_br.server",
     "mcp_nfe_br.tools.validation",
     "mcp_nfe_br.tools.generation",
     "mcp_nfe_br.tools.sefaz",
+    "mcp_nfe_br.tools.nfse",
     "mcp_nfe_br.utils.document_ids",
     "mcp_nfe_br.utils.access_key",
     "mcp_nfe_br.standards.nfe_generator",
     "mcp_nfe_br.standards.nfe_signer",
+    "mcp_nfe_br.standards.nfse_generator",
+    "mcp_nfe_br.standards.nfse_signer",
     "mcp_nfe_br.standards.sefaz_client",
     "mcp_nfe_br.validators.nfe_xsd",
+    "mcp_nfe_br.validators.nfse_xsd",
 ]
 
 _PYPROJECT = Path(__file__).parent.parent / "pyproject.toml"
@@ -270,6 +280,7 @@ _PYPROJECT = Path(__file__).parent.parent / "pyproject.toml"
 # ---------------------------------------------------------------------------
 
 _REQUIRED_TOOL_CATEGORIES: dict[str, str] = {
+    # NF-e / NFC-e tools
     "br__validate_cpf": "Validate a Brazilian CPF (individual taxpayer ID)",
     "br__validate_cnpj": "Validate a Brazilian CNPJ (company tax ID)",
     "br__generate_nfe": "Generate an unsigned NF-e/NFC-e 4.00 XML document",
@@ -278,12 +289,17 @@ _REQUIRED_TOOL_CATEGORIES: dict[str, str] = {
     "br__submit_nfe": "Submit a signed NF-e/NFC-e to SEFAZ NFeAutorizacao4 (autorização)",
     "br__consult_sefaz_status": "Check SEFAZ webservice availability (NFeStatusServico4)",
     "br__distribute_dfe": "Query/distribute DF-e via SEFAZ NFeDistribuicaoDFe",
+    # NFS-e Nacional (ADN) tools — Sprint 4 (v0.5.0)
+    "br__generate_nfse": "Generate an unsigned DPS for NFS-e Nacional (ADN, schema v1.01)",
+    "br__validate_nfse_xml": "Validate DPS or NFSe XML against the bundled ADN v1.01 XSD",
+    "br__sign_nfse": "Apply ICP-Brasil XML-DSig signature to an NFS-e Nacional DPS (infDPS)",
 }
 
 _TOOL_MODULES: tuple[str, ...] = (
     "mcp_nfe_br.tools.validation",
     "mcp_nfe_br.tools.generation",
     "mcp_nfe_br.tools.sefaz",
+    "mcp_nfe_br.tools.nfse",
 )
 
 
@@ -507,6 +523,160 @@ def run_check_5() -> CheckResult:
 
 
 # ---------------------------------------------------------------------------
+# CHECK 6 — NFSeDocument structural checks (BR-NFSE-8)
+# ---------------------------------------------------------------------------
+
+
+def run_check_6() -> CheckResult:
+    """CHECK 6 — NFSeDocument subclasses InvoiceDocument; no local signer/XSD/HTTP reimplementation."""
+    result = CheckResult(check_id="CHECK_6", name="NFSeDocument structural checks")
+
+    mod, err = _try_import("mcp_nfe_br.models.nfse")
+    if mod is None:
+        result.findings.append(
+            CheckFinding(
+                check_id="CHECK_6",
+                tag="[MISSING]",
+                severity=SEVERITY_BLOCKING,
+                symbol="mcp_nfe_br.models.nfse",
+                message=f"Could not import NFS-e model module: {err}",
+            )
+        )
+        return result
+
+    nfse_cls = getattr(mod, "NFSeDocument", None)
+    if nfse_cls is None:
+        result.findings.append(
+            CheckFinding(
+                check_id="CHECK_6",
+                tag="[MISSING]",
+                severity=SEVERITY_BLOCKING,
+                symbol="NFSeDocument",
+                message="NFSeDocument class not found in mcp_nfe_br.models.nfse.",
+            )
+        )
+        return result
+
+    # Must subclass InvoiceDocument (non-EN16931 pathway, same as BRInvoice)
+    core_mod, _ = _try_import("mcp_einvoicing_core.models")
+    invoice_doc_cls = getattr(core_mod, "InvoiceDocument", None) if core_mod else None
+    if invoice_doc_cls is not None:
+        is_subclass = issubclass(nfse_cls, invoice_doc_cls)
+        tag = "[OK]" if is_subclass else "[WRONG_BASE]"
+        sev = SEVERITY_OK if is_subclass else SEVERITY_BLOCKING
+        result.findings.append(
+            CheckFinding(
+                check_id="CHECK_6",
+                tag=tag,
+                severity=sev,
+                symbol="NFSeDocument",
+                message=(
+                    "NFSeDocument correctly subclasses InvoiceDocument (non-EN16931 pathway)."
+                    if is_subclass
+                    else "NFSeDocument must subclass InvoiceDocument from mcp_einvoicing_core.models."
+                ),
+            )
+        )
+
+    # _IS_EN16931_FAMILY must be False
+    flag = getattr(nfse_cls, "_IS_EN16931_FAMILY", None)
+    if flag is False or flag is None:
+        result.findings.append(
+            CheckFinding(
+                check_id="CHECK_6",
+                tag="[OK]",
+                severity=SEVERITY_OK,
+                symbol="NFSeDocument._IS_EN16931_FAMILY",
+                message="_IS_EN16931_FAMILY is False (non-EN16931 pathway confirmed).",
+            )
+        )
+    else:
+        result.findings.append(
+            CheckFinding(
+                check_id="CHECK_6",
+                tag="[WRONG_VALUE]",
+                severity=SEVERITY_BLOCKING,
+                symbol="NFSeDocument._IS_EN16931_FAMILY",
+                message=f"_IS_EN16931_FAMILY must be False for NFS-e Nacional; got {flag!r}.",
+            )
+        )
+
+    # Verify NFS-e generator does not reimplement local XMLDSigSigner or XSD validator
+    gen_mod, gen_err = _try_import("mcp_nfe_br.standards.nfse_generator")
+    if gen_mod is None:
+        result.findings.append(
+            CheckFinding(
+                check_id="CHECK_6",
+                tag="[MISSING]",
+                severity=SEVERITY_BLOCKING,
+                symbol="mcp_nfe_br.standards.nfse_generator",
+                message=f"NFSeGenerator module missing: {gen_err}",
+            )
+        )
+    else:
+        from mcp_einvoicing_core import BaseDocumentGenerator
+        gen_cls = getattr(gen_mod, "NFSeGenerator", None)
+        if gen_cls and issubclass(gen_cls, BaseDocumentGenerator):
+            result.findings.append(
+                CheckFinding(
+                    check_id="CHECK_6",
+                    tag="[OK]",
+                    severity=SEVERITY_OK,
+                    symbol="NFSeGenerator",
+                    message="NFSeGenerator subclasses BaseDocumentGenerator.",
+                )
+            )
+        else:
+            result.findings.append(
+                CheckFinding(
+                    check_id="CHECK_6",
+                    tag="[WRONG_BASE]",
+                    severity=SEVERITY_BLOCKING,
+                    symbol="NFSeGenerator",
+                    message="NFSeGenerator must subclass BaseDocumentGenerator.",
+                )
+            )
+
+    # Verify NFSeXSDValidator subclasses BaseDocumentValidator
+    val_mod, val_err = _try_import("mcp_nfe_br.validators.nfse_xsd")
+    if val_mod is None:
+        result.findings.append(
+            CheckFinding(
+                check_id="CHECK_6",
+                tag="[MISSING]",
+                severity=SEVERITY_BLOCKING,
+                symbol="mcp_nfe_br.validators.nfse_xsd",
+                message=f"NFSeXSDValidator module missing: {val_err}",
+            )
+        )
+    else:
+        from mcp_einvoicing_core import BaseDocumentValidator
+        val_cls = getattr(val_mod, "NFSeXSDValidator", None)
+        if val_cls and issubclass(val_cls, BaseDocumentValidator):
+            result.findings.append(
+                CheckFinding(
+                    check_id="CHECK_6",
+                    tag="[OK]",
+                    severity=SEVERITY_OK,
+                    symbol="NFSeXSDValidator",
+                    message="NFSeXSDValidator subclasses BaseDocumentValidator.",
+                )
+            )
+        else:
+            result.findings.append(
+                CheckFinding(
+                    check_id="CHECK_6",
+                    tag="[WRONG_BASE]",
+                    severity=SEVERITY_BLOCKING,
+                    symbol="NFSeXSDValidator",
+                    message="NFSeXSDValidator must subclass BaseDocumentValidator.",
+                )
+            )
+
+    return result
+
+
+# ---------------------------------------------------------------------------
 # Assembly
 # ---------------------------------------------------------------------------
 
@@ -533,6 +703,7 @@ def run_audit() -> AuditReport:
         )
     )
     report.checks.append(run_check_5())
+    report.checks.append(run_check_6())
 
     return report
 
