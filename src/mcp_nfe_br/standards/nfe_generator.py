@@ -718,7 +718,7 @@ def _ide_block(invoice: BRInvoice, *, cnf: str, cdv: str) -> str:
     return xml_element("ide", "".join(parts), unsafe=True)
 
 
-class NFeGenerator(BaseDocumentGenerator):
+class NFeGenerator(BaseDocumentGenerator[InvoiceDocument]):
     """Generates unsigned NF-e/NFC-e (modelo 55/65, schema 4.00) XML."""
 
     def get_format_name(self) -> str:

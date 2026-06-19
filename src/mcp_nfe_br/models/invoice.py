@@ -357,7 +357,7 @@ class BRGrupoIBSCBSTot(BaseModel):
     cbs: BRGrupoCBSTot | None = Field(default=None, description="Grupo total da CBS (W50)")
 
 
-class BRInvoiceLine(InvoiceLineItem):  # type: ignore[misc]
+class BRInvoiceLine(InvoiceLineItem):
     """NF-e/NFC-e invoice line (Grupo I — Produtos e Serviços).
 
     Brazil has no single VAT; ``vat_rate``/``vat_exemption_code`` from
@@ -508,7 +508,7 @@ class BRInvoiceLine(InvoiceLineItem):  # type: ignore[misc]
     )
 
 
-class BRInvoice(InvoiceDocument):  # type: ignore[misc]
+class BRInvoice(InvoiceDocument):
     """NF-e / NFC-e document (Grupo B — Identificação da Nota Fiscal eletrônica).
 
     Extends ``InvoiceDocument`` with the fields required by the NF-e/NFC-e

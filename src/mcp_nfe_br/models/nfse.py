@@ -405,7 +405,7 @@ class NFSeValores(BaseModel):
     )
 
 
-class NFSeDocument(InvoiceDocument):  # type: ignore[misc]
+class NFSeDocument(InvoiceDocument):
     """NFS-e Nacional DPS document model.
 
     Extends ``InvoiceDocument`` for the Declaração de Prestação de Serviços (DPS)

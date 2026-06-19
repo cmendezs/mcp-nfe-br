@@ -216,7 +216,7 @@ def _build_valores(v: NFSeValores) -> str:
     return _wrap("valores", v_serv_prest + trib)
 
 
-class NFSeGenerator(BaseDocumentGenerator):
+class NFSeGenerator(BaseDocumentGenerator[InvoiceDocument]):
     """Generates unsigned DPS XML for NFS-e Nacional (ADN), schema v1.01.
 
     Returns the XML string. The caller must sign with ``br__sign_nfse``
