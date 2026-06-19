@@ -252,18 +252,18 @@ uv run mypy src/mcp_nfe_br
 
 ---
 
-## Outros servidores MCP de faturamento eletrônico
+## Other e-invoicing MCP servers
 
-| País | Servidor |
-|---|---|
+| Country | Server |
+|---------|--------|
 | 🌍 Global | [mcp-einvoicing-core](https://github.com/cmendezs/mcp-einvoicing-core) |
-| 🇧🇪 Bélgica | [mcp-einvoicing-be](https://github.com/cmendezs/mcp-einvoicing-be) |
-| 🇧🇷 Brasil | [mcp-nfe-br](https://github.com/cmendezs/mcp-nfe-br) |
-| 🇫🇷 França | [mcp-facture-electronique-fr](https://github.com/cmendezs/mcp-facture-electronique-fr) |
-| 🇩🇪 Alemanha | [mcp-einvoicing-de](https://github.com/cmendezs/mcp-einvoicing-de) |
-| 🇮🇹 Itália | [mcp-fattura-elettronica-it](https://github.com/cmendezs/mcp-fattura-elettronica-it) |
-| 🇵🇱 Polônia | [mcp-ksef-pl](https://github.com/cmendezs/mcp-ksef-pl) |
-| 🇪🇸 Espanha | [mcp-facturacion-electronica-es](https://github.com/cmendezs/mcp-facturacion-electronica-es) |
+| 🇧🇪 Belgium | [mcp-einvoicing-be](https://github.com/cmendezs/mcp-einvoicing-be) |
+| 🇧🇷 Brazil | [mcp-nfe-br](https://github.com/cmendezs/mcp-nfe-br) |
+| 🇫🇷 France | [mcp-facture-electronique-fr](https://github.com/cmendezs/mcp-facture-electronique-fr) |
+| 🇩🇪 Germany | [mcp-einvoicing-de](https://github.com/cmendezs/mcp-einvoicing-de) |
+| 🇮🇹 Italy | [mcp-fattura-elettronica-it](https://github.com/cmendezs/mcp-fattura-elettronica-it) |
+| 🇵🇱 Poland | [mcp-ksef-pl](https://github.com/cmendezs/mcp-ksef-pl) |
+| 🇪🇸 Spain | [mcp-facturacion-electronica-es](https://github.com/cmendezs/mcp-facturacion-electronica-es) |
 
 ---
 
