@@ -1,5 +1,7 @@
 # mcp-nfe-br 🇧🇷
 
+[English](README.md) | [Portugues (Brasil)](README.pt-BR.md)
+
 <!-- mcp-name: io.github.cmendezs/mcp-nfe-br -->
 
 [![PyPI version](https://badge.fury.io/py/mcp-nfe-br.svg)](https://badge.fury.io/py/mcp-nfe-br)
@@ -8,40 +10,34 @@
 
 ---
 
-## Introdução
+## Introduction
 
-`mcp-nfe-br` é um servidor [MCP (Model Context Protocol)](https://modelcontextprotocol.io) que fornece ferramentas para a emissão e validação de documentos fiscais eletrônicos brasileiros: **NF-e (modelo 55)** e **NFC-e (modelo 65)**, conforme o leiaute XML versão 4.00 da SEFAZ. Este servidor faz parte da família `mcp-einvoicing-*` / `mcp-*-*`, construída sobre [`mcp-einvoicing-core`](https://github.com/cmendezs/mcp-einvoicing-core), que fornece o modelo de dados base, utilitários HTTP/OAuth2, e a infraestrutura comum de servidores MCP.
+`mcp-nfe-br` is an [MCP (Model Context Protocol)](https://modelcontextprotocol.io) server providing tools for issuing and validating Brazilian electronic fiscal documents: **NF-e (modelo 55)** and **NFC-e (modelo 65)**, per SEFAZ XML schema version 4.00. This server is part of the `mcp-einvoicing-*` / `mcp-*-*` family, built on [`mcp-einvoicing-core`](https://github.com/cmendezs/mcp-einvoicing-core), which provides the base data model, HTTP/OAuth2 utilities, and shared MCP server infrastructure.
 
-**Status atual (v0.2.0):** fase 1 do roadmap — validação de CPF/CNPJ, **geração de XML NF-e/NFC-e (não assinado)** e **validação contra o XSD oficial (PL_010d, variante sem assinatura)**. Assinatura digital ICP-Brasil e integração com os webservices da SEFAZ estão planejadas para versões futuras — os documentos gerados são **não assinados** e não são transmitidos à SEFAZ por este servidor. NFS-e (nota fiscal de serviços) e CT-e (conhecimento de transporte) são fases posteriores, fora do escopo desta versão.
-
-## English summary
-
-`mcp-nfe-br` is an [MCP (Model Context Protocol)](https://modelcontextprotocol.io) server providing tools for Brazilian electronic fiscal documents: **NF-e (modelo 55)** and **NFC-e (modelo 65)**, per SEFAZ XML schema 4.00. It is part of the `mcp-*-*` family built on [`mcp-einvoicing-core`](https://github.com/cmendezs/mcp-einvoicing-core).
-
-**Current status (v0.2.0):** Phase 1 of the roadmap — CPF/CNPJ tax-ID validation, **unsigned NF-e/NFC-e XML generation**, and **XSD validation** against the official PL_010d schema (unsigned variant). ICP-Brasil digital signing and SEFAZ webservice submission are planned for future releases — generated documents are **unsigned** and are not transmitted to SEFAZ by this server. NFS-e and CT-e are later phases, out of scope for this version.
+**Current status (v0.2.0):** Phase 1 of the roadmap, covering CPF/CNPJ tax-ID validation, **unsigned NF-e/NFC-e XML generation**, and **XSD validation** against the official PL_010d schema (unsigned variant). ICP-Brasil digital signing and SEFAZ webservice submission are planned for future releases. Generated documents are **unsigned** and are not transmitted to SEFAZ by this server. NFS-e (service invoices) and CT-e (transport documents) are later phases, out of scope for this version.
 
 ---
 
-## Instalação
+## Installation
 
-### Requisitos
+### Requirements
 
 - Python ≥ 3.11
-- [`mcp-einvoicing-core`](https://github.com/cmendezs/mcp-einvoicing-core) (instalado automaticamente como dependência)
+- [`mcp-einvoicing-core`](https://github.com/cmendezs/mcp-einvoicing-core) (installed automatically as a dependency)
 
-### Usando `uv` (recomendado)
+### Using `uv` (recommended)
 
 ```bash
 uv add mcp-nfe-br
 ```
 
-### Usando `pip`
+### Using `pip`
 
 ```bash
 pip install mcp-nfe-br
 ```
 
-### A partir do código-fonte
+### From source
 
 ```bash
 git clone https://github.com/cmendezs/mcp-nfe-br.git
@@ -51,9 +47,9 @@ uv sync --all-extras
 
 ---
 
-## Configuração
+## Configuration
 
-Adicione o servidor à configuração do seu cliente MCP. Para o Claude Desktop, edite `claude_desktop_config.json`:
+Add the server to your MCP client configuration. For Claude Desktop, edit `claude_desktop_config.json`:
 
 ```json
 {
@@ -66,7 +62,7 @@ Adicione o servidor à configuração do seu cliente MCP. Para o Claude Desktop,
 }
 ```
 
-Para uma instalação local de desenvolvimento:
+For a local development installation:
 
 ```json
 {
@@ -80,119 +76,119 @@ Para uma instalação local de desenvolvimento:
 }
 ```
 
-### Variáveis de ambiente
+### Environment variables
 
-| Variável | Descrição | Padrão |
+| Variable | Description | Default |
 |---|---|---|
-| `BR_READ_ONLY` | Defina como `1` para desativar as ferramentas de escrita SEFAZ (`br__submit_nfe`, `br__distribute_dfe`). Modo seguro para exploração. O ambiente SEFAZ (produção/homologação) é selecionado por chamada via o argumento `tp_amb`. | — |
-| `LOG_LEVEL` | Nível de log: `DEBUG`, `INFO`, `WARNING`, `ERROR` | `INFO` |
+| `BR_READ_ONLY` | Set to `1` to disable SEFAZ write tools (`br__submit_nfe`, `br__distribute_dfe`). Safe mode for exploration. The SEFAZ environment (production/homologation) is selected per call via the `tp_amb` argument. | — |
+| `LOG_LEVEL` | Log level: `DEBUG`, `INFO`, `WARNING`, `ERROR` | `INFO` |
 
 ---
 
-## Ferramentas disponíveis
+## Available tools
 
 ### `br__validate_cpf`
 
-Valida um CPF (Cadastro de Pessoas Físicas) — número de identificação fiscal de pessoa física, conforme o algoritmo módulo 11 da Receita Federal.
+Validates a CPF (Cadastro de Pessoas Físicas), the individual taxpayer identification number, using the Receita Federal modulo 11 algorithm.
 
-| Parâmetro | Tipo | Obrigatório | Descrição |
+| Parameter | Type | Required | Description |
 |---|---|---|---|
-| `cpf` | `string` | sim | CPF com ou sem separadores `.`/`-` |
+| `cpf` | `string` | yes | CPF with or without `.`/`-` separators |
 
-Retorna um `TaxIdValidationResult` com `valid=True` e o valor limpo (11 dígitos) em caso de sucesso, ou `valid=False` com mensagem de erro em português.
+Returns a `TaxIdValidationResult` with `valid=True` and the cleaned value (11 digits) on success, or `valid=False` with an error message in Portuguese.
 
 ---
 
 ### `br__validate_cnpj`
 
-Valida um CNPJ (Cadastro Nacional da Pessoa Jurídica) — número de identificação fiscal de pessoa jurídica. Aceita tanto o formato numérico tradicional (14 dígitos) quanto o formato alfanumérico introduzido pela NT 2026.004 (PL_010d), com vigência em homologação a partir de 2026-06-01 e em produção a partir de 2026-07-01.
+Validates a CNPJ (Cadastro Nacional da Pessoa Jurídica), the business taxpayer identification number. Accepts both the traditional numeric format (14 digits) and the alphanumeric format introduced by NT 2026.004 (PL_010d), effective in homologation from 2026-06-01 and in production from 2026-07-01.
 
-| Parâmetro | Tipo | Obrigatório | Descrição |
+| Parameter | Type | Required | Description |
 |---|---|---|---|
-| `cnpj` | `string` | sim | CNPJ com ou sem separadores `.`/`/`/`-` |
+| `cnpj` | `string` | yes | CNPJ with or without `.`/`/`/`-` separators |
 
-Retorna um `TaxIdValidationResult` com `valid=True` e o valor limpo (14 caracteres) em caso de sucesso, ou `valid=False` com mensagem de erro em português.
+Returns a `TaxIdValidationResult` with `valid=True` and the cleaned value (14 characters) on success, or `valid=False` with an error message in Portuguese.
 
-> ⚠️ **[Unverified]**: o algoritmo de dígito verificador para o formato alfanumérico do CNPJ foi implementado com base em fontes secundárias, pois a fonte primária ("NT Conjunta DFe 2025.001") ainda não está disponível localmente. Veja `context-library/countries/br.md` para detalhes.
+> ⚠️ **[Unverified]**: the check-digit algorithm for the alphanumeric CNPJ format was implemented based on secondary sources, as the primary source ("NT Conjunta DFe 2025.001") is not yet available locally. See `context-library/countries/br.md` for details.
 
 ---
 
 ### `br__generate_nfe`
 
-Gera um documento NF-e/NFC-e 4.00 **não assinado** (`<NFe><infNFe>…</infNFe></NFe>`) a partir de um objeto `BRInvoice`.
+Generates an **unsigned** NF-e/NFC-e 4.00 document (`<NFe><infNFe>…</infNFe></NFe>`) from a `BRInvoice` object.
 
-| Parâmetro | Tipo | Obrigatório | Descrição |
+| Parameter | Type | Required | Description |
 |---|---|---|---|
-| `invoice` | `object` | sim | Documento `BRInvoice` (modelo 55 ou 65, grupos `ide`/`emit`/`dest`/`det`/`total`/`transp`/`pag`) |
+| `invoice` | `object` | yes | `BRInvoice` document (modelo 55 or 65, groups `ide`/`emit`/`dest`/`det`/`total`/`transp`/`pag`) |
 
-Retorna `{"xml": ..., "chave_acesso": ..., "warnings": [...]}`. Os avisos em português lembram que o documento **não está assinado** (ICP-Brasil) e **não foi transmitido à SEFAZ** — ambas as etapas ficam a cargo de um processo separado.
+Returns `{"xml": ..., "chave_acesso": ..., "warnings": [...]}`. The warnings in Portuguese remind that the document is **not signed** (ICP-Brasil) and **was not transmitted to SEFAZ**. Both steps are the responsibility of a separate process.
 
-Cobertura da fase 1 para os grupos de tributos por item:
+Phase 1 coverage for per-item tax groups:
 
-| Tributo | Códigos suportados | Comportamento |
+| Tax | Supported codes | Behavior |
 |---|---|---|
-| ICMS | CST `00` (regime normal) ou CSOSN `102` (Simples Nacional) | outros códigos geram `DocumentGenerationError` |
-| PIS/COFINS | CST `01`/`02` (alíquota) ou `04`-`09` (não tributado) | grupo omitido se `pis_cst`/`cofins_cst` forem `None` |
-| IPI | CST `00`/`49`/`50`/`99` (tributado) ou outro (não tributado) | grupo omitido se `ipi_cst` for `None` |
+| ICMS | CST `00` (normal regime) or CSOSN `102` (Simples Nacional) | other codes raise `DocumentGenerationError` |
+| PIS/COFINS | CST `01`/`02` (rate-based) or `04`-`09` (non-taxed) | group omitted if `pis_cst`/`cofins_cst` are `None` |
+| IPI | CST `00`/`49`/`50`/`99` (taxed) or other (non-taxed) | group omitted if `ipi_cst` is `None` |
 
-`[NEED: IBS/CBS/Imposto Seletivo — Grupo UB/W03 (NT 2025.002-RTC) ainda não modelado, ver context-library/countries/br.md "Known gaps"]`.
+`[NEED: IBS/CBS/Imposto Seletivo — Grupo UB/W03 (NT 2025.002-RTC) not yet modeled, see context-library/countries/br.md "Known gaps"]`.
 
 ---
 
 ### `br__validate_nfe_xml`
 
-Valida um XML NF-e/NFC-e 4.00 contra o XSD oficial PL_010d (variante local "sem assinatura" — veja nota abaixo).
+Validates an NF-e/NFC-e 4.00 XML document against the official PL_010d XSD (local "unsigned" variant, see note below).
 
-| Parâmetro | Tipo | Obrigatório | Descrição |
+| Parameter | Type | Required | Description |
 |---|---|---|---|
-| `xml_content` | `string` | não* | XML como string |
-| `xml_base64` | `string` | não* | XML codificado em base64 |
+| `xml_content` | `string` | no* | XML as a string |
+| `xml_base64` | `string` | no* | Base64-encoded XML |
 
-\* Exatamente um de `xml_content`/`xml_base64` deve ser informado.
+\* Exactly one of `xml_content`/`xml_base64` must be provided.
 
-Retorna `{"valid": bool, "errors": [...], "metadata": {"schema_version": ...}}`.
+Returns `{"valid": bool, "errors": [...], "metadata": {"schema_version": ...}}`.
 
-> **[Inference]**: o XSD oficial (`nfe_v4.00.xsd`/`leiauteNFe_v4.00.xsd`, PL_010d) exige `<ds:Signature>` como filho obrigatório de `<NFe>`. Como a fase 1 gera documentos não assinados, esta ferramenta valida contra uma cópia derivada local (`nfe_v4.00_unsigned.xsd`) onde `<ds:Signature>` passou a ser opcional (`minOccurs="0"`). A validação de documentos **assinados** (fase futura) deve usar o XSD oficial sem modificações.
+> **[Inference]**: the official XSD (`nfe_v4.00.xsd`/`leiauteNFe_v4.00.xsd`, PL_010d) requires `<ds:Signature>` as a mandatory child of `<NFe>`. Since Phase 1 generates unsigned documents, this tool validates against a local derived copy (`nfe_v4.00_unsigned.xsd`) where `<ds:Signature>` has been made optional (`minOccurs="0"`). Validation of **signed** documents (future phase) should use the official XSD without modifications.
 
 ---
 
 ### `br__build_access_key`
 
-Monta uma chave de acesso (`chNFe`, 44 caracteres) com dígito verificador módulo 11, a partir dos componentes `cUF`, `dhEmi`, CNPJ do emitente, modelo, série e número do documento.
+Builds an access key (`chNFe`, 44 characters) with a modulo 11 check digit, from the components `cUF`, `dhEmi`, issuer CNPJ, model, series, and document number.
 
-| Parâmetro | Tipo | Obrigatório | Descrição |
+| Parameter | Type | Required | Description |
 |---|---|---|---|
-| `c_uf` | `string` | sim | Código IBGE da UF (2 dígitos) |
-| `dh_emi` | `string` | sim | Data/hora de emissão (ISO 8601) |
-| `cnpj` | `string` | sim | CNPJ do emitente (numérico ou alfanumérico PL_010d) |
-| `modelo` | `string` | sim | `55` (NF-e) ou `65` (NFC-e) |
-| `serie` | `string` | sim | Série do documento |
-| `nnf` | `string` | sim | Número do documento |
-| `tp_emis` | `string` | não | Forma de emissão (padrão `"1"`) |
-| `c_nf` | `string` | não | Código numérico aleatório (cNF, 8 dígitos); gerado automaticamente se omitido |
+| `c_uf` | `string` | yes | IBGE state code (2 digits) |
+| `dh_emi` | `string` | yes | Issue date/time (ISO 8601) |
+| `cnpj` | `string` | yes | Issuer CNPJ (numeric or alphanumeric PL_010d) |
+| `modelo` | `string` | yes | `55` (NF-e) or `65` (NFC-e) |
+| `serie` | `string` | yes | Document series |
+| `nnf` | `string` | yes | Document number |
+| `tp_emis` | `string` | no | Issuance type (default `"1"`) |
+| `c_nf` | `string` | no | Random numeric code (cNF, 8 digits); auto-generated if omitted |
 
-Retorna `{"chave_acesso": ..., "cnf": ...}`.
+Returns `{"chave_acesso": ..., "cnf": ...}`.
 
 ---
 
-## Arquitetura
+## Architecture
 
 ```
 mcp-nfe-br/
 ├── src/
 │   └── mcp_nfe_br/
 │       ├── __init__.py
-│       ├── server.py              # ponto de entrada MCP e registro de ferramentas
+│       ├── server.py              # MCP entry point and tool registration
 │       ├── models/
 │       │   ├── __init__.py
 │       │   └── invoice.py         # BRInvoice, BRInvoiceLine, NFeModelo, TipoOperacao
 │       ├── standards/
 │       │   ├── __init__.py
-│       │   └── nfe_generator.py   # NFeGenerator — gera NF-e/NFC-e 4.00 não assinada
+│       │   └── nfe_generator.py   # NFeGenerator — generates unsigned NF-e/NFC-e 4.00
 │       ├── validators/
 │       │   ├── __init__.py
-│       │   └── nfe_xsd.py         # NFeXSDValidator — valida contra XSD PL_010d (variante sem assinatura)
-│       ├── schemas/nfe/           # XSDs bundled (oficiais + variantes "_unsigned")
+│       │   └── nfe_xsd.py         # NFeXSDValidator — validates against PL_010d XSD (unsigned variant)
+│       ├── schemas/nfe/           # Bundled XSDs (official + "_unsigned" variants)
 │       ├── tools/
 │       │   ├── __init__.py
 │       │   ├── validation.py      # br__validate_cpf, br__validate_cnpj
@@ -213,7 +209,7 @@ mcp-nfe-br/
 │   │   └── test_nfe_xsd.py
 │   └── test_utils/
 │       └── test_access_key.py
-├── specs/nfe/                     # material normativo (XSDs, MOC, Notas Técnicas — não publicado)
+├── specs/nfe/                     # Normative material (XSDs, MOC, Technical Notes, not published)
 ├── audit/
 │   ├── audit_vs_core.py
 │   └── report.json
@@ -223,23 +219,23 @@ mcp-nfe-br/
 └── LICENSE
 ```
 
-### Relação com `mcp-einvoicing-core`
+### Relationship with `mcp-einvoicing-core`
 
-`mcp-einvoicing-core` fornece:
-- Modelos Pydantic base para faturas, partes, itens e resultados de validação (`InvoiceDocument`, `InvoiceLineItem`, `TaxIdValidationResult`)
-- Infraestrutura comum de servidor MCP (`EInvoicingMCPServer`)
-- Cliente HTTP/OAuth2, cache de tokens, logging estruturado, hierarquia de exceções
+`mcp-einvoicing-core` provides:
+- Base Pydantic models for invoices, parties, line items, and validation results (`InvoiceDocument`, `InvoiceLineItem`, `TaxIdValidationResult`)
+- Shared MCP server infrastructure (`EInvoicingMCPServer`)
+- HTTP/OAuth2 client, token cache, structured logging, exception hierarchy
 
-`mcp-nfe-br` adiciona a lógica específica do Brasil:
-- `BRInvoice` (extensão de `InvoiceDocument` — NF-e/NFC-e não tem ascendência EN 16931)
-- Campos de Grupo I (NCM, CFOP, ICMS/IPI/PIS/COFINS) em `BRInvoiceLine`
-- Validação de CPF/CNPJ (incluindo o CNPJ alfanumérico da NT 2026.004)
+`mcp-nfe-br` adds Brazil-specific logic:
+- `BRInvoice` (extends `InvoiceDocument`, as NF-e/NFC-e has no EN 16931 lineage)
+- Group I fields (NCM, CFOP, ICMS/IPI/PIS/COFINS) in `BRInvoiceLine`
+- CPF/CNPJ validation (including the alphanumeric CNPJ from NT 2026.004)
 
 ---
 
-## Contribuindo
+## Contributing
 
-Contribuições são bem-vindas. Abra uma issue para discutir mudanças significativas antes de enviar um pull request.
+Contributions are welcome. Please open an issue to discuss significant changes before submitting a pull request.
 
 ```bash
 git clone https://github.com/cmendezs/mcp-nfe-br.git
@@ -267,12 +263,12 @@ uv run mypy src/mcp_nfe_br
 
 ---
 
-## Licença
+## License
 
-Este projeto está licenciado sob **Apache 2.0** — veja [LICENSE](LICENSE) para detalhes.
+This project is licensed under **Apache 2.0**. See [LICENSE](LICENSE) for details.
 
 ---
 
 ## Changelog
 
-Veja [RELEASE.md](RELEASE.md) para o histórico completo de versões.
+See [RELEASE.md](RELEASE.md) for the full version history.
