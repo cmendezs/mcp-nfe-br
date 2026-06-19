@@ -11,8 +11,11 @@ from mcp_nfe_br.tools.generation import (
     br__validate_nfe_xml,
 )
 from mcp_nfe_br.tools.nfse import (
+    br__cancel_nfse,
+    br__consult_nfse_status,
     br__generate_nfse,
     br__sign_nfse,
+    br__submit_nfse,
     br__validate_nfse_xml,
 )
 from mcp_nfe_br.tools.sefaz import (
@@ -37,6 +40,9 @@ def _register_br_tools(mcp: Any) -> None:
     mcp.tool()(br__generate_nfse)
     mcp.tool()(br__sign_nfse)
     mcp.tool()(br__validate_nfse_xml)
+    mcp.tool()(br__submit_nfse)
+    mcp.tool()(br__consult_nfse_status)
+    mcp.tool()(br__cancel_nfse)
 
 
 mcp = EInvoicingMCPServer(

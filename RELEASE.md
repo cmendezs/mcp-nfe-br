@@ -1,163 +1,75 @@
-# Release Process
+# mcp-nfe-br — Release Notes
 
-This document describes how to release a new version of `mcp-nfe-br` to PyPI and the official MCP registry.
+## v0.5.2 (2026-06-19) — NFS-e homologação verification scaffold (Sprint 6)
 
-## One-Time Setup Requirements
+- **[BR-NFSE-12]** End-to-end ADN homologação verification test scaffold in `tests/test_standards/test_adn_e2e.py`
+  - Full lifecycle: generate DPS, sign, submit to ADN, query status, cancel
+  - Skipped by default without `BR_CERT_PATH`, `GOVBR_CLIENT_ID`, `GOVBR_CLIENT_SECRET` environment variables
+  - `[NEED: manual verification with real ICP-Brasil A1 test certificate and gov.br developer portal credentials]`
 
-### PyPI Trusted Publishing
+## v0.5.1 (2026-06-19) — NFS-e ADN client and gated submission tools (Sprint 5)
 
-PyPI publishing is fully automated via OIDC (no token stored). The Trusted Publisher must be configured on PyPI under `cmendezs/mcp-nfe-br`, workflow `publish.yml`, environment `pypi`, before the first tag push. No `.env` or secret needed.
+- **[BR-NFSE-9]** New `mcp_nfe_br.standards.govbr_auth` module for gov.br federal account OAuth2 authentication
+  - `build_govbr_oauth()` returns `OAuthValues` for ADN client
+  - Staging and production token URLs; default scope `"openid govbr_empresa"` `[Unverified]`
+- **[BR-NFSE-10]** New `mcp_nfe_br.standards.adn_client.ADNClient(BaseEInvoicingClient)` for ADN operations
+  - `AuthMode.OAUTH2_CLIENT_CREDENTIALS` with gov.br tokens
+  - Single national endpoint; homologação and produção environment split `[Unverified]`
+  - Operations: `submit_dps`, `consult_nfse`, `cancel_nfse`
+  - Response parsing with `mark_untrusted_fields` (BR-SH-2 parity)
+- **[BR-NFSE-11]** Three new MCP tools (server now exposes 15 tools):
+  - `br__submit_nfse`: submit signed DPS to ADN, gated with `ConfirmationGate` + `assert_not_read_only`
+  - `br__consult_nfse_status`: query NFS-e status by access key (read-only, no gate)
+  - `br__cancel_nfse`: request NFS-e cancellation, gated with `ConfirmationGate` + `assert_not_read_only`
+- `server.json` `BR_READ_ONLY` description updated to include `br__submit_nfse` and `br__cancel_nfse`
+- `caplog` sentinel test verifies gov.br `client_secret` does not appear in log records (BR-SH-1 parity)
+- Audit gate: PASS (0 blocking); 203 tests pass
 
-### MCP Publisher CLI
+## v0.5.0 (2026-06-19) — NFS-e Nacional (ADN) Phase 2, Sprint 4
 
-Binary installed at `~/.local/bin/mcp-publisher` (already in `PATH`). To update to a newer version:
+- **[BR-NFSE-0 through BR-NFSE-8]** NFS-e Nacional DPS model, generator, XSD validator, signer, and tools
+- Audit gate: PASS; 185 tests pass
 
-```bash
-curl -L "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_darwin_arm64.tar.gz" \
-  | tar xzf - -C ~/.local/bin/
-```
+## v0.4.1 (2026-06-18) — Sprint 3 verification + monitoring
 
-### MCP Registry Authentication
+- **[BR-TL-2]** Alphanumeric-CNPJ check-digit algorithm verified against NTCJ DFe 2025.001
+- **[BR-TL-4]** Runtime warning for NT 2025.002-RTC UB12-10 activation date
+- **[BR-LC-3]** SOAP envelope shapes verified against MOC 7.0
+- **[BR-SH-1]** `caplog` sentinel tests for PKCS#12 password non-leakage
+- **[BR-SH-2]** SEFAZ response fields wrapped with `mark_untrusted_fields`
 
-Authenticate once with GitHub (device flow):
+## v0.4.0 (2026-06-18) — IBS/CBS readiness plus hardening
 
-```bash
-mcp-publisher login github
-```
+- **[BR-TL-3]** Grupo UB per-line emission and Grupo W03 totals in NFeGenerator
+- **[BR-SH-3]** XML-escape parity tests
+- **[BR-SC-3]** `chave_acesso` PL_010d field validator
+- **[BR-LC-2]** `BR_READ_ONLY` env var; drift-detection test
+- **[BR-SC-4]** Dropped hardcoded FCP zeros from ICMS00
 
----
+## v0.3.2 (2026-06-18) — Unblock publish
 
-## Release Steps
+- **[BR-SC-1 BLOCKING]** Version slot alignment; regression tests
+- **[BR-TL-1 HIGH]** Removed emitente-CNPJ fallback in `_pag_block`
+- **[BR-LC-1 HIGH]** Complete SEFAZ cUF routing table (all 27 UFs)
+- **[BR-SC-2]** Module docstring update for IBS/CBS state
 
-### 1. Bump the version
+## v0.3.1 (2026-06-15) — SEFAZ webservice integration
 
-Edit **both** files — replace `X.X.X` with the new version (e.g. `0.1.0` → `0.1.1`):
+- `SefazClient` with SOAP 1.2 over mTLS
+- Tools: `br__consult_sefaz_status`, `br__submit_nfe`, `br__distribute_dfe`
 
-- `pyproject.toml` → `version = "X.X.X"`
-- `server.json` → `"version": "X.X.X"` and `"version": "X.X.X"` (in `packages[]`)
+## v0.3.0 (2026-06-15) — ICP-Brasil digital signature + signed-schema validation
 
-### 2. Commit, tag and push
+- `br__sign_nfe` tool with XMLDSigSigner over `infNFe`
+- Extended ICMS/PIS/COFINS/IPI tax-code coverage
+- IBS/CBS/Imposto Seletivo (Grupo UB/W03) field modeling
 
-GitHub Actions publishes to PyPI automatically on tag push.
+## v0.2.0 (2026-06-13) — NF-e/NFC-e generation and XSD validation
 
-```bash
-git add pyproject.toml server.json
-git commit -m "chore: bump version to X.X.X"
-git push origin main
-git tag vX.X.X
-git push origin vX.X.X
-```
+- `br__generate_nfe`, `br__validate_nfe_xml`, `br__build_access_key`
+- ICMS CST 00/CSOSN 102, PIS/COFINS CST 01/02/04-09, IPI CST 00/49/50/99
 
-### 3. Publish to the MCP registry
+## v0.1.0 (2026-06-13) — Initial release
 
-```bash
-mcp-publisher publish
-```
-
-Expected output:
-```
-✓ Successfully published
-✓ Server io.github.cmendezs/mcp-nfe-br version X.X.X
-```
-
----
-
-## Changelog
-
-### [0.4.0] - 2026-06-18
-#### Added / Fixed
-- **[BR-TL-3 MEDIUM]** Grupo UB per-line emission: `_imposto_seletivo_block` emits `<IS>`
-  (UB01–UB11); `_ibs_cbs_block` emits `<IBSCBS>` (`<gIBSUF>`, `<gIBSMun>`, `<gCBS>`,
-  UB12–UB67); partial-population guard raises `DocumentGenerationError("BR-TL-3: …")`.
-  `_icms_tot_block` extended to emit `<vISTot>` (W33) and `<IBSCBSTot>` (W34–W56b).
-- **[BR-SH-3 MEDIUM]** `tests/test_standards/test_nfe_generator_escape.py`:
-  parametrised XML-escape parity tests for `xNome`, `xLgr`, `xMun`, `xProd`,
-  `natOp`, `xPag`.
-- **[BR-SC-3 LOW]** `BRInvoice.chave_acesso`: `min_length=44` and PL_010d
-  `@field_validator`; regex `^[0-9]{6}[0-9A-Z]{14}[0-9]{24}$`.
-- **[BR-LC-2 LOW]** Replaced `SEFAZ_ENV` with `BR_READ_ONLY` in `server.json`;
-  `README.md` env-var table updated; drift-detection test added.
-- **[BR-SC-4 LOW]** Dropped hardcoded `pFCP`/`vFCP` zeros from ICMS00 branch
-  (`minOccurs="0"` in XSD; omission matches "FCP not modeled" docstring).
-- Audit gate: PASS (0 blocking / 0 warnings); 181 tests pass.
-
-### [0.3.2] - 2026-06-18
-#### Fixed
-- **[BR-SC-1 BLOCKING]** Aligned `__version__` (was `"0.2.0"`) with `pyproject.toml`
-  and `server.json`; added `tests/test_metadata.py` version-slot and `server.json`
-  consistency regression tests.
-- **[BR-TL-1 HIGH]** Removed emitente-CNPJ fallback in `_pag_block`; added
-  `_TPAG_REQUIRES_CNPJ` frozenset; raises `DocumentGenerationError("BR-TL-1: …")`
-  when `cnpj_pag` absent for electronic payment methods; `<CNPJPag>` and `<UFPag>`
-  emitted only when set.
-- **[BR-LC-1 HIGH]** Completed `_CUF_AUTORIZADOR` (all 27 UFs) and
-  `_SEFAZ_ENDPOINTS` (added SP, MG, PR, MS, MT, GO, BA, CE, PE, AM, SVAN).
-- **[BR-SC-2 MEDIUM]** Rewrote `NFeGenerator` module docstring IBS/CBS block to
-  reflect that Grupo UB/W03 fields are modeled but not yet emitted.
-- Audit gate: PASS (0 blocking / 0 warnings); 155 tests pass.
-
-### [0.3.1] - 2026-06-15
-#### Added
-- `mcp_nfe_br.standards.sefaz_client.SefazClient`: SOAP 1.2 envelope builders,
-  namespace-agnostic response parser, and UF to endpoint routing table, posting via
-  `BaseEInvoicingClient(auth_mode=AuthMode.MTLS)`.
-- New tools: `br__consult_sefaz_status` (`NFeStatusServico4`, read-only),
-  `br__submit_nfe` (`NFeAutorizacao4`, returns `protNFe`),
-  `br__distribute_dfe` (`NFeDistribuicaoDFe`, per NT2014.002_v1.30). The latter two
-  gated with `assert_not_read_only` and `ConfirmationGate`.
-- UF to endpoint routing populated for Ambiente Nacional (distribuição) and SVRS/cUF=43;
-  other UFs raise `ValueError` with `endpoint_override` escape hatch.
-- Unit tests cover envelope shapes, endpoint routing, response parsing, and
-  mocked-mTLS-transport round trips.
-- Audit gate: PASS (0 blocking / 0 warnings).
-
-### [0.3.0] - 2026-06-15
-#### Added
-- `br__sign_nfe` tool (`mcp_nfe_br.standards.nfe_signer`) wrapping
-  `mcp_einvoicing_core.XMLDSigSigner` for enveloped XML-DSig over `infNFe`
-  (RSA-SHA1/SHA-1, per MOC 7.0 Table 4-2). ICP-Brasil A1 (PKCS#12) only;
-  A3/HSM not modeled.
-- `NFeXSDValidator`/`br__validate_nfe_xml` now auto-selects between the unsigned
-  derivative schema and the unmodified official `nfe_v4.00.xsd` based on presence
-  of `ds:Signature`.
-- CPF/CNPJ validators re-pointed at `mcp_einvoicing_core.models.TaxIdentifier`.
-- Extended ICMS/PIS/COFINS/IPI generator tax-code coverage.
-- IBS/CBS/Imposto Seletivo (Grupo UB/W03, NT 2025.002-RTC) fields modeled in
-  `BRInvoiceLine`.
-- Core dependency pin raised to `>=1.5.1,<2.0.0`.
-- Audit gate: PASS (0 blocking / 0 warnings).
-
-### [0.2.0] - 2026-06-13
-- NF-e/NFC-e (modelo 55/65, schema 4.00) **generation and XSD validation**
-  (Phase 1 of the roadmap): unsigned `<NFe><infNFe>…</infNFe></NFe>` document
-  generation (`br__generate_nfe`), validation against the bundled PL_010d XSD
-  set (`br__validate_nfe_xml`), and 44-character `chNFe` access-key assembly
-  with mod-11 check digit (`br__build_access_key`).
-- Covers ICMS (CST `00` / CSOSN `102`), PIS/COFINS (CST `01`/`02`/`04`-`09`),
-  and IPI (CST `00`/`49`/`50`/`99` or NT) tax groups; other codes raise a
-  `DocumentGenerationError` with a Portuguese message — see
-  `context-library/countries/br.md` for the full coverage table.
-- ICP-Brasil XML-DSig signing and SEFAZ webservice submission are **not**
-  implemented — generated documents are unsigned and must be signed and
-  transmitted by a separate process. Both tools surface this in their
-  responses.
-- XSD validation uses a locally derived "unsigned" variant of the official
-  `nfe_v4.00.xsd`/`leiauteNFe_v4.00.xsd` (PL_010d), with `<ds:Signature>`
-  changed from mandatory to optional — `[Inference]`, see
-  `src/mcp_nfe_br/validators/nfe_xsd.py` docstring. Signed documents (a later
-  phase) should validate against the unmodified official schema.
-
-### [0.1.0] - 2026-06-12
-- Initial scaffold: NF-e / NFC-e (modelo 55/65, schema 4.00) party-identifier
-  validation tools (`br__validate_cpf`, `br__validate_cnpj`). Phase 1 of the
-  Brazilian e-invoicing roadmap (NFS-e and CT-e are later phases — see
-  `context-library/countries/br.md`).
-
----
-
-## Notes
-
-- The MCP registry does **not** sync automatically with PyPI or GitHub — step 3 is required for every release.
-- The `server.json` description field must be **≤ 100 characters**.
-- PyPI rejects re-uploads of the same version — always bump before tagging.
-- GitHub Actions creates the GitHub Release automatically (with release notes) alongside the PyPI publish.
+- Project scaffold; `BRInvoice`/`BRInvoiceLine` models
+- `br__validate_cpf`, `br__validate_cnpj` tools
