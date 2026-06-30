@@ -1,5 +1,14 @@
 # mcp-nfe-br — Release Notes
 
+## v0.5.3 (2026-06-30) — Explicit rounding mode, core re-sync
+
+- **[BR-TL-6]** `_d2`/`_percent` in `nfe_generator.py` and `nfse_generator.py` now pass `ROUND_HALF_UP` explicitly instead of relying on core's default
+  - Research finding: `ANEXO I - Leiaute e Regra de Validação - NF-e e NFC-e.pdf` footnote (*4) (not MOC v7.0 itself) requires only 2-decimal rounding with a +/- R$0.01 SEFAZ validation tolerance, no specific rounding mode is mandated
+  - `context-library/countries/br.md` markers at lines 145 and 280 cleared with this citation
+  - New boundary-case regression tests in `tests/test_standards/test_rounding.py`
+- Re-synced to `mcp-einvoicing-core` v1.13.1 (BR-TL-5: `validate_br_cnpj` now rejects an all-equal-character base); lower-bound pin bumped to `>=1.13.1,<2.0.0`
+- Fixed `audit/audit_vs_core.py`: missing `SEVERITY_WARNING` import (pre-existing bug, caught by pre-flight lint)
+
 ## v0.5.2 (2026-06-19) — NFS-e homologação verification scaffold (Sprint 6)
 
 - **[BR-NFSE-12]** End-to-end ADN homologação verification test scaffold in `tests/test_standards/test_adn_e2e.py`
