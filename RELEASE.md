@@ -1,5 +1,12 @@
 # mcp-nfe-br — Release Notes
 
+## v0.5.4 (2026-06-30) — Hardcoded UB12-10 activation dates
+
+- **[BR-INV-2]** Runtime warning in `br__generate_nfe` now states the verified `UB12-10` (Grupo UB IBS/CBS mandatory) activation dates instead of "Implementação futura"
+  - Verified directly against NT 2025.002-RTC v1.50 page 41/97 rule text (not the cronograma summary table, which still reads generic "Implementação futura"): homologação from `dhEmi` >= 2026-07-01 (CRT 3=Regime Normal); produção from `dhEmi` >= 2026-08-03 (CRT 3); produção from 2027-01-04 (CRT 1/2/4, Simples Nacional family)
+  - Two rule exceptions documented in the warning text: devolução/complementar NF-e referencing a pre-2026 original; items on the monofásico-fuel `cProdANP` table
+- **[BR-INV-3]** Re-checked the "ICP-Brasil V10 certificate chain retirement by 2026-12-31" claim against newly bundled `MCT10Vol.IIv.3.0.pdf` and `NT_2026.001_v1.02a - PAA NFe.pdf` — neither confirms it; `specs/nfe/MANIFEST.md` updated, no code change (claim remains `[BLOCKED]` pending a primary ICP-Brasil source)
+
 ## v0.5.3 (2026-06-30) — Explicit rounding mode, core re-sync
 
 - **[BR-TL-6]** `_d2`/`_percent` in `nfe_generator.py` and `nfse_generator.py` now pass `ROUND_HALF_UP` explicitly instead of relying on core's default
