@@ -31,7 +31,7 @@ Not yet emitted (``[NEED: not modeled for v0.5.0]``):
 
 from __future__ import annotations
 
-from decimal import Decimal
+from decimal import ROUND_HALF_UP, Decimal
 
 from mcp_einvoicing_core import BaseDocumentGenerator, DocumentGenerationError, InvoiceDocument
 from mcp_einvoicing_core.xml_utils import format_amount, xml_element, xml_optional
@@ -53,8 +53,14 @@ _VERSAO = "1.01"
 
 
 def _d2(value: str | Decimal) -> str:
-    """Format a monetary value to 2 decimal places (TSDec15V2)."""
-    return format_amount(Decimal(str(value)), 2)
+    """Format a monetary value to 2 decimal places (TSDec15V2).
+
+    `ROUND_HALF_UP` mirrors the rounding choice made for NF-e/NFC-e (see
+    `nfe_generator._d2`), for consistency across BR sub-formats. The ADN
+    manuals for NFS-e Nacional have not been read for a specific rounding
+    rule `[NEED: confirm against ADN manual]`.
+    """
+    return format_amount(Decimal(str(value)), 2, rounding_mode=ROUND_HALF_UP)
 
 
 def _el(tag: str, text: str) -> str:

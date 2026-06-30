@@ -24,6 +24,7 @@ from pathlib import Path
 from mcp_einvoicing_core.audit import (
     SEVERITY_BLOCKING,
     SEVERITY_OK,
+    SEVERITY_WARNING,
     AuditReport,
     CheckFinding,
     CheckResult,

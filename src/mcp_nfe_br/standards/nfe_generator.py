@@ -48,7 +48,7 @@ IBS/CBS/Imposto Seletivo (NT 2025.002-RTC): Grupo UB (`imposto_seletivo`,
 from __future__ import annotations
 
 import secrets
-from decimal import Decimal
+from decimal import ROUND_HALF_UP, Decimal
 
 from mcp_einvoicing_core import BaseDocumentGenerator, DocumentGenerationError, InvoiceDocument
 from mcp_einvoicing_core.xml_utils import format_amount, format_quantity, xml_element, xml_optional
@@ -86,8 +86,15 @@ _IPI_TRIBUTADO = {"00", "49", "50", "99"}
 
 
 def _d2(value: str | Decimal) -> str:
-    """Format a monetary value to TDec_1302 (2 decimal places)."""
-    return format_amount(Decimal(str(value)), 2)
+    """Format a monetary value to TDec_1302 (2 decimal places).
+
+    `ANEXO I - Leiaute e Regra de Validação - NF-e e NFC-e.pdf` footnote
+    (*4) only requires rounding to 2 decimal places with a +/- R$0.01
+    validation tolerance; it does not mandate a specific rounding mode
+    `[Verified locally]`. `ROUND_HALF_UP` is passed explicitly so this
+    stays correct under SEFAZ's tolerance even if core's default changes.
+    """
+    return format_amount(Decimal(str(value)), 2, rounding_mode=ROUND_HALF_UP)
 
 
 def _qty(value: str | Decimal) -> str:
@@ -101,8 +108,11 @@ def _unit_price(value: str | Decimal) -> str:
 
 
 def _percent(value: str | Decimal) -> str:
-    """Format a percentage to TDec_0302a04 (2-4 decimal places)."""
-    return format_amount(Decimal(str(value)), 4)
+    """Format a percentage to TDec_0302a04 (2-4 decimal places).
+
+    Same rounding-mode rationale as `_d2`.
+    """
+    return format_amount(Decimal(str(value)), 4, rounding_mode=ROUND_HALF_UP)
 
 
 def _endereco_block(tag: str, end: BREndereco, *, include_fone: bool = True) -> str:
