@@ -31,8 +31,11 @@ the distilled compliance reference derived from these files.
 | `NT_2024.003- Produtos AGRO NF-e - v 1.10_Rev.pdf` | Agricultural products fields |
 | `NT_2020.001 v1.60 - Manifestação do destinatário.pdf` | Recipient manifestation events |
 | `NT2022.002v1.30a - Equiparação Exportação e outras alterações.pdf` | Export equivalence and other changes (source for `xsd/` PL_010c) |
+| `NT_2026.001_v1.02a - PAA NFe.pdf` | Padrão de Assinatura Avançada (PAA) — digital-certificate standard for advanced signature on behalf of the emitente. Read for BR-INV-3 (ICP-Brasil certificate retirement); does not mention "V10" or any certificate-chain retirement timeline. |
+| `MCT10Vol.IIv.3.0.pdf` | ICP-Brasil "Manual de Condutas Técnicas 10 — Volume II" (Carimbo do Tempo/timestamp-authority conformance testing), v3.0, 2021-11-10. Not NF-e-specific. Read for BR-INV-3; the only "V.10" hits are a requirement-numbering label (`REQUISITO V.10`), unrelated to certificate-chain versioning. Does not cover certificate retirement. |
 
 ## Not yet retrieved
 
 - Instrução Normativa RFB nº 2.229/2024 (CNPJ alfanumérico, primary text — not yet retrieved)
 - Lei Complementar 214/2025 (Reforma Tributária do Consumo, primary text)
+- A primary ITI/ICP-Brasil document describing the "V10 certificate chain" retirement claimed by secondary sources (tecnospeed.com.br, portalspedbrasil.com.br forum). Not found in any document supplied so far — see BR-INV-3 in `br.md` for current status.

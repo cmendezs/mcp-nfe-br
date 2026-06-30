@@ -45,11 +45,14 @@ def br__generate_nfe(
         "Documento não assinado (use br__sign_nfe com um certificado ICP-Brasil A1 antes da submissão à SEFAZ).",
         "Documento não transmitido à SEFAZ (submissão via webservice não implementada nesta fase).",
         (
-            "[BR-TL-4] NT 2025.002-RTC v1.50 (2026-06): a data de obrigatoriedade da regra de "
-            "validação UB12-10 (Grupo UB — IBS/CBS/IS item-level) permanece listada como "
-            "'Implementação futura'. Monitore NT 2025.002 v1.51+ para a data de ativação antes "
-            "de emitir NF-e com Grupo UB ausente em produção. "
-            "[NEED: remover este aviso quando BR-TL-3 emitir o Grupo UB e a data for publicada]"
+            "[BR-TL-4/BR-INV-2] NT 2025.002-RTC v1.50, regra UB12-10 (Grupo UB — IBS/CBS/IS "
+            "item-level) torna-se obrigatória: homologação a partir de NF-e com dhEmi >= "
+            "2026-07-01 (CRT 3=Regime Normal); produção a partir de dhEmi >= 2026-08-03 (CRT "
+            "3); produção a partir de 2027-01-04 para CRT 1/2/4 (Simples Nacional/MEI). "
+            "Exceções: NF-e de devolução/complementar referenciando original anterior a 2026; "
+            "itens na tabela de combustíveis sujeitos à tributação monofásica (cProdANP). "
+            "[NEED: remover este aviso após 2026-08-03, ou antes se NT 2025.002 v1.51+ alterar "
+            "novamente a data]"
         ),
     ]
 

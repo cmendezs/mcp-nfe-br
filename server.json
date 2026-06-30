@@ -6,12 +6,12 @@
     "url": "https://github.com/cmendezs/mcp-nfe-br",
     "source": "github"
   },
-  "version": "0.5.3",
+  "version": "0.5.4",
   "packages": [
     {
       "registryType": "pypi",
       "identifier": "mcp-nfe-br",
-      "version": "0.5.3",
+      "version": "0.5.4",
       "transport": {
         "type": "stdio"
       },
