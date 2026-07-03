@@ -1,5 +1,14 @@
 # mcp-nfe-br — Release Notes
 
+## v0.6.1 (2026-07-03) — CT-e SEFAZ submission/consultation (BR-CTE-10..12)
+
+- **[BR-CTE-10]** Extracted `mcp_nfe_br.standards._sefaz_soap` (private shared SOAP envelope/response-parsing helper: `soap_envelope`, `scrape_fields`, `parse_response_root`); refactored `sefaz_client.py` to use it. All 48 existing NF-e SEFAZ tests pass unchanged, confirming the extraction preserves behavior
+- **[BR-CTE-11]** `mcp_nfe_br.standards.sefaz_cte_client.SefazCTeClient` — covers `CTeStatusServicoV4`/`CTeConsultaV4` (plain XML) and `CTeRecepcaoSincV4` (GZip+Base64 payload, a structurally different shape from NF-e, confirmed against MOC CT-e Visão Geral §3.4.1)
+  - No CT-e endpoint URLs are bundled or independently verified (the MOC only points to the live dfe-portal.svrs.rs.gov.br listing) — `get_cte_endpoint` always raises; `endpoint_override` is mandatory on every call
+- **[BR-CTE-12]** Three new tools (server now exposes 20 tools): `br__submit_cte` (gated), `br__consult_cte_sefaz_status` (read-only), `br__consult_cte` (read-only — queries one already-known chCTe, not a bulk pull, per the CT-e scoping plan's tool table). New `BR_CTE_READ_ONLY` env var, kept distinct from `BR_READ_ONLY`
+- `br__distribute_cte_dfe` (CTeDistribuicaoDFe) is **not implemented** — the bundled spec confirms the `distDFeInt` payload shape but not the webservice's method/namespace/wrapper details; deferred as `BR-CTE-13` `[NEED: verify]`
+- `br__build_cte_access_key` MCP tool wrapper also deferred (the underlying `build_cte_access_key` util has existed since BR-CTE-5)
+
 ## v0.6.0 (2026-07-03) — CT-e (modelo 57) Phase 3, v1 (BR-CTE-1..9)
 
 CT-e (Conhecimento de Transporte Eletrônico) work begins, per explicit user request (previously deferred, see `context-library/roadmap-2026.md`). v1 scope: modal rodoviário only, ICMS CST 00 (tributação normal) only, event tools deferred.

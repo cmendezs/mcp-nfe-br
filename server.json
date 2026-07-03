@@ -6,12 +6,12 @@
     "url": "https://github.com/cmendezs/mcp-nfe-br",
     "source": "github"
   },
-  "version": "0.6.0",
+  "version": "0.6.1",
   "packages": [
     {
       "registryType": "pypi",
       "identifier": "mcp-nfe-br",
-      "version": "0.6.0",
+      "version": "0.6.1",
       "transport": {
         "type": "stdio"
       },
@@ -19,6 +19,12 @@
         {
           "name": "BR_READ_ONLY",
           "description": "Set to '1' to disable write-side tools (br__submit_nfe, br__distribute_dfe, br__submit_nfse, br__cancel_nfse). Read-only mode for safe exploration.",
+          "isRequired": false,
+          "format": "string"
+        },
+        {
+          "name": "BR_CTE_READ_ONLY",
+          "description": "Set to '1' to disable the CT-e write-side tool (br__submit_cte). Kept distinct from BR_READ_ONLY so NF-e and CT-e can be gated independently.",
           "isRequired": false,
           "format": "string"
         },

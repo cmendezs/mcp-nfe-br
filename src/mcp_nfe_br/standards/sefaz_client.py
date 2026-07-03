@@ -43,8 +43,8 @@ from mcp_einvoicing_core.http_client import AuthMode, BaseEInvoicingClient
 from mcp_einvoicing_core.xml_utils import mark_untrusted_fields, safe_fromstring
 
 from mcp_nfe_br.models.invoice import TipoAmbiente
+from mcp_nfe_br.standards._sefaz_soap import parse_response_root, scrape_fields, soap_envelope
 
-_SOAP_NS = "http://www.w3.org/2003/05/soap-envelope"
 _NFE_NS = "http://www.portalfiscal.inf.br/nfe"
 
 _WSDL_NS = {
@@ -287,17 +287,12 @@ def get_endpoint(service: str, cuf: str, tp_amb: TipoAmbiente) -> str:
 
 def _soap_envelope(service: str, payload: etree._Element) -> bytes:
     """Wrap *payload* in a SOAP 1.2 envelope for the given SEFAZ *service*."""
-    nsmap = {"soap": _SOAP_NS}
-    envelope = etree.Element(f"{{{_SOAP_NS}}}Envelope", nsmap=nsmap)
-    etree.SubElement(envelope, f"{{{_SOAP_NS}}}Header")
-    body = etree.SubElement(envelope, f"{{{_SOAP_NS}}}Body")
-
-    wsdl_ns = _WSDL_NS[service]
-    operation = etree.SubElement(body, f"{{{wsdl_ns}}}{_WSDL_OPERATION[service]}")
-    nfe_dados_msg = etree.SubElement(operation, f"{{{wsdl_ns}}}nfeDadosMsg")
-    nfe_dados_msg.append(payload)
-
-    return etree.tostring(envelope, xml_declaration=True, encoding="UTF-8")
+    return soap_envelope(
+        wsdl_namespace=_WSDL_NS[service],
+        operation=_WSDL_OPERATION[service],
+        dados_msg_element="nfeDadosMsg",
+        payload_element=payload,
+    )
 
 
 def build_status_servico_envelope(cuf: str, tp_amb: TipoAmbiente) -> bytes:
@@ -415,21 +410,15 @@ def parse_sefaz_response(response_xml: bytes) -> dict[str, object]:
     namespace varies by webservice/autorizador. Free-text and identifier fields
     are wrapped with `mark_untrusted_fields` to prevent prompt injection.
     """
-    root = safe_fromstring(response_xml)
+    root = parse_response_root(response_xml)
 
-    result: dict[str, object] = {}
-    for field in ("cStat", "xMotivo", "tpAmb", "verAplic", "dhRecbto", "nRec", "cUF"):
-        elems = root.xpath(f".//*[local-name()='{field}']")
-        if elems:
-            result[field] = elems[0].text
+    result = scrape_fields(root, ("cStat", "xMotivo", "tpAmb", "verAplic", "dhRecbto", "nRec", "cUF"))
 
     prot_nfe = root.xpath(".//*[local-name()='protNFe']")
     if prot_nfe:
-        prot: dict[str, object] = {}
-        for field in ("chNFe", "tpAmb", "verAplic", "dhRecbto", "nProt", "digVal", "cStat", "xMotivo"):
-            elems = prot_nfe[0].xpath(f".//*[local-name()='{field}']")
-            if elems:
-                prot[field] = elems[0].text
+        prot = scrape_fields(
+            prot_nfe[0], ("chNFe", "tpAmb", "verAplic", "dhRecbto", "nProt", "digVal", "cStat", "xMotivo")
+        )
         result["protNFe"] = mark_untrusted_fields(prot, _SEFAZ_UNTRUSTED_FIELDS)
 
     return mark_untrusted_fields(result, _SEFAZ_UNTRUSTED_FIELDS)
