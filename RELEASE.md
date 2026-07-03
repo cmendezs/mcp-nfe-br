@@ -1,5 +1,12 @@
 # mcp-nfe-br — Release Notes
 
+## v0.6.2 (2026-07-03) — CT-e events, audit CHECK 8, docs (BR-CTE-14..17)
+
+- **[BR-CTE-14]** New `mcp_nfe_br.standards.cte_events` module — builds `eventoCTe` XML for cancelamento (event `110111`); `build_cte_event_signer` added to `cte_signer.py` (targets `infEvento`); `enviar_evento` added to `SefazCTeClient` (`CTeRecepcaoEventoV4`, plain uncompressed XML unlike `CTeRecepcaoSincV4`). New gated tool `br__cancel_cte`
+- **[BR-CTE-15]** `build_correcao_event_xml` (CC-e, event `110110`) and gated tool `br__correct_cte`. Both events confirmed `cStat=135` on success (MOC CT-e Visão Geral §6.2.2, §6.4) — resolves the `[NEED: verify]` marker in `br.md`. Server now exposes 22 tools
+- **[BR-CTE-16]** New audit CHECK 8 in `audit/audit_vs_core.py`: `BRCTeDocument` subclasses `InvoiceDocument`; `CTeGenerator`/`CTeXSDValidator`/`SefazCTeClient` subclass the correct core ABCs. `_BR_MODULES` extended with all 9 CT-e modules; `_REQUIRED_TOOL_CATEGORIES`/`_TOOL_MODULES` extended with the 7 CT-e tools — CHECK 1/CHECK 2 both pass with zero new warnings, confirming no undeclared core overrides
+- **[BR-CTE-17]** README.md/README.pt-BR.md: new "CT-e (modelo 57) tools" section, `BR_CTE_READ_ONLY` documented, stale "CT-e out of scope" intro claim removed. Homologação verification **not done** — requires a real ICP-Brasil A1 test certificate, `[NEED: manual verification]`
+
 ## v0.6.1 (2026-07-03) — CT-e SEFAZ submission/consultation (BR-CTE-10..12)
 
 - **[BR-CTE-10]** Extracted `mcp_nfe_br.standards._sefaz_soap` (private shared SOAP envelope/response-parsing helper: `soap_envelope`, `scrape_fields`, `parse_response_root`); refactored `sefaz_client.py` to use it. All 48 existing NF-e SEFAZ tests pass unchanged, confirming the extraction preserves behavior

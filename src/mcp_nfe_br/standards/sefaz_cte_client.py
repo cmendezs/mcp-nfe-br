@@ -1,9 +1,9 @@
 """SOAP 1.2 client for the SEFAZ CT-e webservices (modelo 57, schema 4.00).
 
 Mirrors `sefaz_client.py` (NF-e), reusing the shared envelope/parsing
-primitives in `_sefaz_soap.py` (BR-CTE-10). Covers the three CT-e
-webservices confirmed against the bundled MOC CT-e Visão Geral v4.00 §4.2,
-§4.5, §4.6 `[Verified locally]`:
+primitives in `_sefaz_soap.py` (BR-CTE-10). Covers four CT-e webservices
+confirmed against the bundled MOC CT-e Visão Geral v4.00 §4.2, §4.5, §4.6,
+§5 `[Verified locally]`:
 
 - ``CTeStatusServicoV4`` — service availability check (`cteStatusServicoCT`).
 - ``CTeConsultaV4`` — query CT-e status by access key (`cteConsultaCT`).
@@ -12,11 +12,14 @@ webservices confirmed against the bundled MOC CT-e Visão Geral v4.00 §4.2,
   GZip-compressed then Base64-encoded before being placed as the
   `cteDadosMsg` wrapper's text content (`[Verified locally]` — MOC CT-e
   Visão Geral v4.00 §3.4.1).
+- ``CTeRecepcaoEventoV4`` — event submission (`cteRecepcaoEvento`, roadmap
+  BR-CTE-14/15). Plain uncompressed XML, same shape as
+  `CTeStatusServicoV4`/`CTeConsultaV4`.
 
-WSDL namespaces for `CTeStatusServicoV4`/`CTeConsultaV4` are
-`[Inference — pattern extrapolated from the one WSDL namespace example the
-bundled MOC actually shows (CTeRecepcaoSincV4 -> ".../cte/wsdl/CTeRecepcaoSinc",
-dropping the "V4" suffix); not independently confirmed for the other two
+WSDL namespaces for `CTeStatusServicoV4`/`CTeConsultaV4`/`CTeRecepcaoEventoV4`
+are `[Inference — pattern extrapolated from the one WSDL namespace example
+the bundled MOC actually shows (CTeRecepcaoSincV4 -> ".../cte/wsdl/CTeRecepcaoSinc",
+dropping the "V4" suffix); not independently confirmed for these three
 operations]`.
 
 UF -> endpoint routing table
@@ -46,7 +49,7 @@ import gzip
 from lxml import etree
 from mcp_einvoicing_core.exceptions import PlatformError
 from mcp_einvoicing_core.http_client import AuthMode, BaseEInvoicingClient
-from mcp_einvoicing_core.xml_utils import mark_untrusted_fields
+from mcp_einvoicing_core.xml_utils import mark_untrusted_fields, safe_fromstring
 
 from mcp_nfe_br.models.invoice import TipoAmbiente
 from mcp_nfe_br.standards._sefaz_soap import parse_response_root, scrape_fields, soap_envelope
@@ -57,12 +60,14 @@ _CTE_WSDL_NS = {
     "status_servico": "http://www.portalfiscal.inf.br/cte/wsdl/CTeStatusServico",
     "consulta": "http://www.portalfiscal.inf.br/cte/wsdl/CTeConsulta",
     "recepcao": "http://www.portalfiscal.inf.br/cte/wsdl/CTeRecepcaoSinc",
+    "evento": "http://www.portalfiscal.inf.br/cte/wsdl/CTeRecepcaoEvento",
 }
 
 _CTE_WSDL_OPERATION = {
     "status_servico": "cteStatusServicoCT",
     "consulta": "cteConsultaCT",
     "recepcao": "cteRecepcao",
+    "evento": "cteRecepcaoEvento",
 }
 
 # No CT-e endpoint URLs are bundled or independently verified — see module docstring.
@@ -124,6 +129,26 @@ def build_cte_consulta_envelope(ch_cte: str, tp_amb: TipoAmbiente) -> bytes:
         operation=_CTE_WSDL_OPERATION["consulta"],
         dados_msg_element="cteDadosMsg",
         payload_element=cons_sit_cte,
+    )
+
+
+def build_cte_evento_envelope(signed_event_xml: bytes) -> bytes:
+    """Build the `CTeRecepcaoEventoV4` (`cteRecepcaoEvento`) SOAP envelope.
+
+    Args:
+        signed_event_xml: A signed `<eventoCTe>...</eventoCTe>` document
+            (output of `mcp_nfe_br.standards.cte_signer.build_cte_event_signer`).
+
+    `[Verified locally — MOC CT-e Visão Geral v4.00 §5]` — unlike
+    `CTeRecepcaoSincV4`, this service uses plain uncompressed XML
+    ("Parâmetro da Mensagem da área de dados: XML sem compactação").
+    """
+    evento_element = safe_fromstring(signed_event_xml)
+    return soap_envelope(
+        wsdl_namespace=_CTE_WSDL_NS["evento"],
+        operation=_CTE_WSDL_OPERATION["evento"],
+        dados_msg_element="cteDadosMsg",
+        payload_element=evento_element,
     )
 
 
@@ -235,4 +260,13 @@ class SefazCTeClient(BaseEInvoicingClient):
     async def autorizar_cte(self, signed_cte_xml: bytes) -> dict[str, object]:
         """Call `CTeRecepcaoSincV4` (synchronous) and return the parsed `protCTe`."""
         envelope = build_cte_recepcao_envelope(signed_cte_xml)
+        return await self._post_soap(envelope)
+
+    async def enviar_evento(self, signed_event_xml: bytes) -> dict[str, object]:
+        """Call `CTeRecepcaoEventoV4` and return the parsed `cStat`/`xMotivo`.
+
+        `cStat=135` indicates the event was homologado (cancelamento or
+        CC-e) `[Verified locally]` — MOC CT-e Visão Geral v4.00 §6.2.2, §6.4.
+        """
+        envelope = build_cte_evento_envelope(signed_event_xml)
         return await self._post_soap(envelope)

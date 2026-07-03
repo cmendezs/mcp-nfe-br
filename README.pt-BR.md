@@ -12,9 +12,9 @@
 
 ## Introdução
 
-`mcp-nfe-br` é um servidor [MCP (Model Context Protocol)](https://modelcontextprotocol.io) que fornece ferramentas para a emissão e validação de documentos fiscais eletrônicos brasileiros: **NF-e (modelo 55)** e **NFC-e (modelo 65)**, conforme o leiaute XML versão 4.00 da SEFAZ. Este servidor faz parte da família `mcp-einvoicing-*` / `mcp-*-*`, construída sobre [`mcp-einvoicing-core`](https://github.com/cmendezs/mcp-einvoicing-core), que fornece o modelo de dados base, utilitários HTTP/OAuth2, e a infraestrutura comum de servidores MCP.
+`mcp-nfe-br` é um servidor [MCP (Model Context Protocol)](https://modelcontextprotocol.io) que fornece ferramentas para a emissão e validação de documentos fiscais eletrônicos brasileiros: **NF-e (modelo 55)**, **NFC-e (modelo 65)**, **NFS-e Nacional** (ADN) e **CT-e (modelo 57)**. Este servidor faz parte da família `mcp-einvoicing-*` / `mcp-*-*`, construída sobre [`mcp-einvoicing-core`](https://github.com/cmendezs/mcp-einvoicing-core), que fornece o modelo de dados base, utilitários HTTP/OAuth2, e a infraestrutura comum de servidores MCP.
 
-**Status atual (v0.2.0):** fase 1 do roadmap, cobrindo validação de CPF/CNPJ, **geração de XML NF-e/NFC-e (não assinado)** e **validação contra o XSD oficial (PL_010d, variante sem assinatura)**. Assinatura digital ICP-Brasil e integração com os webservices da SEFAZ estão planejadas para versões futuras. Os documentos gerados são **não assinados** e não são transmitidos à SEFAZ por este servidor. NFS-e (nota fiscal de serviços) e CT-e (conhecimento de transporte) são fases posteriores, fora do escopo desta versão.
+**Status atual (v0.6.1):** geração, assinatura ICP-Brasil, validação XSD e submissão gated à SEFAZ/ADN estão implementadas para NF-e/NFC-e (modelo 55/65, schema 4.00) e NFS-e Nacional (ADN, schema v1.01). A cobertura de **CT-e (modelo 57)** — geração, assinatura, validação e submissão de eventos SEFAZ (cancelamento, Carta de Correção) — começou na v0.6.0. O escopo v1 é intencionalmente restrito: **apenas modal rodoviário**, **apenas ICMS CST 00**, e **nenhuma tabela de endpoints de webservice CT-e embutida/verificada** (toda chamada SEFAZ CT-e exige `endpoint_override` explícito). Veja a seção "Ferramentas CT-e (modelo 57)" abaixo e `context-library/countries/br.md` (no repositório de origem) para a referência completa em nível de campo.
 
 ---
 
@@ -80,7 +80,8 @@ Para uma instalação local de desenvolvimento:
 
 | Variável | Descrição | Padrão |
 |---|---|---|
-| `BR_READ_ONLY` | Defina como `1` para desativar as ferramentas de escrita SEFAZ (`br__submit_nfe`, `br__distribute_dfe`). Modo seguro para exploração. O ambiente SEFAZ (produção/homologação) é selecionado por chamada via o argumento `tp_amb`. | — |
+| `BR_READ_ONLY` | Defina como `1` para desativar as ferramentas de escrita SEFAZ (`br__submit_nfe`, `br__distribute_dfe`, `br__submit_nfse`, `br__cancel_nfse`). Modo seguro para exploração. O ambiente SEFAZ (produção/homologação) é selecionado por chamada via o argumento `tp_amb`. | — |
+| `BR_CTE_READ_ONLY` | Defina como `1` para desativar as ferramentas de escrita CT-e (`br__submit_cte`, `br__cancel_cte`, `br__correct_cte`). Mantida distinta de `BR_READ_ONLY` para que NF-e e CT-e possam ser controladas independentemente. | — |
 | `LOG_LEVEL` | Nível de log: `DEBUG`, `INFO`, `WARNING`, `ERROR` | `INFO` |
 
 ---
@@ -168,6 +169,55 @@ Monta uma chave de acesso (`chNFe`, 44 caracteres) com dígito verificador módu
 | `c_nf` | `string` | não | Código numérico aleatório (cNF, 8 dígitos); gerado automaticamente se omitido |
 
 Retorna `{"chave_acesso": ..., "cnf": ...}`.
+
+---
+
+## Ferramentas CT-e (modelo 57)
+
+A cobertura de CT-e (Conhecimento de Transporte Eletrônico) começou na v0.6.0. **O escopo v1 é intencionalmente restrito**: apenas modal rodoviário (outros modais retornam erro), apenas ICMS CST 00 (tributação normal), e nenhuma tabela de endpoints SEFAZ CT-e embutida/verificada — toda chamada SEFAZ abaixo exige `endpoint_override` explícito.
+
+### `br__generate_cte`
+
+Gera um documento CT-e 4.00 **não assinado** (`<CTe><infCte>…</infCte></CTe>`) a partir de um objeto `BRCTeDocument`.
+
+| Parâmetro | Tipo | Obrigatório | Descrição |
+|---|---|---|---|
+| `cte` | `object` | sim | `BRCTeDocument` (modelo 57, modal rodoviário, ICMS CST 00) |
+
+Retorna `{"xml": ..., "chave_acesso": ..., "warnings": [...]}`.
+
+### `br__validate_cte_xml`
+
+Valida um XML de CT-e 4.00 contra o XSD PL_CTe_400 embutido (seleciona automaticamente o schema não assinado ou o oficial assinado, conforme a presença de `<ds:Signature>`).
+
+| Parâmetro | Tipo | Obrigatório | Descrição |
+|---|---|---|---|
+| `xml_content` | `string` | não* | XML como string |
+| `xml_base64` | `string` | não* | XML codificado em base64 |
+
+\* Exatamente um de `xml_content`/`xml_base64` deve ser informado.
+
+### `br__consult_cte_sefaz_status`
+
+Consulta a disponibilidade do webservice SEFAZ CT-e (`CTeStatusServicoV4`). Somente leitura, sem confirmação.
+
+### `br__consult_cte`
+
+Consulta a situação de um CT-e por chave de acesso (`CTeConsultaV4`). Somente leitura, sem confirmação — consulta um documento específico já conhecido, não um lote de dados.
+
+### `br__submit_cte`
+
+Submete um CT-e assinado à autorização SEFAZ (`CTeRecepcaoSincV4`, síncrono). O payload é automaticamente compactado em GZip e codificado em Base64 antes do envio, conforme o MOC CT-e. Requer confirmação em duas etapas (`ConfirmationGate`) e respeita `BR_CTE_READ_ONLY`.
+
+### `br__cancel_cte`
+
+Solicita o cancelamento de um CT-e autorizado (evento `110111`, `CTeRecepcaoEventoV4`). `cStat=135` indica cancelamento homologado. Requer confirmação.
+
+### `br__correct_cte`
+
+Emite uma Carta de Correção Eletrônica (evento `110110`, `CTeRecepcaoEventoV4`). Conforme o Art. 58-B do CONVÊNIO/SINIEF 06/89, a CC-e não pode alterar valores de impostos, dados cadastrais das partes, ou a data de emissão/saída. Requer confirmação.
+
+Ainda não implementado: `br__distribute_cte_dfe` (`CTeDistribuicaoDFe`) — a especificação embutida confirma o formato do payload da requisição, mas não o nome do método, o namespace WSDL, ou o elemento wrapper da mensagem do webservice.
 
 ---
 

@@ -13,13 +13,17 @@ from mcp_einvoicing_core.confirmation import ConfirmationGate, ConfirmationStore
 
 from mcp_nfe_br.models.cte import BRCteInfModal, CTeModal
 from mcp_nfe_br.tools.cte import (
+    br__cancel_cte,
     br__consult_cte,
     br__consult_cte_sefaz_status,
+    br__correct_cte,
     br__generate_cte,
     br__submit_cte,
     br__validate_cte_xml,
 )
 from tests.conftest import make_cte
+
+_CH_CTE = "35260711222333000181570010000000011212199180"
 
 
 @pytest.fixture(autouse=True)
@@ -125,4 +129,79 @@ async def test_submit_cte_invalid_environment() -> None:
         tp_amb="9",
     )
 
+    assert "error" in result
+
+
+_CANCEL_CTE_KWARGS = {
+    "ch_cte": _CH_CTE,
+    "c_orgao": "35",
+    "cnpj": "11222333000181",
+    "dh_evento": "2026-07-03T10:00:00Z",
+    "n_prot": "135250000000001",
+    "x_just": "Erro de digitação, requer emissão de novo CT-e.",
+    "cert_path": "/tmp/does-not-exist.p12",
+    "endpoint_override": "https://homolog.example/CTeRecepcaoEventoV4.asmx",
+}
+
+
+async def test_cancel_cte_read_only_blocks(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("BR_CTE_READ_ONLY", "1")
+    result = await br__cancel_cte(**_CANCEL_CTE_KWARGS)
+    assert "error" in result
+
+
+async def test_cancel_cte_requires_confirmation() -> None:
+    result = await br__cancel_cte(**_CANCEL_CTE_KWARGS)
+    assert result.get("status") == "awaiting_confirmation"
+    assert "token" in result
+
+
+async def test_cancel_cte_invalid_environment() -> None:
+    result = await br__cancel_cte(**{**_CANCEL_CTE_KWARGS, "tp_amb": "9"})
+    assert "error" in result
+
+
+_CORRECT_CTE_KWARGS = {
+    "ch_cte": _CH_CTE,
+    "c_orgao": "35",
+    "cnpj": "11222333000181",
+    "dh_evento": "2026-07-03T10:00:00Z",
+    "correcoes": [{"grupo_alterado": "rem", "campo_alterado": "xNome", "valor_alterado": "Novo Nome"}],
+    "cert_path": "/tmp/does-not-exist.p12",
+    "endpoint_override": "https://homolog.example/CTeRecepcaoEventoV4.asmx",
+}
+
+
+async def test_correct_cte_read_only_blocks(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("BR_CTE_READ_ONLY", "1")
+    result = await br__correct_cte(**_CORRECT_CTE_KWARGS)
+    assert "error" in result
+
+
+async def test_correct_cte_requires_confirmation() -> None:
+    result = await br__correct_cte(**_CORRECT_CTE_KWARGS)
+    assert result.get("status") == "awaiting_confirmation"
+    assert "token" in result
+
+
+async def test_correct_cte_invalid_environment() -> None:
+    result = await br__correct_cte(**{**_CORRECT_CTE_KWARGS, "tp_amb": "9"})
+    assert "error" in result
+
+
+async def test_correct_cte_empty_correcoes_returns_error_after_confirmation(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The ValueError from build_correcao_event_xml surfaces as `error`,
+    not an unhandled exception, once the confirmation gate is bypassed."""
+    from mcp_einvoicing_core.confirmation import ConfirmationGate, ConfirmationStore
+
+    gate = ConfirmationGate(ConfirmationStore())
+    monkeypatch.setattr(ConfirmationGate, "_default", gate)
+    pending = await br__correct_cte(**{**_CORRECT_CTE_KWARGS, "correcoes": []})
+    token = pending["token"]
+
+    result = await br__correct_cte(
+        **{**_CORRECT_CTE_KWARGS, "correcoes": [], "confirmation_token": token}
+    )
     assert "error" in result

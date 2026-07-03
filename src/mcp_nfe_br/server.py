@@ -5,8 +5,10 @@ from typing import Any
 from mcp_einvoicing_core import EInvoicingMCPServer
 
 from mcp_nfe_br.tools.cte import (
+    br__cancel_cte,
     br__consult_cte,
     br__consult_cte_sefaz_status,
+    br__correct_cte,
     br__generate_cte,
     br__submit_cte,
     br__validate_cte_xml,
@@ -55,6 +57,8 @@ def _register_br_tools(mcp: Any) -> None:
     mcp.tool()(br__consult_cte_sefaz_status)
     mcp.tool()(br__consult_cte)
     mcp.tool()(br__submit_cte)
+    mcp.tool()(br__cancel_cte)
+    mcp.tool()(br__correct_cte)
 
 
 mcp = EInvoicingMCPServer(

@@ -12,9 +12,9 @@
 
 ## Introduction
 
-`mcp-nfe-br` is an [MCP (Model Context Protocol)](https://modelcontextprotocol.io) server providing tools for issuing and validating Brazilian electronic fiscal documents: **NF-e (modelo 55)** and **NFC-e (modelo 65)**, per SEFAZ XML schema version 4.00. This server is part of the `mcp-einvoicing-*` / `mcp-*-*` family, built on [`mcp-einvoicing-core`](https://github.com/cmendezs/mcp-einvoicing-core), which provides the base data model, HTTP/OAuth2 utilities, and shared MCP server infrastructure.
+`mcp-nfe-br` is an [MCP (Model Context Protocol)](https://modelcontextprotocol.io) server providing tools for issuing and validating Brazilian electronic fiscal documents: **NF-e (modelo 55)**, **NFC-e (modelo 65)**, **NFS-e Nacional** (ADN), and **CT-e (modelo 57)**. This server is part of the `mcp-einvoicing-*` / `mcp-*-*` family, built on [`mcp-einvoicing-core`](https://github.com/cmendezs/mcp-einvoicing-core), which provides the base data model, HTTP/OAuth2 utilities, and shared MCP server infrastructure.
 
-**Current status (v0.2.0):** Phase 1 of the roadmap, covering CPF/CNPJ tax-ID validation, **unsigned NF-e/NFC-e XML generation**, and **XSD validation** against the official PL_010d schema (unsigned variant). ICP-Brasil digital signing and SEFAZ webservice submission are planned for future releases. Generated documents are **unsigned** and are not transmitted to SEFAZ by this server. NFS-e (service invoices) and CT-e (transport documents) are later phases, out of scope for this version.
+**Current status (v0.6.1):** NF-e/NFC-e (modelo 55/65, schema 4.00) and NFS-e Nacional (ADN, schema v1.01) generation, ICP-Brasil signing, XSD validation, and gated SEFAZ/ADN submission are implemented. **CT-e (modelo 57)** generation/signing/validation and SEFAZ event submission (cancelamento, Carta de Correção) were added starting v0.6.0 — v1 scope is intentionally narrow: **modal rodoviário only**, **ICMS CST 00 only**, and **no bundled/verified CT-e webservice endpoint table** (every SEFAZ CT-e call requires an explicit `endpoint_override`). See the "CT-e (modelo 57)" tools section below and `context-library/countries/br.md` (in the source repo) for the full field-level reference.
 
 ---
 
@@ -80,7 +80,8 @@ For a local development installation:
 
 | Variable | Description | Default |
 |---|---|---|
-| `BR_READ_ONLY` | Set to `1` to disable SEFAZ write tools (`br__submit_nfe`, `br__distribute_dfe`). Safe mode for exploration. The SEFAZ environment (production/homologation) is selected per call via the `tp_amb` argument. | — |
+| `BR_READ_ONLY` | Set to `1` to disable SEFAZ write tools (`br__submit_nfe`, `br__distribute_dfe`, `br__submit_nfse`, `br__cancel_nfse`). Safe mode for exploration. The SEFAZ environment (production/homologation) is selected per call via the `tp_amb` argument. | — |
+| `BR_CTE_READ_ONLY` | Set to `1` to disable the CT-e write tools (`br__submit_cte`, `br__cancel_cte`, `br__correct_cte`). Kept distinct from `BR_READ_ONLY` so NF-e and CT-e can be gated independently. | — |
 | `LOG_LEVEL` | Log level: `DEBUG`, `INFO`, `WARNING`, `ERROR` | `INFO` |
 
 ---
@@ -168,6 +169,55 @@ Builds an access key (`chNFe`, 44 characters) with a modulo 11 check digit, from
 | `c_nf` | `string` | no | Random numeric code (cNF, 8 digits); auto-generated if omitted |
 
 Returns `{"chave_acesso": ..., "cnf": ...}`.
+
+---
+
+## CT-e (modelo 57) tools
+
+CT-e (Conhecimento de Transporte Eletrônico) coverage started at v0.6.0. **v1 scope is intentionally narrow**: modal rodoviário only (other modais raise an error), ICMS CST 00 (tributação normal) only, and no bundled/verified SEFAZ CT-e endpoint table — every SEFAZ call below requires an explicit `endpoint_override`.
+
+### `br__generate_cte`
+
+Generates an **unsigned** CT-e 4.00 document (`<CTe><infCte>…</infCte></CTe>`) from a `BRCTeDocument` object.
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `cte` | `object` | yes | `BRCTeDocument` (modelo 57, modal rodoviário, ICMS CST 00) |
+
+Returns `{"xml": ..., "chave_acesso": ..., "warnings": [...]}`.
+
+### `br__validate_cte_xml`
+
+Validates a CT-e 4.00 XML document against the bundled PL_CTe_400 XSD (auto-selects the unsigned or official signed schema based on `<ds:Signature>` presence).
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `xml_content` | `string` | no* | XML as a string |
+| `xml_base64` | `string` | no* | Base64-encoded XML |
+
+\* Exactly one of `xml_content`/`xml_base64` must be provided.
+
+### `br__consult_cte_sefaz_status`
+
+Checks SEFAZ CT-e webservice availability (`CTeStatusServicoV4`). Read-only, no confirmation required.
+
+### `br__consult_cte`
+
+Queries a CT-e's status by access key (`CTeConsultaV4`). Read-only, no confirmation required — it queries one already-known document, not a bulk data pull.
+
+### `br__submit_cte`
+
+Submits a signed CT-e to SEFAZ authorization (`CTeRecepcaoSincV4`, synchronous). The payload is automatically GZip-compressed and Base64-encoded before transmission, per the CT-e MOC. Gated with a two-step confirmation (`ConfirmationGate`) and `BR_CTE_READ_ONLY`.
+
+### `br__cancel_cte`
+
+Requests cancellation of an authorized CT-e (event `110111`, `CTeRecepcaoEventoV4`). `cStat=135` indicates the cancellation was homologated. Gated.
+
+### `br__correct_cte`
+
+Issues a Carta de Correção Eletrônica (event `110110`, `CTeRecepcaoEventoV4`). Per Art. 58-B of CONVÊNIO/SINIEF 06/89, a CC-e cannot alter tax values, party registration data, or the issue/departure date. Gated.
+
+Not yet implemented: `br__distribute_cte_dfe` (`CTeDistribuicaoDFe`) — the bundled specification confirms the request payload shape but not the webservice's method name, WSDL namespace, or message-wrapper element.
 
 ---
 

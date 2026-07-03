@@ -11,8 +11,10 @@ Exit codes:
     2  Blocking failures found
 
 CHECK 1 and CHECK 4 are delegated to mcp_einvoicing_core.audit.
-CHECK 2 (tool registry), CHECK 3 (BRInvoice field alignment), and CHECK 5
-(BR-specific structural) are implemented here.
+CHECK 2 (tool registry), CHECK 3 (BRInvoice field alignment), CHECK 5
+(BR-specific structural), CHECK 6 (NFSeDocument structural), CHECK 7
+(parallel-implementation detector), and CHECK 8 (BRCTeDocument structural,
+BR-CTE-16) are implemented here.
 """
 
 from __future__ import annotations
@@ -257,20 +259,29 @@ _BR_MODULES: list[str] = [
     "mcp_nfe_br",
     "mcp_nfe_br.models.invoice",
     "mcp_nfe_br.models.nfse",
+    "mcp_nfe_br.models.cte",
     "mcp_nfe_br.server",
     "mcp_nfe_br.tools.validation",
     "mcp_nfe_br.tools.generation",
     "mcp_nfe_br.tools.sefaz",
     "mcp_nfe_br.tools.nfse",
+    "mcp_nfe_br.tools.cte",
     "mcp_nfe_br.utils.document_ids",
     "mcp_nfe_br.utils.access_key",
+    "mcp_nfe_br.utils.cte_access_key",
     "mcp_nfe_br.standards.nfe_generator",
     "mcp_nfe_br.standards.nfe_signer",
     "mcp_nfe_br.standards.nfse_generator",
     "mcp_nfe_br.standards.nfse_signer",
     "mcp_nfe_br.standards.sefaz_client",
+    "mcp_nfe_br.standards._sefaz_soap",
+    "mcp_nfe_br.standards.sefaz_cte_client",
+    "mcp_nfe_br.standards.cte_generator",
+    "mcp_nfe_br.standards.cte_signer",
+    "mcp_nfe_br.standards.cte_events",
     "mcp_nfe_br.validators.nfe_xsd",
     "mcp_nfe_br.validators.nfse_xsd",
+    "mcp_nfe_br.validators.cte_xsd",
 ]
 
 _PYPROJECT = Path(__file__).parent.parent / "pyproject.toml"
@@ -294,6 +305,14 @@ _REQUIRED_TOOL_CATEGORIES: dict[str, str] = {
     "br__generate_nfse": "Generate an unsigned DPS for NFS-e Nacional (ADN, schema v1.01)",
     "br__validate_nfse_xml": "Validate DPS or NFSe XML against the bundled ADN v1.01 XSD",
     "br__sign_nfse": "Apply ICP-Brasil XML-DSig signature to an NFS-e Nacional DPS (infDPS)",
+    # CT-e (modelo 57) tools — Phase 3, v1 (BR-CTE-9/12/14/15)
+    "br__generate_cte": "Generate an unsigned CT-e 4.00 XML document (modal rodoviário, ICMS CST 00)",
+    "br__validate_cte_xml": "Validate CT-e 4.00 XML against the bundled PL_CTe_400 XSD",
+    "br__consult_cte_sefaz_status": "Check SEFAZ CT-e webservice availability (CTeStatusServicoV4)",
+    "br__consult_cte": "Query a CT-e's status by access key (CTeConsultaV4)",
+    "br__submit_cte": "Submit a signed CT-e to SEFAZ CTeRecepcaoSincV4 (autorização)",
+    "br__cancel_cte": "Request CT-e cancellation via event 110111 (CTeRecepcaoEventoV4)",
+    "br__correct_cte": "Issue a Carta de Correção Eletrônica via event 110110 (CTeRecepcaoEventoV4)",
 }
 
 _TOOL_MODULES: tuple[str, ...] = (
@@ -301,6 +320,7 @@ _TOOL_MODULES: tuple[str, ...] = (
     "mcp_nfe_br.tools.generation",
     "mcp_nfe_br.tools.sefaz",
     "mcp_nfe_br.tools.nfse",
+    "mcp_nfe_br.tools.cte",
 )
 
 
@@ -678,6 +698,182 @@ def run_check_6() -> CheckResult:
 
 
 # ---------------------------------------------------------------------------
+# CHECK 8 — BRCTeDocument structural checks (BR-CTE-16)
+# ---------------------------------------------------------------------------
+
+# CT-e is exempt from CHECK 3's buyer/lines field-alignment rule (which
+# applies only to BRInvoice): `BRCTeDocument.buyer` is intentionally
+# Optional[InvoiceParty]=None (no CT-e equivalent — see roadmap BR-CTE-5),
+# and `lines` intentionally stays empty (freight-value components live
+# under `v_prest.comp` instead). CHECK 3 never scans BRCTeDocument, so no
+# override registration is needed — this comment documents the exemption
+# for anyone tempted to extend CHECK 3 to cover it.
+
+
+def run_check_8() -> CheckResult:
+    """CHECK 8 — BRCTeDocument subclasses InvoiceDocument; CTeGenerator/
+    CTeXSDValidator subclass the correct core ABCs; no local reimplementation."""
+    result = CheckResult(check_id="CHECK_8", name="BRCTeDocument structural checks")
+
+    mod, err = _try_import("mcp_nfe_br.models.cte")
+    if mod is None:
+        result.findings.append(
+            CheckFinding(
+                check_id="CHECK_8",
+                tag="[MISSING]",
+                severity=SEVERITY_BLOCKING,
+                symbol="mcp_nfe_br.models.cte",
+                message=f"Could not import CT-e model module: {err}",
+            )
+        )
+        return result
+
+    cte_cls = getattr(mod, "BRCTeDocument", None)
+    if cte_cls is None:
+        result.findings.append(
+            CheckFinding(
+                check_id="CHECK_8",
+                tag="[MISSING]",
+                severity=SEVERITY_BLOCKING,
+                symbol="BRCTeDocument",
+                message="BRCTeDocument class not found in mcp_nfe_br.models.cte.",
+            )
+        )
+        return result
+
+    # Must subclass InvoiceDocument (non-EN16931 pathway, same as BRInvoice/NFSeDocument)
+    core_mod, _ = _try_import("mcp_einvoicing_core.models")
+    invoice_doc_cls = getattr(core_mod, "InvoiceDocument", None) if core_mod else None
+    if invoice_doc_cls is not None:
+        is_subclass = issubclass(cte_cls, invoice_doc_cls)
+        tag = "[OK]" if is_subclass else "[WRONG_BASE]"
+        sev = SEVERITY_OK if is_subclass else SEVERITY_BLOCKING
+        result.findings.append(
+            CheckFinding(
+                check_id="CHECK_8",
+                tag=tag,
+                severity=sev,
+                symbol="BRCTeDocument",
+                message=(
+                    "BRCTeDocument correctly subclasses InvoiceDocument (non-EN16931 pathway)."
+                    if is_subclass
+                    else "BRCTeDocument must subclass InvoiceDocument from mcp_einvoicing_core.models."
+                ),
+            )
+        )
+
+    # Verify CTeGenerator subclasses BaseDocumentGenerator (no local reimplementation)
+    gen_mod, gen_err = _try_import("mcp_nfe_br.standards.cte_generator")
+    if gen_mod is None:
+        result.findings.append(
+            CheckFinding(
+                check_id="CHECK_8",
+                tag="[MISSING]",
+                severity=SEVERITY_BLOCKING,
+                symbol="mcp_nfe_br.standards.cte_generator",
+                message=f"CTeGenerator module missing: {gen_err}",
+            )
+        )
+    else:
+        from mcp_einvoicing_core import BaseDocumentGenerator
+        gen_cls = getattr(gen_mod, "CTeGenerator", None)
+        if gen_cls and issubclass(gen_cls, BaseDocumentGenerator):
+            result.findings.append(
+                CheckFinding(
+                    check_id="CHECK_8",
+                    tag="[OK]",
+                    severity=SEVERITY_OK,
+                    symbol="CTeGenerator",
+                    message="CTeGenerator subclasses BaseDocumentGenerator.",
+                )
+            )
+        else:
+            result.findings.append(
+                CheckFinding(
+                    check_id="CHECK_8",
+                    tag="[WRONG_BASE]",
+                    severity=SEVERITY_BLOCKING,
+                    symbol="CTeGenerator",
+                    message="CTeGenerator must subclass BaseDocumentGenerator.",
+                )
+            )
+
+    # Verify CTeXSDValidator subclasses BaseDocumentValidator
+    val_mod, val_err = _try_import("mcp_nfe_br.validators.cte_xsd")
+    if val_mod is None:
+        result.findings.append(
+            CheckFinding(
+                check_id="CHECK_8",
+                tag="[MISSING]",
+                severity=SEVERITY_BLOCKING,
+                symbol="mcp_nfe_br.validators.cte_xsd",
+                message=f"CTeXSDValidator module missing: {val_err}",
+            )
+        )
+    else:
+        from mcp_einvoicing_core import BaseDocumentValidator
+        val_cls = getattr(val_mod, "CTeXSDValidator", None)
+        if val_cls and issubclass(val_cls, BaseDocumentValidator):
+            result.findings.append(
+                CheckFinding(
+                    check_id="CHECK_8",
+                    tag="[OK]",
+                    severity=SEVERITY_OK,
+                    symbol="CTeXSDValidator",
+                    message="CTeXSDValidator subclasses BaseDocumentValidator.",
+                )
+            )
+        else:
+            result.findings.append(
+                CheckFinding(
+                    check_id="CHECK_8",
+                    tag="[WRONG_BASE]",
+                    severity=SEVERITY_BLOCKING,
+                    symbol="CTeXSDValidator",
+                    message="CTeXSDValidator must subclass BaseDocumentValidator.",
+                )
+            )
+
+    # Verify SefazCTeClient subclasses BaseEInvoicingClient (reuses AuthMode.MTLS transport)
+    client_mod, client_err = _try_import("mcp_nfe_br.standards.sefaz_cte_client")
+    if client_mod is None:
+        result.findings.append(
+            CheckFinding(
+                check_id="CHECK_8",
+                tag="[MISSING]",
+                severity=SEVERITY_BLOCKING,
+                symbol="mcp_nfe_br.standards.sefaz_cte_client",
+                message=f"SefazCTeClient module missing: {client_err}",
+            )
+        )
+    else:
+        from mcp_einvoicing_core.http_client import BaseEInvoicingClient
+        client_cls = getattr(client_mod, "SefazCTeClient", None)
+        if client_cls and issubclass(client_cls, BaseEInvoicingClient):
+            result.findings.append(
+                CheckFinding(
+                    check_id="CHECK_8",
+                    tag="[OK]",
+                    severity=SEVERITY_OK,
+                    symbol="SefazCTeClient",
+                    message="SefazCTeClient subclasses BaseEInvoicingClient.",
+                )
+            )
+        else:
+            result.findings.append(
+                CheckFinding(
+                    check_id="CHECK_8",
+                    tag="[WRONG_BASE]",
+                    severity=SEVERITY_BLOCKING,
+                    symbol="SefazCTeClient",
+                    message="SefazCTeClient must subclass BaseEInvoicingClient.",
+                )
+            )
+
+    return result
+
+
+# ---------------------------------------------------------------------------
 # Assembly
 # ---------------------------------------------------------------------------
 
@@ -809,6 +1005,7 @@ def run_audit() -> AuditReport:
     report.checks.append(run_check_5())
     report.checks.append(run_check_6())
     report.checks.append(run_check_7())
+    report.checks.append(run_check_8())
 
     return report
 

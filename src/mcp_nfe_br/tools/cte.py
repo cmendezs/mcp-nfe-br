@@ -4,13 +4,14 @@ Generation/validation tools are v1 scope: modal rodoviário only, ICMS CST 00
 only — see `mcp_nfe_br.standards.cte_generator` module docstring
 (roadmap BR-CTE-9).
 
-`br__submit_cte` and `br__consult_cte` (roadmap BR-CTE-12) are
-mutating/network operations against real SEFAZ infrastructure and are
-gated with `assert_not_read_only` + `ConfirmationGate`, mirroring
-`mcp_nfe_br.tools.sefaz`. No CT-e endpoint URLs are bundled/verified in
-this version — callers must always pass `endpoint_override`
-(`SefazCTeClient`/`get_cte_endpoint` docstring). `br__distribute_cte_dfe`
-is not implemented — see roadmap BR-CTE-13.
+`br__submit_cte`, `br__cancel_cte`, and `br__correct_cte` (roadmap
+BR-CTE-12, BR-CTE-14/15) are mutating/network operations against real
+SEFAZ infrastructure and are gated with `assert_not_read_only` +
+`ConfirmationGate`, mirroring `mcp_nfe_br.tools.sefaz`. `br__consult_cte`
+and `br__consult_cte_sefaz_status` are read-only. No CT-e endpoint URLs
+are bundled/verified in this version — callers must always pass
+`endpoint_override` (`SefazCTeClient`/`get_cte_endpoint` docstring).
+`br__distribute_cte_dfe` is not implemented — see roadmap BR-CTE-13.
 """
 
 from __future__ import annotations
@@ -24,7 +25,9 @@ from mcp_einvoicing_core.xml_utils import resolve_xml_input
 
 from mcp_nfe_br.models.cte import BRCTeDocument
 from mcp_nfe_br.models.invoice import TipoAmbiente
+from mcp_nfe_br.standards.cte_events import build_cancelamento_event_xml, build_correcao_event_xml
 from mcp_nfe_br.standards.cte_generator import CTeGenerator
+from mcp_nfe_br.standards.cte_signer import build_cte_event_signer
 from mcp_nfe_br.standards.sefaz_cte_client import SefazCTeClient
 from mcp_nfe_br.validators.cte_xsd import CTeXSDValidator
 
@@ -240,6 +243,188 @@ async def br__submit_cte(
     )
     try:
         result = await client.autorizar_cte(xml_bytes)
+    except (PlatformError, ValueError, OSError) as exc:
+        return {"error": str(exc)}
+
+    gate.consume(confirmation_token)
+    return result
+
+
+async def br__cancel_cte(
+    ch_cte: Annotated[str, "Chave de acesso do CT-e a cancelar (chCTe), 44 caracteres"],
+    c_orgao: Annotated[str, "Código IBGE da UF do autorizador (cOrgao), 2 dígitos (ou '90' para SUFRAMA)"],
+    cnpj: Annotated[str, "CNPJ do emitente do CT-e (autor do evento)"],
+    dh_evento: Annotated[str, "Data e hora do evento (ISO 8601, UTC)"],
+    n_prot: Annotated[str, "Número do protocolo de autorização do CT-e original (nProt)"],
+    x_just: Annotated[str, "Justificativa do cancelamento"],
+    cert_path: Annotated[str, "Caminho local para o certificado ICP-Brasil A1 (.p12/.pfx)"],
+    endpoint_override: Annotated[
+        str, "URL completa do webservice CTeRecepcaoEventoV4 — obrigatório, ver docstring do módulo."
+    ],
+    tp_amb: Annotated[
+        str, "Identificação do Ambiente (tpAmb): '1' = produção, '2' = homologação"
+    ] = "2",
+    cert_password: Annotated[str | None, "Senha do certificado A1, se houver"] = None,
+    confirmation_token: Annotated[
+        str | None, "Token de confirmação obtido de uma chamada anterior pendente."
+    ] = None,
+) -> dict[str, object]:
+    """Solicita o cancelamento de um CT-e autorizado (evento `110111`, `CTeRecepcaoEventoV4`).
+
+    Constrói, assina (`build_cte_event_signer`, alvo `infEvento`) e submete
+    o evento de cancelamento. `cStat=135` indica cancelamento homologado
+    `[Verified locally]` — MOC CT-e Visão Geral v4.00 §6.2.2.
+
+    Cancelamento é uma operação irreversível em produção e exige
+    confirmação em duas etapas (`ConfirmationGate`). Define
+    `BR_CTE_READ_ONLY=1` para desabilitar. `endpoint_override` é
+    obrigatório — nenhuma URL de endpoint CT-e está embutida/verificada
+    nesta versão.
+
+    Retorna `cStat`/`xMotivo` ou `error`.
+    """
+    try:
+        ambiente = TipoAmbiente(tp_amb)
+    except ValueError:
+        return {"error": f"tp_amb inválido: {tp_amb!r}. Use '1' ou '2'."}
+
+    try:
+        assert_not_read_only(_READ_ONLY_ENV_VAR)
+    except PlatformError as exc:
+        return {"error": str(exc)}
+
+    gate = ConfirmationGate.get_default()
+    if not gate.is_confirmed(confirmation_token):
+        env_label = "produção" if ambiente == TipoAmbiente.PRODUCAO else "homologação"
+        return gate.pending_response(
+            action="br__cancel_cte",
+            summary=(
+                f"Cancelar CT-e {ch_cte} via SEFAZ ({env_label}). "
+                "Cancelamentos homologados em produção não podem ser desfeitos."
+            ),
+            token=confirmation_token,
+        )
+
+    event_xml = build_cancelamento_event_xml(
+        ch_cte=ch_cte,
+        c_orgao=c_orgao,
+        tp_amb=tp_amb,
+        cnpj=cnpj,
+        dh_evento=dh_evento,
+        n_prot=n_prot,
+        x_just=x_just,
+    )
+    signer = build_cte_event_signer(cert_path, cert_password)
+    try:
+        signed_event_xml = signer.sign(event_xml.encode("utf-8"))
+    except (ImportError, ValueError, OSError) as exc:
+        return {"error": str(exc)}
+
+    client = SefazCTeClient(
+        cuf=c_orgao,
+        tp_amb=ambiente,
+        cert_path=cert_path,
+        cert_password=cert_password,
+        service="evento",
+        endpoint_override=endpoint_override,
+    )
+    try:
+        result = await client.enviar_evento(signed_event_xml)
+    except (PlatformError, ValueError, OSError) as exc:
+        return {"error": str(exc)}
+
+    gate.consume(confirmation_token)
+    return result
+
+
+async def br__correct_cte(
+    ch_cte: Annotated[str, "Chave de acesso do CT-e a corrigir (chCTe), 44 caracteres"],
+    c_orgao: Annotated[str, "Código IBGE da UF do autorizador (cOrgao), 2 dígitos (ou '90' para SUFRAMA)"],
+    cnpj: Annotated[str, "CNPJ do emitente do CT-e (autor do evento)"],
+    dh_evento: Annotated[str, "Data e hora do evento (ISO 8601, UTC)"],
+    correcoes: Annotated[
+        list[dict[str, str]],
+        (
+            "Lista de correções. Cada item: 'grupo_alterado', 'campo_alterado', "
+            "'valor_alterado', e opcionalmente 'nro_item_alterado'."
+        ),
+    ],
+    cert_path: Annotated[str, "Caminho local para o certificado ICP-Brasil A1 (.p12/.pfx)"],
+    endpoint_override: Annotated[
+        str, "URL completa do webservice CTeRecepcaoEventoV4 — obrigatório, ver docstring do módulo."
+    ],
+    tp_amb: Annotated[
+        str, "Identificação do Ambiente (tpAmb): '1' = produção, '2' = homologação"
+    ] = "2",
+    cert_password: Annotated[str | None, "Senha do certificado A1, se houver"] = None,
+    confirmation_token: Annotated[
+        str | None, "Token de confirmação obtido de uma chamada anterior pendente."
+    ] = None,
+) -> dict[str, object]:
+    """Emite uma Carta de Correção Eletrônica para um CT-e (evento `110110`, `CTeRecepcaoEventoV4`).
+
+    Constrói, assina (`build_cte_event_signer`, alvo `infEvento`) e submete
+    o evento de CC-e. `cStat=135` indica CC-e homologada `[Verified
+    locally]` — MOC CT-e Visão Geral v4.00 §6.4. Por força do Art. 58-B do
+    CONVÊNIO/SINIEF 06/89, a CC-e não pode alterar valores de impostos,
+    dados cadastrais das partes, ou a data de emissão/saída.
+
+    Exige confirmação em duas etapas (`ConfirmationGate`). Define
+    `BR_CTE_READ_ONLY=1` para desabilitar. `endpoint_override` é
+    obrigatório.
+
+    Retorna `cStat`/`xMotivo` ou `error`.
+    """
+    try:
+        ambiente = TipoAmbiente(tp_amb)
+    except ValueError:
+        return {"error": f"tp_amb inválido: {tp_amb!r}. Use '1' ou '2'."}
+
+    try:
+        assert_not_read_only(_READ_ONLY_ENV_VAR)
+    except PlatformError as exc:
+        return {"error": str(exc)}
+
+    gate = ConfirmationGate.get_default()
+    if not gate.is_confirmed(confirmation_token):
+        env_label = "produção" if ambiente == TipoAmbiente.PRODUCAO else "homologação"
+        return gate.pending_response(
+            action="br__correct_cte",
+            summary=(
+                f"Emitir Carta de Correção para o CT-e {ch_cte} via SEFAZ ({env_label}). "
+                "CC-e homologada em produção não pode ser retratada."
+            ),
+            token=confirmation_token,
+        )
+
+    try:
+        event_xml = build_correcao_event_xml(
+            ch_cte=ch_cte,
+            c_orgao=c_orgao,
+            tp_amb=tp_amb,
+            cnpj=cnpj,
+            dh_evento=dh_evento,
+            correcoes=correcoes,
+        )
+    except ValueError as exc:
+        return {"error": str(exc)}
+
+    signer = build_cte_event_signer(cert_path, cert_password)
+    try:
+        signed_event_xml = signer.sign(event_xml.encode("utf-8"))
+    except (ImportError, ValueError, OSError) as exc:
+        return {"error": str(exc)}
+
+    client = SefazCTeClient(
+        cuf=c_orgao,
+        tp_amb=ambiente,
+        cert_path=cert_path,
+        cert_password=cert_password,
+        service="evento",
+        endpoint_override=endpoint_override,
+    )
+    try:
+        result = await client.enviar_evento(signed_event_xml)
     except (PlatformError, ValueError, OSError) as exc:
         return {"error": str(exc)}
 

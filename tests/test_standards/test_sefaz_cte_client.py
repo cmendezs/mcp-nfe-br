@@ -10,9 +10,11 @@ import pytest
 from mcp_einvoicing_core.exceptions import PlatformError
 
 from mcp_nfe_br.models.invoice import TipoAmbiente
+from mcp_nfe_br.standards.cte_events import build_cancelamento_event_xml
 from mcp_nfe_br.standards.sefaz_cte_client import (
     SefazCTeClient,
     build_cte_consulta_envelope,
+    build_cte_evento_envelope,
     build_cte_recepcao_envelope,
     build_cte_status_servico_envelope,
     get_cte_endpoint,
@@ -61,6 +63,24 @@ def test_build_cte_recepcao_envelope_is_gzip_base64() -> None:
     encoded_payload = xml[start:end]
     decompressed = gzip.decompress(base64.b64decode(encoded_payload))
     assert decompressed == signed_xml
+
+
+def test_build_cte_evento_envelope_shape() -> None:
+    event_xml = build_cancelamento_event_xml(
+        ch_cte="35260711222333000181570010000000011212199180",
+        c_orgao="35",
+        tp_amb="2",
+        cnpj="11222333000181",
+        dh_evento="2026-07-03T10:00:00Z",
+        n_prot="135250000000001",
+        x_just="Erro de digitação, requer emissão de novo CT-e.",
+    ).encode("utf-8")
+    envelope = build_cte_evento_envelope(event_xml)
+    xml = envelope.decode("utf-8")
+
+    assert "cteRecepcaoEvento" in xml
+    assert "http://www.portalfiscal.inf.br/cte/wsdl/CTeRecepcaoEvento" in xml
+    assert "<evCancCTe>" in xml  # payload appended as XML, not gzip/base64
 
 
 # ---------------------------------------------------------------------------
@@ -215,6 +235,48 @@ async def test_autorizar_cte_mocked() -> None:
     assert result["status_code"] == 200
     assert result["cStat"] == "100"
     assert result["protCTe"]["nProt"] == "135250000000002"
+
+
+@pytest.mark.asyncio
+async def test_enviar_evento_mocked() -> None:
+    response = httpx.Response(
+        200,
+        content=b"""<?xml version="1.0" encoding="UTF-8"?>
+<soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope">
+  <soap:Body>
+    <cteResultMsg xmlns="http://www.portalfiscal.inf.br/cte/wsdl/CTeRecepcaoEvento">
+      <retEventoCTe xmlns="http://www.portalfiscal.inf.br/cte" versao="4.00">
+        <infEvento>
+          <tpAmb>2</tpAmb>
+          <cStat>135</cStat>
+          <xMotivo>Evento registrado e vinculado ao CT-e</xMotivo>
+        </infEvento>
+      </retEventoCTe>
+    </cteResultMsg>
+  </soap:Body>
+</soap:Envelope>""",
+    )
+    event_xml = build_cancelamento_event_xml(
+        ch_cte="35260711222333000181570010000000011212199180",
+        c_orgao="35",
+        tp_amb="2",
+        cnpj="11222333000181",
+        dh_evento="2026-07-03T10:00:00Z",
+        n_prot="135250000000001",
+        x_just="Erro de digitação, requer emissão de novo CT-e.",
+    ).encode("utf-8")
+    client = _MockTransportClient(
+        cuf="43",
+        tp_amb=TipoAmbiente.HOMOLOGACAO,
+        cert_path="/tmp/does-not-need-to-exist.p12",
+        service="evento",
+        endpoint_override="https://homolog.example/CTeRecepcaoEventoV4.asmx",
+        response=response,
+    )
+
+    result = await client.enviar_evento(event_xml)
+    assert result["status_code"] == 200
+    assert result["cStat"] == "135"
 
 
 @pytest.mark.asyncio
