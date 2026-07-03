@@ -4,6 +4,7 @@ from typing import Any
 
 from mcp_einvoicing_core import EInvoicingMCPServer
 
+from mcp_nfe_br.tools.cte import br__generate_cte, br__validate_cte_xml
 from mcp_nfe_br.tools.generation import (
     br__build_access_key,
     br__generate_nfe,
@@ -43,6 +44,8 @@ def _register_br_tools(mcp: Any) -> None:
     mcp.tool()(br__submit_nfse)
     mcp.tool()(br__consult_nfse_status)
     mcp.tool()(br__cancel_nfse)
+    mcp.tool()(br__generate_cte)
+    mcp.tool()(br__validate_cte_xml)
 
 
 mcp = EInvoicingMCPServer(

@@ -1,5 +1,19 @@
 # mcp-nfe-br — Release Notes
 
+## v0.6.0 (2026-07-03) — CT-e (modelo 57) Phase 3, v1 (BR-CTE-1..9)
+
+CT-e (Conhecimento de Transporte Eletrônico) work begins, per explicit user request (previously deferred, see `context-library/roadmap-2026.md`). v1 scope: modal rodoviário only, ICMS CST 00 (tributação normal) only, event tools deferred.
+
+- Spec bundle sourced from https://dfeportal.svrs.rs.gov.br/Cte/Documentos and bundled under `specs/cte/` (MOC CT-e 4.00, `PL_CTe_400.zip`, `PL_CTeDistDFe_100.zip`, 14 Notas Técnicas); XSDs extracted to `src/mcp_nfe_br/schemas/cte/`
+- **[BR-CTE-2..4]** `mcp_nfe_br.models.cte`: `BRCTeDocument(InvoiceDocument)` and CT-e party classes (`BRCteEmitente`, `BRCteRemetente`, `BRCteExpedidor`, `BRCteRecebedor`, `BRCteDestinatario`, `BRCteTomador`). Namespace `http://www.portalfiscal.inf.br/cte`, schema 4.00 `[Verified locally]`
+  - `buyer` overridden `Optional[InvoiceParty]=None` (no CT-e equivalent — `tomador` is the closest analog); `lines` stays empty (`v_prest.comp` used instead for freight-value components)
+- **[BR-CTE-5]** `mcp_nfe_br.utils.cte_access_key.build_cte_access_key` — 44-char `chCTe`, reuses the mod-11 `access_key_check_digit` already shipped for NF-e's `chNFe`
+- **[BR-CTE-6]** `mcp_nfe_br.standards.cte_signer.build_cte_signer` — wraps core `XMLDSigSigner` targeting `infCte` (RSA-SHA1, confirmed against MOC CT-e Visão Geral §3.2.4)
+- **[BR-CTE-8]** `mcp_nfe_br.standards.cte_generator.CTeGenerator` — modal rodoviário only for v1 (`infModal` is `<xs:any>` in the main schema, so other modais don't break main-document validation, but their payloads are unmodeled)
+- **[BR-CTE-9]** `mcp_nfe_br.validators.cte_xsd.CTeXSDValidator` — unsigned/signed auto-select, same pattern as `NFeXSDValidator`; two new tools `br__generate_cte`, `br__validate_cte_xml` (server now exposes 17 tools)
+- `context-library/countries/br.md` CT-e section and wire-formats table resolved from `[NEED: verify]` to `[Verified locally]`
+- Cancellation success `cStat` code and `infCTeAnu`/`tpCTe=2` mapping remain `[NEED: verify]` — not found in the bundled XSD enum or MOC text search
+
 ## v0.5.4 (2026-06-30) — Hardcoded UB12-10 activation dates
 
 - **[BR-INV-2]** Runtime warning in `br__generate_nfe` now states the verified `UB12-10` (Grupo UB IBS/CBS mandatory) activation dates instead of "Implementação futura"

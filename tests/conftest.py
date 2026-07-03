@@ -8,6 +8,22 @@ from pathlib import Path
 import pytest
 from mcp_einvoicing_core.models import InvoiceParty, TaxIdentifier
 
+from mcp_nfe_br.models.cte import (
+    BRCTeDocument,
+    BRCteEmitente,
+    BRCteICMS00,
+    BRCteImp,
+    BRCteInfCarga,
+    BRCteInfModal,
+    BRCteInfQ,
+    BRCteRemetente,
+    BRCteTomador,
+    BRCteVPrest,
+    CTeModal,
+    CTeModelo,
+    CTeTipoServico,
+    CTeTomadorPapel,
+)
 from mcp_nfe_br.models.invoice import (
     BREmitente,
     BREndereco,
@@ -209,3 +225,68 @@ def make_nfce(**overrides: object) -> BRInvoice:
     }
     data.update(overrides)
     return BRInvoice.model_validate(data)
+
+
+def make_cte_emitente(**overrides: object) -> BRCteEmitente:
+    data: dict[str, object] = {
+        "cnpj": "11222333000181",
+        "x_nome": "Transportadora Teste LTDA",
+        "ie": "123456789",
+        "endereco": make_endereco(),
+        "crt": RegimeTributario.REGIME_NORMAL,
+    }
+    data.update(overrides)
+    return BRCteEmitente.model_validate(data)
+
+
+def make_cte_remetente(**overrides: object) -> BRCteRemetente:
+    data: dict[str, object] = {
+        "cnpj": "11444777000161",
+        "x_nome": "Remetente Teste LTDA",
+        "endereco": make_endereco(),
+    }
+    data.update(overrides)
+    return BRCteRemetente.model_validate(data)
+
+
+def make_cte(**overrides: object) -> BRCTeDocument:
+    """Build a sample modelo-57 CT-e (modal rodoviário, tomador=remetente)."""
+    data: dict[str, object] = {
+        "document_type": "57",
+        "date": "2026-07-03",
+        "number": "1",
+        "seller": InvoiceParty(
+            tax_id=TaxIdentifier(country_code="BR", identifier="11222333000181"),
+            name="Transportadora Teste LTDA",
+        ),
+        "mod": CTeModelo.CTE,
+        "serie": "1",
+        "n_ct": "1",
+        "nat_op": "Prestação de serviço de transporte",
+        "tp_serv": CTeTipoServico.NORMAL,
+        "modal": CTeModal.RODOVIARIO,
+        "dh_emi": "2026-07-03T10:00:00-03:00",
+        "c_uf": "35",
+        "cfop": "5352",
+        "tp_amb": "2",
+        "c_mun_ini": "3550308",
+        "x_mun_ini": "Sao Paulo",
+        "uf_ini": "SP",
+        "c_mun_fim": "3304557",
+        "x_mun_fim": "Rio de Janeiro",
+        "uf_fim": "RJ",
+        "retira": "1",
+        "emitente": make_cte_emitente(),
+        "remetente": make_cte_remetente(),
+        "tomador": BRCteTomador(papel=CTeTomadorPapel.REMETENTE, ind_ie_toma="1"),
+        "v_prest": BRCteVPrest(v_tprest="100.00", v_rec="100.00"),
+        "imp": BRCteImp(icms=BRCteICMS00(v_bc="100.00", p_icms="12.00", v_icms="12.00")),
+        "inf_carga": BRCteInfCarga(
+            v_carga="1000.00",
+            pro_pred="Eletrônicos",
+            inf_q=[BRCteInfQ(c_unid="01", tp_med="PESO BRUTO", q_carga="100.0000")],
+        ),
+        "inf_modal": BRCteInfModal(modal=CTeModal.RODOVIARIO, rntrc="12345678"),
+    }
+    data.update(overrides)
+    return BRCTeDocument.model_validate(data)
