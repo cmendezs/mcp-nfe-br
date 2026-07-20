@@ -1,12 +1,12 @@
 {
-  "generated_at": "2026-06-15T08:57:41.226595+00:00",
+  "generated_at": "2026-07-15T13:32:38.214837+00:00",
   "pkg_name": "mcp-nfe-br",
-  "pkg_version": "0.3.0",
-  "core_version": "1.5.1",
+  "pkg_version": "0.6.2",
+  "core_version": "1.15.0",
   "core_version_compatible": true,
-  "exit_code": 0,
+  "exit_code": 1,
   "total_blocking": 0,
-  "total_warnings": 0,
+  "total_warnings": 7,
   "checks": [
     {
       "check_id": "CHECK_1",
@@ -15,7 +15,7 @@
       "skipped": false,
       "skip_reason": "",
       "blocking_count": 0,
-      "warning_count": 0,
+      "warning_count": 7,
       "findings": [
         {
           "check_id": "CHECK_1",
@@ -103,6 +103,13 @@
         },
         {
           "check_id": "CHECK_1",
+          "tag": "[MISSING]",
+          "severity": "WARNING",
+          "symbol": "mcp_einvoicing_core.base_server.Generic",
+          "message": "Core symbol 'Generic' is neither imported by mcp-nfe-br nor marked as an intentional override. Add to _INTENTIONAL_OVERRIDES if this is deliberate."
+        },
+        {
+          "check_id": "CHECK_1",
           "tag": "[OK]",
           "severity": "OK",
           "symbol": "mcp_einvoicing_core.base_server.InvoiceDocument",
@@ -131,6 +138,13 @@
         },
         {
           "check_id": "CHECK_1",
+          "tag": "[MISSING]",
+          "severity": "WARNING",
+          "symbol": "mcp_einvoicing_core.base_server.TypeVar",
+          "message": "Core symbol 'TypeVar' is neither imported by mcp-nfe-br nor marked as an intentional override. Add to _INTENTIONAL_OVERRIDES if this is deliberate."
+        },
+        {
+          "check_id": "CHECK_1",
           "tag": "[OVERRIDE]",
           "severity": "OK",
           "symbol": "mcp_einvoicing_core.base_server.abstractmethod",
@@ -138,10 +152,10 @@
         },
         {
           "check_id": "CHECK_1",
-          "tag": "[OVERRIDE]",
+          "tag": "[OK]",
           "severity": "OK",
           "symbol": "mcp_einvoicing_core.base_server.assert_not_read_only",
-          "message": "Intentionally overridden by mcp-nfe-br."
+          "message": "Imported and used."
         },
         {
           "check_id": "CHECK_1",
@@ -163,6 +177,20 @@
           "severity": "OK",
           "symbol": "mcp_einvoicing_core.digital_signature.BaseDocumentSigner",
           "message": "Intentionally overridden by mcp-nfe-br."
+        },
+        {
+          "check_id": "CHECK_1",
+          "tag": "[MISSING]",
+          "severity": "WARNING",
+          "symbol": "mcp_einvoicing_core.digital_signature.CAdESSigner",
+          "message": "Core symbol 'CAdESSigner' is neither imported by mcp-nfe-br nor marked as an intentional override. Add to _INTENTIONAL_OVERRIDES if this is deliberate."
+        },
+        {
+          "check_id": "CHECK_1",
+          "tag": "[MISSING]",
+          "severity": "WARNING",
+          "symbol": "mcp_einvoicing_core.digital_signature.CAdESSignerConfig",
+          "message": "Core symbol 'CAdESSignerConfig' is neither imported by mcp-nfe-br nor marked as an intentional override. Add to _INTENTIONAL_OVERRIDES if this is deliberate."
         },
         {
           "check_id": "CHECK_1",
@@ -404,10 +432,10 @@
         },
         {
           "check_id": "CHECK_1",
-          "tag": "[OVERRIDE]",
+          "tag": "[OK]",
           "severity": "OK",
           "symbol": "mcp_einvoicing_core.exceptions.PlatformError",
-          "message": "Intentionally overridden by mcp-nfe-br."
+          "message": "Imported and used."
         },
         {
           "check_id": "CHECK_1",
@@ -439,10 +467,10 @@
         },
         {
           "check_id": "CHECK_1",
-          "tag": "[OVERRIDE]",
+          "tag": "[OK]",
           "severity": "OK",
           "symbol": "mcp_einvoicing_core.http_client.AuthMode",
-          "message": "Intentionally overridden by mcp-nfe-br."
+          "message": "Imported and used."
         },
         {
           "check_id": "CHECK_1",
@@ -453,10 +481,10 @@
         },
         {
           "check_id": "CHECK_1",
-          "tag": "[OVERRIDE]",
+          "tag": "[OK]",
           "severity": "OK",
           "symbol": "mcp_einvoicing_core.http_client.BaseEInvoicingClient",
-          "message": "Intentionally overridden by mcp-nfe-br."
+          "message": "Imported and used."
         },
         {
           "check_id": "CHECK_1",
@@ -516,10 +544,10 @@
         },
         {
           "check_id": "CHECK_1",
-          "tag": "[OVERRIDE]",
+          "tag": "[OK]",
           "severity": "OK",
           "symbol": "mcp_einvoicing_core.http_client.PlatformError",
-          "message": "Intentionally overridden by mcp-nfe-br."
+          "message": "Imported and used."
         },
         {
           "check_id": "CHECK_1",
@@ -796,6 +824,13 @@
         },
         {
           "check_id": "CHECK_1",
+          "tag": "[MISSING]",
+          "severity": "WARNING",
+          "symbol": "mcp_einvoicing_core.schematron.SaxonSchematronValidator",
+          "message": "Core symbol 'SaxonSchematronValidator' is neither imported by mcp-nfe-br nor marked as an intentional override. Add to _INTENTIONAL_OVERRIDES if this is deliberate."
+        },
+        {
+          "check_id": "CHECK_1",
           "tag": "[OVERRIDE]",
           "severity": "OK",
           "symbol": "mcp_einvoicing_core.schematron.SchematronValidator",
@@ -835,6 +870,20 @@
           "severity": "OK",
           "symbol": "mcp_einvoicing_core.schematron.field",
           "message": "Intentionally overridden by mcp-nfe-br."
+        },
+        {
+          "check_id": "CHECK_1",
+          "tag": "[MISSING]",
+          "severity": "WARNING",
+          "symbol": "mcp_einvoicing_core.schematron.get_xslt_version",
+          "message": "Core symbol 'get_xslt_version' is neither imported by mcp-nfe-br nor marked as an intentional override. Add to _INTENTIONAL_OVERRIDES if this is deliberate."
+        },
+        {
+          "check_id": "CHECK_1",
+          "tag": "[MISSING]",
+          "severity": "WARNING",
+          "symbol": "mcp_einvoicing_core.schematron.load_schematron_validator",
+          "message": "Core symbol 'load_schematron_validator' is neither imported by mcp-nfe-br nor marked as an intentional override. Add to _INTENTIONAL_OVERRIDES if this is deliberate."
         },
         {
           "check_id": "CHECK_1",
@@ -1014,6 +1063,97 @@
           "severity": "OK",
           "symbol": "br__build_access_key",
           "message": "Tool 'br__build_access_key' is registered. (Assemble and check-digit a 44-character chNFe access key)"
+        },
+        {
+          "check_id": "CHECK_2",
+          "tag": "[OK]",
+          "severity": "OK",
+          "symbol": "br__submit_nfe",
+          "message": "Tool 'br__submit_nfe' is registered. (Submit a signed NF-e/NFC-e to SEFAZ NFeAutorizacao4 (autoriza\u00e7\u00e3o))"
+        },
+        {
+          "check_id": "CHECK_2",
+          "tag": "[OK]",
+          "severity": "OK",
+          "symbol": "br__consult_sefaz_status",
+          "message": "Tool 'br__consult_sefaz_status' is registered. (Check SEFAZ webservice availability (NFeStatusServico4))"
+        },
+        {
+          "check_id": "CHECK_2",
+          "tag": "[OK]",
+          "severity": "OK",
+          "symbol": "br__distribute_dfe",
+          "message": "Tool 'br__distribute_dfe' is registered. (Query/distribute DF-e via SEFAZ NFeDistribuicaoDFe)"
+        },
+        {
+          "check_id": "CHECK_2",
+          "tag": "[OK]",
+          "severity": "OK",
+          "symbol": "br__generate_nfse",
+          "message": "Tool 'br__generate_nfse' is registered. (Generate an unsigned DPS for NFS-e Nacional (ADN, schema v1.01))"
+        },
+        {
+          "check_id": "CHECK_2",
+          "tag": "[OK]",
+          "severity": "OK",
+          "symbol": "br__validate_nfse_xml",
+          "message": "Tool 'br__validate_nfse_xml' is registered. (Validate DPS or NFSe XML against the bundled ADN v1.01 XSD)"
+        },
+        {
+          "check_id": "CHECK_2",
+          "tag": "[OK]",
+          "severity": "OK",
+          "symbol": "br__sign_nfse",
+          "message": "Tool 'br__sign_nfse' is registered. (Apply ICP-Brasil XML-DSig signature to an NFS-e Nacional DPS (infDPS))"
+        },
+        {
+          "check_id": "CHECK_2",
+          "tag": "[OK]",
+          "severity": "OK",
+          "symbol": "br__generate_cte",
+          "message": "Tool 'br__generate_cte' is registered. (Generate an unsigned CT-e 4.00 XML document (modal rodovi\u00e1rio, ICMS CST 00))"
+        },
+        {
+          "check_id": "CHECK_2",
+          "tag": "[OK]",
+          "severity": "OK",
+          "symbol": "br__validate_cte_xml",
+          "message": "Tool 'br__validate_cte_xml' is registered. (Validate CT-e 4.00 XML against the bundled PL_CTe_400 XSD)"
+        },
+        {
+          "check_id": "CHECK_2",
+          "tag": "[OK]",
+          "severity": "OK",
+          "symbol": "br__consult_cte_sefaz_status",
+          "message": "Tool 'br__consult_cte_sefaz_status' is registered. (Check SEFAZ CT-e webservice availability (CTeStatusServicoV4))"
+        },
+        {
+          "check_id": "CHECK_2",
+          "tag": "[OK]",
+          "severity": "OK",
+          "symbol": "br__consult_cte",
+          "message": "Tool 'br__consult_cte' is registered. (Query a CT-e's status by access key (CTeConsultaV4))"
+        },
+        {
+          "check_id": "CHECK_2",
+          "tag": "[OK]",
+          "severity": "OK",
+          "symbol": "br__submit_cte",
+          "message": "Tool 'br__submit_cte' is registered. (Submit a signed CT-e to SEFAZ CTeRecepcaoSincV4 (autoriza\u00e7\u00e3o))"
+        },
+        {
+          "check_id": "CHECK_2",
+          "tag": "[OK]",
+          "severity": "OK",
+          "symbol": "br__cancel_cte",
+          "message": "Tool 'br__cancel_cte' is registered. (Request CT-e cancellation via event 110111 (CTeRecepcaoEventoV4))"
+        },
+        {
+          "check_id": "CHECK_2",
+          "tag": "[OK]",
+          "severity": "OK",
+          "symbol": "br__correct_cte",
+          "message": "Tool 'br__correct_cte' is registered. (Issue a Carta de Corre\u00e7\u00e3o Eletr\u00f4nica via event 110110 (CTeRecepcaoEventoV4))"
         }
       ]
     },
@@ -1112,7 +1252,7 @@
           "tag": "[OK]",
           "severity": "OK",
           "symbol": "mcp-einvoicing-core",
-          "message": "Installed: 1.5.1 | Declared range: >=1.5.1,<2.0.0 | Compatible: True"
+          "message": "Installed: 1.15.0 | Declared range: >=1.13.1,<2.0.0 | Compatible: True"
         }
       ]
     },
@@ -1159,6 +1299,102 @@
           "severity": "OK",
           "symbol": "utils.document_ids.validate_cnpj",
           "message": "validate_cnpj is present."
+        }
+      ]
+    },
+    {
+      "check_id": "CHECK_6",
+      "name": "NFSeDocument structural checks",
+      "passed": true,
+      "skipped": false,
+      "skip_reason": "",
+      "blocking_count": 0,
+      "warning_count": 0,
+      "findings": [
+        {
+          "check_id": "CHECK_6",
+          "tag": "[OK]",
+          "severity": "OK",
+          "symbol": "NFSeDocument",
+          "message": "NFSeDocument correctly subclasses InvoiceDocument (non-EN16931 pathway)."
+        },
+        {
+          "check_id": "CHECK_6",
+          "tag": "[OK]",
+          "severity": "OK",
+          "symbol": "NFSeDocument._IS_EN16931_FAMILY",
+          "message": "_IS_EN16931_FAMILY is False (non-EN16931 pathway confirmed)."
+        },
+        {
+          "check_id": "CHECK_6",
+          "tag": "[OK]",
+          "severity": "OK",
+          "symbol": "NFSeGenerator",
+          "message": "NFSeGenerator subclasses BaseDocumentGenerator."
+        },
+        {
+          "check_id": "CHECK_6",
+          "tag": "[OK]",
+          "severity": "OK",
+          "symbol": "NFSeXSDValidator",
+          "message": "NFSeXSDValidator subclasses BaseDocumentValidator."
+        }
+      ]
+    },
+    {
+      "check_id": "CHECK_7",
+      "name": "Parallel-implementation detector",
+      "passed": true,
+      "skipped": false,
+      "skip_reason": "",
+      "blocking_count": 0,
+      "warning_count": 0,
+      "findings": [
+        {
+          "check_id": "CHECK_7",
+          "tag": "[OK]",
+          "severity": "OK",
+          "symbol": "*",
+          "message": "No parallel implementations of core capabilities detected."
+        }
+      ]
+    },
+    {
+      "check_id": "CHECK_8",
+      "name": "BRCTeDocument structural checks",
+      "passed": true,
+      "skipped": false,
+      "skip_reason": "",
+      "blocking_count": 0,
+      "warning_count": 0,
+      "findings": [
+        {
+          "check_id": "CHECK_8",
+          "tag": "[OK]",
+          "severity": "OK",
+          "symbol": "BRCTeDocument",
+          "message": "BRCTeDocument correctly subclasses InvoiceDocument (non-EN16931 pathway)."
+        },
+        {
+          "check_id": "CHECK_8",
+          "tag": "[OK]",
+          "severity": "OK",
+          "symbol": "CTeGenerator",
+          "message": "CTeGenerator subclasses BaseDocumentGenerator."
+        },
+        {
+          "check_id": "CHECK_8",
+          "tag": "[OK]",
+          "severity": "OK",
+          "symbol": "CTeXSDValidator",
+          "message": "CTeXSDValidator subclasses BaseDocumentValidator."
+        },
+        {
+          "check_id": "CHECK_8",
+          "tag": "[OK]",
+          "severity": "OK",
+          "symbol": "SefazCTeClient",
+          "message": "SefazCTeClient subclasses BaseEInvoicingClient."
         }
       ]
     }
