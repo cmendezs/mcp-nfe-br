@@ -91,6 +91,12 @@ _INTENTIONAL_OVERRIDES: dict[str, set[str]] = {
         "Field",
         "scrub",
         "InvoiceParty",
+        # OVERRIDE-REASON: Generic/TypeVar (typing) are used internally by
+        # base_server.py to parameterize BaseDocumentGenerator/BaseDocumentValidator
+        # over document types; mcp-nfe-br's own classes subclass the concrete
+        # generics directly and do not need the typing symbols themselves.
+        "Generic",
+        "TypeVar",
     },
     "mcp_einvoicing_core.digital_signature": {
         # OVERRIDE-REASON: NF-e/NFC-e use ICP-Brasil A1 certificates and plain
@@ -100,6 +106,11 @@ _INTENTIONAL_OVERRIDES: dict[str, set[str]] = {
         "BaseDocumentSigner",
         "XAdESSignerConfig",
         "XAdESEPESSigner",
+        # OVERRIDE-REASON: NF-e/NFC-e signing uses XMLDSigSigner exclusively
+        # (see reason above); CAdES (PKCS#7) is FatturaPA's signing scheme, not
+        # ICP-Brasil's — CAdESSigner/CAdESSignerConfig are not applicable here.
+        "CAdESSigner",
+        "CAdESSignerConfig",
         # OVERRIDE-REASON: load_certificate_der (core v1.16.0) is a helper for
         # country packages building custom auth claims from a cert's public
         # bytes (e.g. ES FACe's JWS "username" claim); BR has no such flow.
@@ -168,6 +179,11 @@ _INTENTIONAL_OVERRIDES: dict[str, set[str]] = {
         # OVERRIDE-REASON: JWSConfig (core v1.16.0) configures RS256/x5c JWT
         # auth for platforms like ES FACe; SefazClient uses AuthMode.MTLS only.
         "JWSConfig",
+        # OVERRIDE-REASON: compute_retry_delay (core v1.16.2) backs
+        # BaseEInvoicingClient._request's retry loop; SefazClient._post_soap
+        # bypasses _request entirely (raw SOAP body, custom Content-Type — see
+        # sefaz_client.py docstring) and does a single POST with no retry loop.
+        "compute_retry_delay",
         "Any",
         "BaseModel",
         "BaseSettings",
@@ -177,10 +193,6 @@ _INTENTIONAL_OVERRIDES: dict[str, set[str]] = {
         "field_validator",
         "parsedate_to_datetime",
         "urlparse",
-        # OVERRIDE-REASON: compute_retry_delay (core v1.16.1) is an internal
-        # retry-delay helper used by http_client.py/signer_service.py
-        # themselves; country packages get retry behaviour transparently.
-        "compute_retry_delay",
     },
     "mcp_einvoicing_core.models": {
         # OVERRIDE-REASON: stdlib/third-party re-exports in models; mcp-nfe-br
@@ -244,6 +256,13 @@ _INTENTIONAL_OVERRIDES: dict[str, set[str]] = {
         "BaseJSONValidator",
         "ValidationMessage",
         "ValidationResult",
+        # OVERRIDE-REASON: SaxonSchematronValidator/get_xslt_version/
+        # load_schematron_validator are Schematron/SVRL-only helpers (Saxon XSLT
+        # execution); NF-e/NFC-e use XSD-only validation, same reason as the
+        # other schematron.py symbols excluded above.
+        "SaxonSchematronValidator",
+        "get_xslt_version",
+        "load_schematron_validator",
         "ABC",
         "abstractmethod",
         "Path",
