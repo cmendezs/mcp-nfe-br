@@ -1,5 +1,26 @@
 # mcp-nfe-br — Release Notes
 
+## v0.6.3 (2026-08-11) — Restore NFS-e generation (BLOCKING), CT-e/gate hardening
+
+Implements all 13 findings from the BR country audit 2026-07 (`audit/2026-07-audit-br.md`), originally scoped as three sprints (v0.6.3/v0.6.4/v0.6.5) and bundled into this single release since all were implemented together and none are breaking changes.
+
+- **[BR-NFSE-C1 BLOCKING]** `NFSeGenerator` was abstract (missing `get_format_name`/`get_country_code`), so `br__generate_nfse` raised an uncaught `TypeError` on every call — NFS-e Nacional generation had never actually worked since it shipped in v0.5.0. Now implements all three abstract methods; `br__generate_nfse`'s `except` broadened to catch model/type errors cleanly. New `tests/test_standards/test_nfse_generator.py`
+- **[BR-NFSE-C2 HIGH]** DPS `<end>` violated `TCEndereco` — missing the mandatory `endNac`/`endExt` choice wrapper, and emitted `xMun`/`UF`/`fone`/`cPais`/`xPais` which are not `TCEndereco` members at all. `_build_endereco` rewritten to emit `<endNac><cMun/><CEP/></endNac>` then `xLgr, nro, xCpl?, xBairro`; foreign addresses (`endExt`) now raise `DocumentGenerationError` since `TCEnderExt`'s required fields (`cEndPost`/`xCidade`/`xEstProvReg`) are not modeled
+- **[BR-NFSE-C3 HIGH]** DPS `regTrib` omitted the mandatory `regEspTrib` (`TCRegTrib` has no `minOccurs` on it). `NFSeRegimeTributacao.reg_esp_trib` made required, default `"0"` (Nenhum)
+- **[BR-NFSE-C4 HIGH]** DPS `tribMun` emitted `pAliq` before `tpRetISSQN`; schema order is `tpRetISSQN` then `pAliq`. Reordered
+- **[BR-NFSE-C5 MEDIUM]** DPS `dCompet` was emitted `AAAAMMDD`; `TSData` requires dashed `YYYY-MM-DD`. New `_normalize_d_compet` defensively converts 8-digit input
+- **[BR-NFSE-C6 MEDIUM]** Bundled `TSSerieDPS` pattern `^0{0,4}\d{1,5}$` had literal `^`/`$` characters (XSD/libxml2 implicit-anchor semantics), rejecting every real `serie` value — stripped in `tiposSimples_v1.01.xsd` as a documented local schema derivative (`specs/nfse/MANIFEST.md`)
+- New `tests/test_validators/test_nfse_xsd.py` — a single fully-populated DPS generate→XSD round-trip that guards C2 through C6 together
+- **[BR-CTE-T1 MEDIUM]** CT-e access-key/party layers disagreed on alphanumeric CNPJ: `BRCteParty` accepted it, `build_cte_access_key`/`check_chave_acesso_format` rejected it. Decided: reject alphanumeric CNPJ at `BRCteParty.check_cnpj` — the bundled CT-e v4.00 schema's `TCnpj` is `[0-9]{14}` only, unlike NF-e's alphanumeric-capable PL_010d. All three layers now agree
+- **[BR-T2 MEDIUM]** Alphanumeric CNPJ check-digit algorithm promoted from `[Unverified]` to `[Verified locally]` against the primary source (NT Conjunta DFe 2025.001 v1.00, §2 worked example p.6 — not "Annex I" as previously assumed). New golden fixture `tests/fixtures/cnpj_alfanumerico_ntcj_2025_001.json`
+- **[BR-L1 MEDIUM]** `br__generate_cte` called `BRCTeDocument.model_validate` outside `try/except`, leaking raw pydantic `ValidationError` (with input values) to the MCP client. Wrapped, mirroring `br__generate_nfse`
+- **[BR-L3 MEDIUM, gate gap]** `audit_vs_core.py` CHECK 6/8 verified generator *subclassing* but not *concreteness*, so BR-NFSE-C1 (a BLOCKING defect) passed the gate green. New `_assert_concrete` helper adds `inspect.isabstract(...) is False` assertions; new **CHECK 9** runs a functional generate→XSD smoke check per sub-format (NF-e, NFS-e, CT-e) — the check that would have caught BR-NFSE-C1..C5
+- **[BR-L2 LOW]** Gate `_REQUIRED_TOOL_CATEGORIES` omitted 4 registered tools (`br__sign_nfe`, `br__submit_nfse`, `br__consult_nfse_status`, `br__cancel_nfse`); added
+- **[BR-S1 LOW]** `BR_READ_ONLY` did not gate CT-e mutating tools (only `BR_CTE_READ_ONLY` did). New `_assert_cte_not_read_only()` helper: CT-e submit/cancel/correct now honor **either** variable; `server.json`/README descriptions corrected
+- **[BR-S2 LOW]** CT-e event XML (`cte_events`) was only checked for well-formedness in tests. New payload-level XSD validation against `evCancCTe_v4.00.xsd`/`evCCeCTe_v4.00.xsd`
+
+282 tests passing (up from 264); audit gate 0 blocking.
+
 ## v0.6.2 (2026-07-03) — CT-e events, audit CHECK 8, docs (BR-CTE-14..17)
 
 - **[BR-CTE-14]** New `mcp_nfe_br.standards.cte_events` module — builds `eventoCTe` XML for cancelamento (event `110111`); `build_cte_event_signer` added to `cte_signer.py` (targets `infEvento`); `enviar_evento` added to `SefazCTeClient` (`CTeRecepcaoEventoV4`, plain uncompressed XML unlike `CTeRecepcaoSincV4`). New gated tool `br__cancel_cte`
