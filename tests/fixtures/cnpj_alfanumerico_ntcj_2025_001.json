@@ -1,0 +1,17 @@
+{
+  "source": "Nota Técnica Conjunta 2025.001 (ENCAT/DFe) v1.00, 25 de abril de 2025 — §2 worked example (page 6); JS reference implementation in Anexo I (page 14)",
+  "source_file": "specs/nfe/DFe NTCJ 2025.001_CNPJ Alfa_v1.00.pdf",
+  "description": "First-party golden value for the alphanumeric CNPJ check-digit algorithm (mod-11, ord(char)-48, weights 2..9 cycling from the right), plus a numeric control value for regression.",
+  "alphanumeric": {
+    "formatted": "12.ABC.345/01DE-35",
+    "root_and_branch": "12ABC34501DE",
+    "check_digits": "35"
+  },
+  "alphanumeric_invalid_check_digit": {
+    "formatted": "12.ABC.345/01DE-00"
+  },
+  "numeric_control": {
+    "formatted": "11.444.777/0001-61",
+    "digits": "11444777000161"
+  }
+}

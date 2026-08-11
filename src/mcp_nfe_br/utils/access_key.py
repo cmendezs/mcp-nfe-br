@@ -10,10 +10,14 @@ context-library/countries/br.md.
 
 The check-digit algorithm (mod-11, weights 2..9 cycling from the rightmost
 character, each character converted via ``ord(char) - 48``) is
-`[Unverified]` — sourced from third-party tax-compliance writeups, not the
-primary "NT Conjunta DFe 2025.001" (not in the local spec bundle). Re-verify
-against the primary source before relying on this for production submissions.
-Cover with golden-value tests from a known authorized NF-e.
+`[Verified locally — NT Conjunta DFe 2025.001 v1.00, Anexo II (Visual Basic
+.NET reference implementation, p.15)]`, bundled at
+``specs/nfe/DFe NTCJ 2025.001_CNPJ Alfa_v1.00.pdf``. The chave-de-acesso DV
+algorithm there is the same ord(char)-48/mod-11 construction used for the
+CNPJ check digit itself (``document_ids.py``), applied to the full
+43-character key body instead. No golden authorized-NF-e access key is
+bundled; the CNPJ-segment algorithm is covered by the golden fixture in
+``tests/fixtures/cnpj_alfanumerico_ntcj_2025_001.json``.
 """
 
 from __future__ import annotations

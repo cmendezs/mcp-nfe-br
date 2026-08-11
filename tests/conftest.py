@@ -35,6 +35,22 @@ from mcp_nfe_br.models.invoice import (
     TipoAmbiente,
     TipoOperacao,
 )
+from mcp_nfe_br.models.nfse import (
+    NFSeCServ,
+    NFSeDocument,
+    NFSeEndereco,
+    NFSeLocPrest,
+    NFSeOpSimplesNacional,
+    NFSePrestador,
+    NFSeRegimeTributacao,
+    NFSeServ,
+    NFSeTipoRetISSQN,
+    NFSeTomador,
+    NFSeTotTrib,
+    NFSeTribISSQN,
+    NFSeTribMunicipal,
+    NFSeValores,
+)
 
 FIXTURES_DIR = Path(__file__).parent / "fixtures"
 
@@ -290,3 +306,78 @@ def make_cte(**overrides: object) -> BRCTeDocument:
     }
     data.update(overrides)
     return BRCTeDocument.model_validate(data)
+
+
+def make_nfse_endereco(**overrides: object) -> NFSeEndereco:
+    data: dict[str, object] = {
+        "x_lgr": "Rua Teste",
+        "nro": "123",
+        "x_bairro": "Centro",
+        "c_mun": "3550308",
+        "cep": "01000000",
+    }
+    data.update(overrides)
+    return NFSeEndereco.model_validate(data)
+
+
+def make_nfse_prestador(**overrides: object) -> NFSePrestador:
+    data: dict[str, object] = {
+        "cnpj": "11222333000181",
+        "x_nome": "Prestador Teste LTDA",
+        "end": make_nfse_endereco(),
+        "reg_trib": NFSeRegimeTributacao(
+            op_simp_nac=NFSeOpSimplesNacional.NAO_OPTANTE, reg_esp_trib="0"
+        ),
+    }
+    data.update(overrides)
+    return NFSePrestador.model_validate(data)
+
+
+def make_nfse_tomador(**overrides: object) -> NFSeTomador:
+    data: dict[str, object] = {
+        "cpf": "11144477735",
+        "x_nome": "Tomador Teste",
+        "end": make_nfse_endereco(x_lgr="Avenida Teste", nro="456"),
+    }
+    data.update(overrides)
+    return NFSeTomador.model_validate(data)
+
+
+def make_nfse(**overrides: object) -> NFSeDocument:
+    """Build a fully-populated DPS: prestador + tomador (national addresses),
+    regTrib with regEspTrib, tribMun with pAliq, dCompet dashed."""
+    data: dict[str, object] = {
+        "document_type": "DPS",
+        "date": "2026-07-01",
+        "number": "1",
+        "seller": InvoiceParty(
+            tax_id=TaxIdentifier(country_code="BR", identifier="11222333000181"),
+            name="Prestador Teste LTDA",
+        ),
+        "buyer": InvoiceParty(
+            tax_id=TaxIdentifier(country_code="BR", identifier="11144477735"),
+            name="Tomador Teste",
+        ),
+        "tp_amb": TipoAmbiente.HOMOLOGACAO,
+        "serie": "1",
+        "n_dps": "1",
+        "d_compet": "2026-07-01",
+        "c_loc_emi": "3550308",
+        "prest": make_nfse_prestador(),
+        "toma": make_nfse_tomador(),
+        "serv": NFSeServ(
+            loc_prest=NFSeLocPrest(c_loc_prestacao="3550308"),
+            c_serv=NFSeCServ(c_trib_nac="010101", x_desc_serv="Serviço de teste"),
+        ),
+        "valores": NFSeValores(
+            v_serv="100.00",
+            trib_mun=NFSeTribMunicipal(
+                trib_issqn=NFSeTribISSQN.TRIBUTAVEL,
+                tp_ret_issqn=NFSeTipoRetISSQN.NAO_RETIDO,
+                p_aliq="5.00",
+            ),
+            tot_trib=NFSeTotTrib(ind_tot_trib="0"),
+        ),
+    }
+    data.update(overrides)
+    return NFSeDocument.model_validate(data)

@@ -32,6 +32,24 @@ Key structural facts `[Verified locally — tiposSimples_v1.01.xsd, tiposComplex
 - **NFSe ID format**: `NFS[0-9]{50}` (53 chars) — "NFS" + cLocEmi(7) + tpAmb(1) + tpInscFederal(1) + inscFederal(14) + nNFSe(13) + anoMes(4) + codNum(9) + DV(1)
 - **Signature algorithm**: `[Unverified — not specified in XSD; assume RSA-SHA1 per XMLDSigSigner defaults pending NFS-e manual review]`
 
+### Local deviation: `TSSerieDPS` anchor stripping (roadmap BR-NFSE-C6)
+
+The upstream `tiposSimples_v1.01.xsd` defines `TSSerieDPS` with pattern
+`^0{0,4}\d{1,5}$`. W3C XSD `xs:pattern` facets are implicitly anchored to the
+whole string, so `^` and `$` inside the pattern are parsed as **literal
+characters**, not anchors — libxml2 (behind `NFSeXSDValidator`) enforces this
+strictly, rejecting every realistic `serie` value (e.g. `"1"`, `"00001"`)
+because none of them literally contain `^`/`$` characters. This is a
+well-known class of upstream XSD-authoring defect, not a bug in this package.
+
+The bundled `tiposSimples_v1.01.xsd` has been locally patched to strip the
+leading `^` and trailing `$`, yielding `0{0,4}\d{1,5}` — semantically
+equivalent to the author's intent under implicit XSD anchoring, and the only
+anchored pattern found anywhere in the NFS-e v1.01 bundle (NF-e and CT-e
+schemas have none). This is a documented local derivative of the upstream
+schema, not a re-download of a corrected file — no such correction has been
+published by ADN as of this writing.
+
 ## PDFs (gitignored)
 
 | File | Covers |

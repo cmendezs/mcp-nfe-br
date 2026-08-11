@@ -97,24 +97,38 @@ def _wrap(tag: str, inner: str) -> str:
     return xml_element(tag, inner, unsafe=True)
 
 
+def _normalize_d_compet(value: str) -> str:
+    """Normalize `dCompet` to `TSData`'s dashed `YYYY-MM-DD` form.
+
+    `TSData`'s pattern is dashed ISO despite the XSD's own annotation text
+    saying "(AAAAMMDD)"; an 8-digit `AAAAMMDD` input is defensively converted.
+    `[Verified locally — tiposSimples_v1.01.xsd TSData]`
+    """
+    if len(value) == 8 and value.isdigit():
+        return f"{value[0:4]}-{value[4:6]}-{value[6:8]}"
+    return value
+
+
 def _build_endereco(end: NFSeEndereco) -> str:
+    """Build `<end>` per `TCEndereco`: choice(endNac|endExt), xLgr, nro, xCpl?, xBairro.
+
+    `endExt` requires `cPais, cEndPost, xCidade, xEstProvReg` (`TCEnderExt`), none of
+    which are modeled on `NFSeEndereco` besides `c_pais`; only the national path
+    (`endNac` = `cMun, CEP`) is emitted `[NEED: endExt not modeled]`.
+    """
+    if end.c_pais:
+        raise DocumentGenerationError(
+            "Endereço no exterior (endExt) ainda não é suportado "
+            "[NEED: TCEnderExt requer cEndPost/xCidade/xEstProvReg, não modelados]."
+        )
+    end_choice = _wrap("endNac", _el("cMun", end.c_mun) + _el("CEP", end.cep))
     parts = [
+        end_choice,
         _el("xLgr", end.x_lgr),
         _el("nro", end.nro),
         _opt("xCpl", end.x_cpl),
-        _opt("xBairro", end.x_bairro),
-        _el("cMun", end.c_mun),
-        _el("xMun", end.x_mun),
+        _el("xBairro", end.x_bairro),
     ]
-    if end.uf:
-        parts.append(_el("UF", end.uf))
-    if end.cep:
-        parts.append(_el("CEP", end.cep))
-    if end.c_pais and end.x_pais:
-        parts.append(_el("cPais", end.c_pais))
-        parts.append(_el("xPais", end.x_pais))
-    if end.fone:
-        parts.append(_el("fone", end.fone))
     return _wrap("end", "".join(p for p in parts if p))
 
 
@@ -123,8 +137,7 @@ def _build_reg_trib(prest: NFSePrestador) -> str:
     parts: list[str] = [_el("opSimpNac", rt.op_simp_nac.value)]
     if rt.reg_ap_trib_sn is not None:
         parts.append(_el("regApTribSN", rt.reg_ap_trib_sn))
-    if rt.reg_esp_trib is not None:
-        parts.append(_el("regEspTrib", rt.reg_esp_trib))
+    parts.append(_el("regEspTrib", rt.reg_esp_trib))
     return _wrap("regTrib", "".join(parts))
 
 
@@ -186,10 +199,10 @@ def _build_c_serv(cs: NFSeCServ) -> str:
 
 
 def _build_trib_mun(t: NFSeTribMunicipal) -> str:
-    parts: list[str] = [_el("tribISSQN", t.trib_issqn.value)]
+    """Build `<tribMun>` per `TCTribMunicipal` order: tribISSQN, …, tpRetISSQN, pAliq?."""
+    parts: list[str] = [_el("tribISSQN", t.trib_issqn.value), _el("tpRetISSQN", t.tp_ret_issqn.value)]
     if t.p_aliq is not None:
         parts.append(_el("pAliq", t.p_aliq))
-    parts.append(_el("tpRetISSQN", t.tp_ret_issqn.value))
     return _wrap("tribMun", "".join(parts))
 
 
@@ -229,6 +242,15 @@ class NFSeGenerator(BaseDocumentGenerator[InvoiceDocument]):
     (``nfse_signer.build_nfse_signer``) before submitting to ADN.
     """
 
+    def get_format_name(self) -> str:
+        return "NFS-e DPS 1.01"
+
+    def get_country_code(self) -> str:
+        return "BR"
+
+    def get_namespace(self) -> str:
+        return _NAMESPACE
+
     def generate(self, document: InvoiceDocument) -> str:
         if not isinstance(document, NFSeDocument):
             raise DocumentGenerationError(
@@ -249,7 +271,7 @@ class NFSeGenerator(BaseDocumentGenerator[InvoiceDocument]):
             _el("verAplic", doc.ver_aplic),
             _el("serie", doc.serie),
             _el("nDPS", doc.n_dps),
-            _el("dCompet", doc.d_compet),
+            _el("dCompet", _normalize_d_compet(doc.d_compet)),
             _el("tpEmit", doc.tp_emit.value),
             _el("cLocEmi", doc.c_loc_emi),
             _build_prestador(doc.prest),

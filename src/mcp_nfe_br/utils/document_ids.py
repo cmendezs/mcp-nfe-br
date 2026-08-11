@@ -10,12 +10,14 @@ all-numeric form (``[0-9]{14}``, PL_010c) and the new alphanumeric form
 both schema packages, see specs/nfe/MANIFEST.md]
 
 The alphanumeric check-digit algorithm (mod-11, weighted, with each
-character converted via ``ord(char) - 48``) is `[Unverified]` — sourced
-from third-party tax-compliance writeups, not the primary "NT Conjunta DFe
-2025.001" (not in the local spec bundle). [NEED: verify against NT Conjunta
-DFe 2025.001]. Re-verify against the primary source before relying on this
-for production validation. See context-library/countries/br.md "Known gaps
-and open items".
+character converted via ``ord(char) - 48``) is
+`[Verified locally — NT Conjunta DFe 2025.001 v1.00, §2 worked example, p.6]`
+against the primary source, bundled at
+``specs/nfe/DFe NTCJ 2025.001_CNPJ Alfa_v1.00.pdf`` (the algorithm's
+reference JavaScript implementation is also bundled there, in Anexo I).
+The golden value from that worked example ("12.ABC.345/01DE-35") is pinned
+in ``tests/fixtures/cnpj_alfanumerico_ntcj_2025_001.json`` and asserted in
+``tests/test_utils/test_document_ids.py``.
 
 The validation algorithms themselves now live in
 ``mcp_einvoicing_core.models.TaxIdentifier.validate_br_cpf`` /

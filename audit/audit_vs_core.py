@@ -13,12 +13,14 @@ Exit codes:
 CHECK 1 and CHECK 4 are delegated to mcp_einvoicing_core.audit.
 CHECK 2 (tool registry), CHECK 3 (BRInvoice field alignment), CHECK 5
 (BR-specific structural), CHECK 6 (NFSeDocument structural), CHECK 7
-(parallel-implementation detector), and CHECK 8 (BRCTeDocument structural,
-BR-CTE-16) are implemented here.
+(parallel-implementation detector), CHECK 8 (BRCTeDocument structural,
+BR-CTE-16), and CHECK 9 (functional generate→XSD smoke check, BR-L3)
+are implemented here.
 """
 
 from __future__ import annotations
 
+import inspect
 import json
 import sys
 from pathlib import Path
@@ -175,6 +177,10 @@ _INTENTIONAL_OVERRIDES: dict[str, set[str]] = {
         "field_validator",
         "parsedate_to_datetime",
         "urlparse",
+        # OVERRIDE-REASON: compute_retry_delay (core v1.16.1) is an internal
+        # retry-delay helper used by http_client.py/signer_service.py
+        # themselves; country packages get retry behaviour transparently.
+        "compute_retry_delay",
     },
     "mcp_einvoicing_core.models": {
         # OVERRIDE-REASON: stdlib/third-party re-exports in models; mcp-nfe-br
@@ -303,6 +309,7 @@ _REQUIRED_TOOL_CATEGORIES: dict[str, str] = {
     "br__validate_cpf": "Validate a Brazilian CPF (individual taxpayer ID)",
     "br__validate_cnpj": "Validate a Brazilian CNPJ (company tax ID)",
     "br__generate_nfe": "Generate an unsigned NF-e/NFC-e 4.00 XML document",
+    "br__sign_nfe": "Apply ICP-Brasil XML-DSig signature to an NF-e/NFC-e 4.00 document",
     "br__validate_nfe_xml": "Validate NF-e/NFC-e 4.00 XML against the bundled PL_010d XSD",
     "br__build_access_key": "Assemble and check-digit a 44-character chNFe access key",
     "br__submit_nfe": "Submit a signed NF-e/NFC-e to SEFAZ NFeAutorizacao4 (autorização)",
@@ -312,6 +319,9 @@ _REQUIRED_TOOL_CATEGORIES: dict[str, str] = {
     "br__generate_nfse": "Generate an unsigned DPS for NFS-e Nacional (ADN, schema v1.01)",
     "br__validate_nfse_xml": "Validate DPS or NFSe XML against the bundled ADN v1.01 XSD",
     "br__sign_nfse": "Apply ICP-Brasil XML-DSig signature to an NFS-e Nacional DPS (infDPS)",
+    "br__submit_nfse": "Submit a signed DPS to the ADN for NFS-e Nacional issuance",
+    "br__consult_nfse_status": "Query an NFS-e's status by access key (chNFSe) via the ADN",
+    "br__cancel_nfse": "Request NFS-e cancellation via the ADN",
     # CT-e (modelo 57) tools — Phase 3, v1 (BR-CTE-9/12/14/15)
     "br__generate_cte": "Generate an unsigned CT-e 4.00 XML document (modal rodoviário, ICMS CST 00)",
     "br__validate_cte_xml": "Validate CT-e 4.00 XML against the bundled PL_CTe_400 XSD",
@@ -555,6 +565,40 @@ def run_check_5() -> CheckResult:
 # ---------------------------------------------------------------------------
 
 
+def _assert_concrete(result: CheckResult, check_id: str, cls: type, symbol: str) -> None:
+    """Append a finding asserting *cls* is instantiable, not merely a correct subclass.
+
+    `issubclass(cls, BaseDocumentGenerator)` is `True` even for a class that fails to
+    implement all abstract methods — BR-NFSE-C1 (NFSeGenerator missing get_format_name/
+    get_country_code) passed the gate for exactly this reason. `inspect.isabstract`
+    catches it directly (BR-L3).
+    """
+    if inspect.isabstract(cls):
+        missing = sorted(getattr(cls, "__abstractmethods__", ()))
+        result.findings.append(
+            CheckFinding(
+                check_id=check_id,
+                tag="[ABSTRACT]",
+                severity=SEVERITY_BLOCKING,
+                symbol=symbol,
+                message=(
+                    f"{symbol} is abstract and cannot be instantiated "
+                    f"(missing: {', '.join(missing) or 'unknown'}) — a BR-NFSE-C1-class defect."
+                ),
+            )
+        )
+    else:
+        result.findings.append(
+            CheckFinding(
+                check_id=check_id,
+                tag="[OK]",
+                severity=SEVERITY_OK,
+                symbol=symbol,
+                message=f"{symbol} is concrete (instantiable).",
+            )
+        )
+
+
 def run_check_6() -> CheckResult:
     """CHECK 6 — NFSeDocument subclasses InvoiceDocument; no local signer/XSD/HTTP reimplementation."""
     result = CheckResult(check_id="CHECK_6", name="NFSeDocument structural checks")
@@ -654,6 +698,7 @@ def run_check_6() -> CheckResult:
                     message="NFSeGenerator subclasses BaseDocumentGenerator.",
                 )
             )
+            _assert_concrete(result, "CHECK_6", gen_cls, "NFSeGenerator")
         else:
             result.findings.append(
                 CheckFinding(
@@ -690,6 +735,7 @@ def run_check_6() -> CheckResult:
                     message="NFSeXSDValidator subclasses BaseDocumentValidator.",
                 )
             )
+            _assert_concrete(result, "CHECK_6", val_cls, "NFSeXSDValidator")
         else:
             result.findings.append(
                 CheckFinding(
@@ -794,6 +840,7 @@ def run_check_8() -> CheckResult:
                     message="CTeGenerator subclasses BaseDocumentGenerator.",
                 )
             )
+            _assert_concrete(result, "CHECK_8", gen_cls, "CTeGenerator")
         else:
             result.findings.append(
                 CheckFinding(
@@ -830,6 +877,7 @@ def run_check_8() -> CheckResult:
                     message="CTeXSDValidator subclasses BaseDocumentValidator.",
                 )
             )
+            _assert_concrete(result, "CHECK_8", val_cls, "CTeXSDValidator")
         else:
             result.findings.append(
                 CheckFinding(
@@ -988,6 +1036,246 @@ def run_check_7() -> CheckResult:
     return result
 
 
+# ---------------------------------------------------------------------------
+# CHECK 9 — Functional generate→XSD smoke check per sub-format (BR-L3)
+# ---------------------------------------------------------------------------
+
+
+def _smoke_nfe() -> tuple[str, bool, list[str]]:
+    from mcp_einvoicing_core.models import InvoiceParty, TaxIdentifier
+
+    from mcp_nfe_br.models.invoice import (
+        BREmitente,
+        BREndereco,
+        BRInvoice,
+        BRInvoiceLine,
+        BRPagamento,
+        NFeModelo,
+        RegimeTributario,
+        TipoAmbiente,
+        TipoOperacao,
+    )
+    from mcp_nfe_br.standards.nfe_generator import NFeGenerator
+    from mcp_nfe_br.validators.nfe_xsd import NFeXSDValidator
+
+    endereco = BREndereco.model_validate({
+        "x_lgr": "Rua Teste", "nro": "123", "x_bairro": "Centro",
+        "c_mun": "3550308", "x_mun": "Sao Paulo", "uf": "SP", "cep": "01000000",
+    })
+    emitente = BREmitente.model_validate({
+        "cnpj": "11222333000181", "x_nome": "Empresa Teste LTDA",
+        "ender_emit": endereco, "ie": "123456789", "crt": RegimeTributario.REGIME_NORMAL,
+    })
+    line = BRInvoiceLine.model_validate({
+        "line_number": 1, "description": "Produto Teste", "unit_price": "100.00",
+        "total_price": "100.00", "c_prod": "P001", "ncm": "61091000", "cfop": "5102",
+        "u_com": "UN", "q_com": "1", "v_un_com": "100.00", "v_prod": "100.00",
+        "u_trib": "UN", "q_trib": "1", "v_un_trib": "100.00", "icms_cst": "00",
+        "icms_rate": "18", "icms_amount": "18.00", "pis_cst": "01", "pis_amount": "1.65",
+        "cofins_cst": "01", "cofins_amount": "7.60",
+    })
+    doc = BRInvoice.model_validate({
+        "document_type": "55", "date": "2026-06-13", "number": "1",
+        "seller": InvoiceParty(
+            tax_id=TaxIdentifier(country_code="BR", identifier="11222333000181"),
+            name="Empresa Teste LTDA",
+        ),
+        "buyer": InvoiceParty(
+            tax_id=TaxIdentifier(country_code="BR", identifier="11144477735"),
+            name="Cliente Teste",
+        ),
+        "modelo": NFeModelo.NFE, "serie": "1", "nnf": "1",
+        "natureza_operacao": "Venda de mercadoria", "tipo_operacao": TipoOperacao.SAIDA,
+        "c_uf": "35", "dh_emi": "2026-06-13T10:00:00-03:00", "id_dest": "1",
+        "c_mun_fg": "3550308", "tp_amb": TipoAmbiente.HOMOLOGACAO,
+        "ind_final": "1", "ind_pres": "1", "emitente": emitente,
+        "destinatario": {"cpf": "11144477735", "x_nome": "Cliente Teste", "ind_ie_dest": "9"},
+        "pagamentos": [BRPagamento(t_pag="01", v_pag="100.00")],
+        "lines": [line],
+    })
+    xml = NFeGenerator().generate(doc)
+    result = NFeXSDValidator().validate(xml)
+    return "NF-e", result.valid, result.errors
+
+
+def _smoke_nfse() -> tuple[str, bool, list[str]]:
+    from mcp_einvoicing_core.models import InvoiceParty, TaxIdentifier
+
+    from mcp_nfe_br.models.invoice import TipoAmbiente
+    from mcp_nfe_br.models.nfse import (
+        NFSeCServ,
+        NFSeDocument,
+        NFSeEndereco,
+        NFSeLocPrest,
+        NFSeOpSimplesNacional,
+        NFSePrestador,
+        NFSeRegimeTributacao,
+        NFSeServ,
+        NFSeTipoRetISSQN,
+        NFSeTomador,
+        NFSeTotTrib,
+        NFSeTribISSQN,
+        NFSeTribMunicipal,
+        NFSeValores,
+    )
+    from mcp_nfe_br.standards.nfse_generator import NFSeGenerator
+    from mcp_nfe_br.validators.nfse_xsd import NFSeXSDValidator
+
+    endereco = NFSeEndereco.model_validate({
+        "x_lgr": "Rua Teste", "nro": "123", "x_bairro": "Centro",
+        "c_mun": "3550308", "cep": "01000000",
+    })
+    prestador = NFSePrestador.model_validate({
+        "cnpj": "11222333000181", "x_nome": "Prestador Teste LTDA", "end": endereco,
+        "reg_trib": NFSeRegimeTributacao(
+            op_simp_nac=NFSeOpSimplesNacional.NAO_OPTANTE, reg_esp_trib="0"
+        ),
+    })
+    tomador = NFSeTomador.model_validate({
+        "cpf": "11144477735", "x_nome": "Tomador Teste", "end": endereco,
+    })
+    doc = NFSeDocument.model_validate({
+        "document_type": "DPS", "date": "2026-07-01", "number": "1",
+        "seller": InvoiceParty(
+            tax_id=TaxIdentifier(country_code="BR", identifier="11222333000181"),
+            name="Prestador Teste LTDA",
+        ),
+        "buyer": InvoiceParty(
+            tax_id=TaxIdentifier(country_code="BR", identifier="11144477735"),
+            name="Tomador Teste",
+        ),
+        "tp_amb": TipoAmbiente.HOMOLOGACAO, "serie": "1", "n_dps": "1",
+        "d_compet": "2026-07-01", "c_loc_emi": "3550308",
+        "prest": prestador, "toma": tomador,
+        "serv": NFSeServ(
+            loc_prest=NFSeLocPrest(c_loc_prestacao="3550308"),
+            c_serv=NFSeCServ(c_trib_nac="010101", x_desc_serv="Serviço de teste"),
+        ),
+        "valores": NFSeValores(
+            v_serv="100.00",
+            trib_mun=NFSeTribMunicipal(
+                trib_issqn=NFSeTribISSQN.TRIBUTAVEL,
+                tp_ret_issqn=NFSeTipoRetISSQN.NAO_RETIDO,
+                p_aliq="5.00",
+            ),
+            tot_trib=NFSeTotTrib(ind_tot_trib="0"),
+        ),
+    })
+    xml = NFSeGenerator().generate(doc)
+    result = NFSeXSDValidator().validate(xml)
+    return "NFS-e", result.valid, result.errors
+
+
+def _smoke_cte() -> tuple[str, bool, list[str]]:
+    from mcp_einvoicing_core.models import InvoiceParty, TaxIdentifier
+
+    from mcp_nfe_br.models.cte import (
+        BRCTeDocument,
+        BRCteEmitente,
+        BRCteICMS00,
+        BRCteImp,
+        BRCteInfCarga,
+        BRCteInfModal,
+        BRCteInfQ,
+        BRCteRemetente,
+        BRCteTomador,
+        BRCteVPrest,
+        CTeModal,
+        CTeModelo,
+        CTeTipoServico,
+        CTeTomadorPapel,
+    )
+    from mcp_nfe_br.models.invoice import BREndereco, RegimeTributario
+    from mcp_nfe_br.standards.cte_generator import CTeGenerator
+    from mcp_nfe_br.validators.cte_xsd import CTeXSDValidator
+
+    endereco = BREndereco.model_validate({
+        "x_lgr": "Rua Teste", "nro": "123", "x_bairro": "Centro",
+        "c_mun": "3550308", "x_mun": "Sao Paulo", "uf": "SP", "cep": "01000000",
+    })
+    emitente = BRCteEmitente.model_validate({
+        "cnpj": "11222333000181", "x_nome": "Transportadora Teste LTDA",
+        "ie": "123456789", "endereco": endereco, "crt": RegimeTributario.REGIME_NORMAL,
+    })
+    remetente = BRCteRemetente.model_validate({
+        "cnpj": "11444777000161", "x_nome": "Remetente Teste LTDA", "endereco": endereco,
+    })
+    doc = BRCTeDocument.model_validate({
+        "document_type": "57", "date": "2026-07-03", "number": "1",
+        "seller": InvoiceParty(
+            tax_id=TaxIdentifier(country_code="BR", identifier="11222333000181"),
+            name="Transportadora Teste LTDA",
+        ),
+        "mod": CTeModelo.CTE, "serie": "1", "n_ct": "1",
+        "nat_op": "Prestação de serviço de transporte", "tp_serv": CTeTipoServico.NORMAL,
+        "modal": CTeModal.RODOVIARIO, "dh_emi": "2026-07-03T10:00:00-03:00", "c_uf": "35",
+        "cfop": "5352", "tp_amb": "2", "c_mun_ini": "3550308", "x_mun_ini": "Sao Paulo",
+        "uf_ini": "SP", "c_mun_fim": "3304557", "x_mun_fim": "Rio de Janeiro",
+        "uf_fim": "RJ", "retira": "1", "emitente": emitente, "remetente": remetente,
+        "tomador": BRCteTomador(papel=CTeTomadorPapel.REMETENTE, ind_ie_toma="1"),
+        "v_prest": BRCteVPrest(v_tprest="100.00", v_rec="100.00"),
+        "imp": BRCteImp(icms=BRCteICMS00(v_bc="100.00", p_icms="12.00", v_icms="12.00")),
+        "inf_carga": BRCteInfCarga(
+            v_carga="1000.00", pro_pred="Eletrônicos",
+            inf_q=[BRCteInfQ(c_unid="01", tp_med="PESO BRUTO", q_carga="100.0000")],
+        ),
+        "inf_modal": BRCteInfModal(modal=CTeModal.RODOVIARIO, rntrc="12345678"),
+    })
+    xml = CTeGenerator().generate(doc)
+    result = CTeXSDValidator().validate(xml)
+    return "CT-e", result.valid, result.errors
+
+
+def run_check_9() -> CheckResult:
+    """CHECK 9 — Functional generate→XSD round-trip smoke check, one per sub-format.
+
+    CHECK 6/8 only verify that generators/validators are the right *type*
+    (subclass + concrete); neither exercises a real document. This is the
+    check that would have caught BR-NFSE-C1..C5: every sub-format must
+    build a minimal document, generate it, and XSD-validate the output
+    (BR-L3).
+    """
+    result = CheckResult(check_id="CHECK_9", name="Functional generate→XSD smoke check")
+
+    for smoke_fn in (_smoke_nfe, _smoke_nfse, _smoke_cte):
+        try:
+            sub_format, valid, errors = smoke_fn()
+        except Exception as exc:  # noqa: BLE001 - any failure here is a gate finding
+            result.findings.append(
+                CheckFinding(
+                    check_id="CHECK_9",
+                    tag="[SMOKE_ERROR]",
+                    severity=SEVERITY_BLOCKING,
+                    symbol=smoke_fn.__name__,
+                    message=f"Generate→XSD smoke check raised: {type(exc).__name__}: {exc}",
+                )
+            )
+            continue
+
+        if valid:
+            result.findings.append(
+                CheckFinding(
+                    check_id="CHECK_9",
+                    tag="[OK]",
+                    severity=SEVERITY_OK,
+                    symbol=sub_format,
+                    message=f"{sub_format}: minimal document generates and validates against its bundled XSD.",
+                )
+            )
+        else:
+            result.findings.append(
+                CheckFinding(
+                    check_id="CHECK_9",
+                    tag="[XSD_INVALID]",
+                    severity=SEVERITY_BLOCKING,
+                    symbol=sub_format,
+                    message=f"{sub_format}: generated XML fails XSD validation: {'; '.join(errors)}",
+                )
+            )
+
+    return result
+
+
 def run_audit() -> AuditReport:
     """Execute all checks and return the aggregated AuditReport. No side effects."""
     report = make_report("mcp-nfe-br", _PYPROJECT)
@@ -1013,6 +1301,7 @@ def run_audit() -> AuditReport:
     report.checks.append(run_check_6())
     report.checks.append(run_check_7())
     report.checks.append(run_check_8())
+    report.checks.append(run_check_9())
 
     return report
 

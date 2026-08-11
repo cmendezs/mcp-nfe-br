@@ -6,25 +6,25 @@
     "url": "https://github.com/cmendezs/mcp-nfe-br",
     "source": "github"
   },
-  "version": "0.6.2",
+  "version": "0.6.3",
   "packages": [
     {
       "registryType": "pypi",
       "identifier": "mcp-nfe-br",
-      "version": "0.6.2",
+      "version": "0.6.3",
       "transport": {
         "type": "stdio"
       },
       "environmentVariables": [
         {
           "name": "BR_READ_ONLY",
-          "description": "Set to '1' to disable write-side tools (br__submit_nfe, br__distribute_dfe, br__submit_nfse, br__cancel_nfse). Read-only mode for safe exploration.",
+          "description": "Master switch. Set to '1' to disable all write-side tools across NF-e, NFC-e, NFS-e, AND CT-e (br__submit_nfe, br__distribute_dfe, br__submit_nfse, br__cancel_nfse, br__submit_cte, br__cancel_cte, br__correct_cte). Read-only mode for safe exploration. Setting only this variable is sufficient to disable all CT-e writes too — BR_CTE_READ_ONLY is an additional, independent gate, not a required second step.",
           "isRequired": false,
           "format": "string"
         },
         {
           "name": "BR_CTE_READ_ONLY",
-          "description": "Set to '1' to disable the CT-e write-side tool (br__submit_cte). Kept distinct from BR_READ_ONLY so NF-e and CT-e can be gated independently.",
+          "description": "Set to '1' to disable the three CT-e write-side tools (br__submit_cte, br__cancel_cte, br__correct_cte). Independent of BR_READ_ONLY — either variable being set to '1' is sufficient to block CT-e writes; use this one to gate CT-e alone while leaving NF-e/NFS-e writes enabled.",
           "isRequired": false,
           "format": "string"
         },

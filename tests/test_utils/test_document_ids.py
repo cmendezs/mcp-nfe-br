@@ -5,12 +5,19 @@ re-pointing them to
 ``mcp_einvoicing_core.models.TaxIdentifier.validate_br_cpf``/
 ``validate_br_cnpj`` (core >=1.5.0). They confirm the bool-returning wrappers
 still behave like the pre-re-point local implementation; they do not assert
-regulatory correctness.
+regulatory correctness beyond the alphanumeric-CNPJ golden fixture below.
 """
 
 from __future__ import annotations
 
+import json
+from pathlib import Path
+
 from mcp_nfe_br.utils.document_ids import validate_cnpj, validate_cpf
+
+_FIXTURE = json.loads(
+    (Path(__file__).parent.parent / "fixtures" / "cnpj_alfanumerico_ntcj_2025_001.json").read_text()
+)
 
 
 def test_validate_cpf_valid() -> None:
@@ -42,18 +49,24 @@ def test_validate_cnpj_wrong_length() -> None:
 
 
 def test_validate_cnpj_alphanumeric_valid() -> None:
-    # [Unverified]-behavior: pins the current mod-11 alphanumeric algorithm
-    # (PL_010d / NT 2026.004), sourced from third-party writeups and not yet
-    # confirmed against the primary "NT Conjunta DFe 2025.001" source.
-    # [NEED: verify against NT Conjunta DFe 2025.001]
-    assert validate_cnpj("12.ABC.345/01DE-35") is True
+    # [Verified locally — NTCJ DFe 2025.001 v1.00 §2 worked example, p.6]:
+    # golden value from the bundled primary source, pinned in
+    # tests/fixtures/cnpj_alfanumerico_ntcj_2025_001.json.
+    assert validate_cnpj(_FIXTURE["alphanumeric"]["formatted"]) is True
 
 
 def test_validate_cnpj_alphanumeric_invalid_check_digit() -> None:
-    # [Unverified]-behavior: see test_validate_cnpj_alphanumeric_valid.
-    assert validate_cnpj("12.ABC.345/01DE-00") is False
+    # [Verified locally — NTCJ DFe 2025.001 v1.00 §2]: see
+    # test_validate_cnpj_alphanumeric_valid.
+    assert validate_cnpj(_FIXTURE["alphanumeric_invalid_check_digit"]["formatted"]) is False
 
 
 def test_validate_cnpj_alphanumeric_lowercase_normalized() -> None:
-    # [Unverified]-behavior: lowercase letters are uppercased before checking.
-    assert validate_cnpj("12.abc.345/01de-35") is True
+    # [Verified locally — NTCJ DFe 2025.001 v1.00 §2]: lowercase letters
+    # are uppercased before checking.
+    lowered = _FIXTURE["alphanumeric"]["formatted"].lower()
+    assert validate_cnpj(lowered) is True
+
+
+def test_validate_cnpj_numeric_control_from_fixture() -> None:
+    assert validate_cnpj(_FIXTURE["numeric_control"]["formatted"]) is True

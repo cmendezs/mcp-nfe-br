@@ -44,7 +44,7 @@ def br__generate_nfse(
 
     try:
         xml_string = NFSeGenerator().generate(document)
-    except EInvoicingError as exc:
+    except Exception as exc:
         return {"error": str(exc)}
 
     dps_id = xml_string.split('Id="DPS', 1)[1].split('"', 1)[0]

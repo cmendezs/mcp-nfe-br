@@ -37,6 +37,18 @@ def test_cte_party_rejects_invalid_cnpj() -> None:
         make_cte_emitente(cnpj="00000000000000")
 
 
+def test_cte_party_rejects_alphanumeric_cnpj() -> None:
+    """BR-CTE-T1 (decided): CT-e's TCnpj (tiposGeralCTe_v4.00.xsd) is all-numeric,
+    unlike NF-e's PL_010d schema — reject alphanumeric CNPJ at the party layer."""
+    with pytest.raises(ValidationError, match="CNPJ numérico de 14 dígitos"):
+        make_cte_emitente(cnpj="12ABC34501DE35")
+
+
+def test_cte_party_accepts_numeric_cnpj() -> None:
+    party = make_cte_emitente(cnpj="11222333000181")
+    assert party.cnpj == "11222333000181"
+
+
 def test_cte_tomador_requires_exactly_one_choice() -> None:
     with pytest.raises(ValidationError, match="papel.*ou.*outros"):
         BRCteTomador(ind_ie_toma="1")

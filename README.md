@@ -80,8 +80,8 @@ For a local development installation:
 
 | Variable | Description | Default |
 |---|---|---|
-| `BR_READ_ONLY` | Set to `1` to disable SEFAZ write tools (`br__submit_nfe`, `br__distribute_dfe`, `br__submit_nfse`, `br__cancel_nfse`). Safe mode for exploration. The SEFAZ environment (production/homologation) is selected per call via the `tp_amb` argument. | — |
-| `BR_CTE_READ_ONLY` | Set to `1` to disable the CT-e write tools (`br__submit_cte`, `br__cancel_cte`, `br__correct_cte`). Kept distinct from `BR_READ_ONLY` so NF-e and CT-e can be gated independently. | — |
+| `BR_READ_ONLY` | Master switch. Set to `1` to disable write tools across **all** sub-formats: NF-e/NFC-e (`br__submit_nfe`, `br__distribute_dfe`), NFS-e (`br__submit_nfse`, `br__cancel_nfse`), and CT-e (`br__submit_cte`, `br__cancel_cte`, `br__correct_cte`). Safe mode for exploration. The SEFAZ environment (production/homologation) is selected per call via the `tp_amb` argument. | — |
+| `BR_CTE_READ_ONLY` | Set to `1` to disable *only* the CT-e write tools (`br__submit_cte`, `br__cancel_cte`, `br__correct_cte`), leaving NF-e/NFS-e writes enabled. Independent of `BR_READ_ONLY` — either variable set to `1` is sufficient to block CT-e writes; you do not need both. | — |
 | `LOG_LEVEL` | Log level: `DEBUG`, `INFO`, `WARNING`, `ERROR` | `INFO` |
 
 ---

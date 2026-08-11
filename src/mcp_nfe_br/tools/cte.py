@@ -32,6 +32,19 @@ from mcp_nfe_br.standards.sefaz_cte_client import SefazCTeClient
 from mcp_nfe_br.validators.cte_xsd import CTeXSDValidator
 
 _READ_ONLY_ENV_VAR = "BR_CTE_READ_ONLY"
+_MASTER_READ_ONLY_ENV_VAR = "BR_READ_ONLY"
+
+
+def _assert_cte_not_read_only() -> None:
+    """Block CT-e mutating tools when either read-only switch is set (BR-S1).
+
+    `BR_READ_ONLY` is the package-wide master switch (already honored by the
+    NF-e and NFS-e mutating tools); `BR_CTE_READ_ONLY` is the CT-e-specific
+    gate. Either being truthy blocks — a "safe demo" operator who sets only
+    `BR_READ_ONLY=1` must not leave CT-e submit/cancel/correct callable.
+    """
+    assert_not_read_only(_MASTER_READ_ONLY_ENV_VAR)
+    assert_not_read_only(_READ_ONLY_ENV_VAR)
 
 
 def br__generate_cte(
@@ -50,7 +63,10 @@ def br__generate_cte(
     - ``chave_acesso``: the computed 44-character access key (chCTe)
     - ``warnings``: list of non-fatal notices
     """
-    document = BRCTeDocument.model_validate(cte)
+    try:
+        document = BRCTeDocument.model_validate(cte)
+    except Exception as exc:
+        return {"error": f"Erro na validação do modelo BRCTeDocument: {exc}"}
 
     try:
         xml_string = CTeGenerator().generate(document)
@@ -216,7 +232,7 @@ async def br__submit_cte(
         return {"error": f"tp_amb inválido: {tp_amb!r}. Use '1' ou '2'."}
 
     try:
-        assert_not_read_only(_READ_ONLY_ENV_VAR)
+        _assert_cte_not_read_only()
     except PlatformError as exc:
         return {"error": str(exc)}
 
@@ -289,7 +305,7 @@ async def br__cancel_cte(
         return {"error": f"tp_amb inválido: {tp_amb!r}. Use '1' ou '2'."}
 
     try:
-        assert_not_read_only(_READ_ONLY_ENV_VAR)
+        _assert_cte_not_read_only()
     except PlatformError as exc:
         return {"error": str(exc)}
 
@@ -381,7 +397,7 @@ async def br__correct_cte(
         return {"error": f"tp_amb inválido: {tp_amb!r}. Use '1' ou '2'."}
 
     try:
-        assert_not_read_only(_READ_ONLY_ENV_VAR)
+        _assert_cte_not_read_only()
     except PlatformError as exc:
         return {"error": str(exc)}
 

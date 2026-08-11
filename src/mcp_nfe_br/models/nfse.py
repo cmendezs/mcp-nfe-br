@@ -105,31 +105,38 @@ class NFSeTipoTotTrib(StrEnum):
 class NFSeEndereco(BaseModel):
     """Endereço (``TCEndereco``).
 
-    `[Verified locally — tiposComplexos_v1.01.xsd TCEndereco]`.
-    Foreign-address fields (``endExt``) are `[NEED: not modeled]`.
+    `TCEndereco` is `choice(endNac | endExt), xLgr, nro, xCpl?, xBairro`, where
+    `TCEnderNac = {cMun, CEP}` (both mandatory). `xMun`, `UF`, `fone` are not
+    members of `TCEndereco` at all — they belong to `TCEnderecoEmitente` /
+    `TCInfoPrestador` / `TCInfoPessoa`, not the address block itself.
+    `[Verified locally — tiposComplexos_v1.01.xsd TCEndereco/TCEnderNac]`.
+
+    Only the national path (``endNac``) is emitted by the generator; foreign
+    addresses (``endExt``, `TCEnderExt` = `cPais, cEndPost, xCidade, xEstProvReg`)
+    are `[NEED: not modeled]` — setting ``c_pais`` raises at generation time.
     """
 
     x_lgr: str = Field(..., description="Logradouro")
     nro: str = Field(..., description="Número")
     x_cpl: str | None = Field(default=None, description="Complemento")
-    x_bairro: str | None = Field(default=None, description="Bairro")
+    x_bairro: str = Field(..., description="Bairro")
     c_mun: str = Field(..., min_length=7, max_length=7, description="Código IBGE do município")
-    x_mun: str = Field(..., description="Nome do município")
-    uf: str | None = Field(default=None, min_length=2, max_length=2, description="Sigla da UF")
-    cep: str | None = Field(default=None, description="CEP")
+    cep: str = Field(..., description="CEP (obrigatório dentro de endNac)")
     c_pais: str | None = Field(
-        default=None, description="Código ISO do país (omit for Brasil, ADN infers)"
+        default=None,
+        description=(
+            "Código ISO do país — presença indica endereço no exterior (endExt), "
+            "ainda não suportado pelo gerador [NEED: not modeled]"
+        ),
     )
-    x_pais: str | None = Field(default=None, description="Nome do país")
-    fone: str | None = Field(default=None, description="Telefone")
 
 
 class NFSeRegimeTributacao(BaseModel):
     """Regimes de tributação do prestador (`TCRegTrib`).
 
-    ``opSimpNac`` is mandatory; optional regime fields are `[NEED: not modeled]`:
-    ``regApTribSN`` (apuração SN), ``regEspTrib`` (special regulated regimes:
-    ANS/ANATEL/ANP healthcare/telecom/petroleum).
+    ``opSimpNac`` and ``regEspTrib`` are mandatory (`TCRegTrib` has no
+    `minOccurs` on `regEspTrib`); ``regApTribSN`` (apuração SN, ME/EPP only)
+    is optional. `[Verified locally — tiposComplexos_v1.01.xsd TCRegTrib]`.
     """
 
     op_simp_nac: NFSeOpSimplesNacional = Field(
@@ -143,13 +150,14 @@ class NFSeRegimeTributacao(BaseModel):
             "tributos federais por fora, 4=todos por fora do SN"
         ),
     )
-    reg_esp_trib: str | None = Field(
-        default=None,
+    reg_esp_trib: str = Field(
+        default="0",
         description=(
-            "Regime Especial de Tributação: 1=Microempreendedor Individual, "
-            "2=Estimativa, 3=Sociedade de Profissionais, 4=Cooperativa, "
-            "5=Microempresário Individual, 6=Microempresário e Empresa de Pequeno Porte "
-            "[Unverified — code list from tiposSimples.xsd TSRegEspTrib pending manual check]"
+            "Regime Especial de Tributação (TSRegEspTrib, obrigatório — no minOccurs "
+            "in TCRegTrib): 0=Nenhum, 1=Ato Cooperado (Cooperativa), 2=Estimativa, "
+            "3=Microempresa Municipal, 4=Notário ou Registrador, 5=Profissional "
+            "Autônomo, 6=Sociedade de Profissionais, 9=Outros "
+            "[Verified locally — tiposSimples_v1.01.xsd TSRegEspTrib]"
         ),
     )
 
@@ -435,7 +443,11 @@ class NFSeDocument(InvoiceDocument):
     )
     d_compet: str = Field(
         ...,
-        description="Data de competência — início da prestação (AAAAMMDD)",
+        description=(
+            "Data de competência — início da prestação (YYYY-MM-DD; TSData é ISO "
+            "com hífens apesar da anotação do XSD dizer \"AAAAMMDD\") "
+            "[Verified locally — tiposSimples_v1.01.xsd TSData]"
+        ),
     )
     tp_emit: NFSeTipoEmitente = Field(
         default=NFSeTipoEmitente.PRESTADOR,

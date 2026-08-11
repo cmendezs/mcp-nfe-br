@@ -43,6 +43,13 @@ def test_generate_cte_returns_xml_and_chave() -> None:
     assert result["warnings"]
 
 
+def test_generate_cte_malformed_payload_returns_error() -> None:
+    """BR-L1: a malformed payload must return {"error": ...}, not raise ValidationError."""
+    result = br__generate_cte({"document_type": "57"})
+    assert "error" in result
+    assert "BRCTeDocument" in result["error"]
+
+
 def test_generate_cte_unsupported_modal_returns_error() -> None:
     data = make_cte(
         modal=CTeModal.AEREO,
@@ -108,6 +115,20 @@ async def test_submit_cte_read_only_blocks(monkeypatch: pytest.MonkeyPatch) -> N
     assert "error" in result
 
 
+async def test_submit_cte_master_read_only_blocks(monkeypatch: pytest.MonkeyPatch) -> None:
+    """BR-S1: BR_READ_ONLY alone (without BR_CTE_READ_ONLY) must also block CT-e writes."""
+    monkeypatch.setenv("BR_READ_ONLY", "1")
+
+    result = await br__submit_cte(
+        c_uf="43",
+        cert_path="/tmp/does-not-exist.p12",
+        endpoint_override="https://homolog.example/CTeRecepcaoSincV4.asmx",
+        xml_content='<CTe xmlns="http://www.portalfiscal.inf.br/cte"><infCte Id="CTe1"/></CTe>',
+    )
+
+    assert "error" in result
+
+
 async def test_submit_cte_requires_confirmation() -> None:
     result = await br__submit_cte(
         c_uf="43",
@@ -150,6 +171,12 @@ async def test_cancel_cte_read_only_blocks(monkeypatch: pytest.MonkeyPatch) -> N
     assert "error" in result
 
 
+async def test_cancel_cte_master_read_only_blocks(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("BR_READ_ONLY", "1")
+    result = await br__cancel_cte(**_CANCEL_CTE_KWARGS)
+    assert "error" in result
+
+
 async def test_cancel_cte_requires_confirmation() -> None:
     result = await br__cancel_cte(**_CANCEL_CTE_KWARGS)
     assert result.get("status") == "awaiting_confirmation"
@@ -174,6 +201,12 @@ _CORRECT_CTE_KWARGS = {
 
 async def test_correct_cte_read_only_blocks(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("BR_CTE_READ_ONLY", "1")
+    result = await br__correct_cte(**_CORRECT_CTE_KWARGS)
+    assert "error" in result
+
+
+async def test_correct_cte_master_read_only_blocks(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("BR_READ_ONLY", "1")
     result = await br__correct_cte(**_CORRECT_CTE_KWARGS)
     assert "error" in result
 

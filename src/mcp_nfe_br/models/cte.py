@@ -125,7 +125,26 @@ class BRCteParty(BaseModel):
     @field_validator("cnpj")
     @classmethod
     def check_cnpj(cls, v: str | None) -> str | None:
-        if v is not None and not validate_cnpj(v):
+        """Reject alphanumeric CNPJ (BR-CTE-T1, decided).
+
+        The bundled CT-e v4.00 schema (`tiposGeralCTe_v4.00.xsd:133`) defines
+        `TCnpj` as `[0-9]{14}` (all-numeric) — unlike the NF-e schema package
+        (PL_010d), which was updated for the alphanumeric CNPJ form. Accepting
+        an alphanumeric CNPJ here would only defer the failure to XSD
+        validation at `CTeGenerator.generate()`, after the model has already
+        validated cleanly. `[NEED: verify — no CT-e-specific Nota Técnica
+        confirming alphanumeric-CNPJ applicability to CT-e has been found;
+        see utils/cte_access_key.py]`
+        """
+        if v is None:
+            return v
+        digits_only = v.replace(".", "").replace("/", "").replace("-", "")
+        if not digits_only.isdigit():
+            raise ValueError(
+                "CT-e requer CNPJ numérico de 14 dígitos; CNPJ alfanumérico "
+                f"ainda não suportado pelo schema PL_CTe_400 (recebido {v!r})."
+            )
+        if not validate_cnpj(v):
             raise ValueError(f"CNPJ inválido: {v!r}")
         return v
 
