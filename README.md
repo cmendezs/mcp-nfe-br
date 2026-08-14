@@ -14,7 +14,7 @@
 
 `mcp-nfe-br` is an [MCP (Model Context Protocol)](https://modelcontextprotocol.io) server providing tools for issuing and validating Brazilian electronic fiscal documents: **NF-e (modelo 55)**, **NFC-e (modelo 65)**, **NFS-e Nacional** (ADN), and **CT-e (modelo 57)**. This server is part of the `mcp-einvoicing-*` / `mcp-*-*` family, built on [`mcp-einvoicing-core`](https://github.com/cmendezs/mcp-einvoicing-core), which provides the base data model, HTTP/OAuth2 utilities, and shared MCP server infrastructure.
 
-**Current status (v0.6.3):** NF-e/NFC-e (modelo 55/65, schema 4.00) and NFS-e Nacional (ADN, schema v1.01) generation, ICP-Brasil signing, XSD validation, and gated SEFAZ/ADN submission are implemented. **CT-e (modelo 57)** generation/signing/validation and SEFAZ event submission (cancelamento, Carta de Correção) were added starting v0.6.0 — v1 scope is intentionally narrow: **modal rodoviário only**, **ICMS CST 00 only**, and **no bundled/verified CT-e webservice endpoint table** (every SEFAZ CT-e call requires an explicit `endpoint_override`). See the "CT-e (modelo 57)" tools section below and `context-library/countries/br.md` (in the source repo) for the full field-level reference.
+**Current status (v0.6.5):** NF-e/NFC-e (modelo 55/65, schema 4.00) and NFS-e Nacional (ADN, schema v1.01) generation, ICP-Brasil signing, XSD validation, and gated SEFAZ/ADN submission are implemented. NF-e/NFC-e now also covers the `010e_v.1.02` schema delta (DANFE Simplificado Tipo 2 — `tpImp=6`, `cIndOp`, `ISUFEmit`, and the SEFAZ alert-message response group) on top of the `PL_010d` base. **CT-e (modelo 57)** generation/signing/validation and SEFAZ event submission (cancelamento, Carta de Correção) were added starting v0.6.0 — v1 scope is intentionally narrow: **modal rodoviário only**, **ICMS CST 00 only**, and **no bundled/verified CT-e webservice endpoint table** (every SEFAZ CT-e call requires an explicit `endpoint_override`). See the "CT-e (modelo 57)" tools section below and `context-library/countries/br.md` (in the source repo) for the full field-level reference.
 
 ---
 
@@ -138,7 +138,7 @@ Phase 1 coverage for per-item tax groups:
 
 ### `br__validate_nfe_xml`
 
-Validates an NF-e/NFC-e 4.00 XML document against the official PL_010d XSD (local "unsigned" variant, see note below).
+Validates an NF-e/NFC-e 4.00 XML document against the official PL_010d XSD, patched with the `PL_010e_v.1.02` delta (local "unsigned" variant, see note below).
 
 | Parameter | Type | Required | Description |
 |---|---|---|---|
