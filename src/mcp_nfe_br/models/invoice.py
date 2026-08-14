@@ -98,6 +98,15 @@ class BREmitente(BaseModel):
     ie_st: str | None = Field(default=None, description="IE do Substituto Tributário")
     im: str | None = Field(default=None, description="Inscrição Municipal")
     crt: RegimeTributario = Field(..., description="Código de Regime Tributário")
+    isuf_emit: str | None = Field(
+        default=None,
+        min_length=8,
+        max_length=9,
+        description=(
+            "Inscrição do emitente na Suframa (ISUFEmit). New in schema package "
+            "010e_v.1.02 [Verified locally — PL_010e_v1.02, leiauteNFe_v4.00.xsd]"
+        ),
+    )
 
     @model_validator(mode="after")
     def check_one_document(self) -> BREmitente:
@@ -570,12 +579,42 @@ class BRInvoice(InvoiceDocument):
     c_mun_fg: str = Field(
         ..., min_length=7, max_length=7, description="Código IBGE do município do fato gerador"
     )
-    tp_imp: str = Field(default="1", description="Formato de impressão do DANFE (tpImp)")
-    tp_emis: str = Field(default="1", description="Forma de emissão (tpEmis): 1=normal")
+    tp_imp: str = Field(
+        default="1",
+        description=(
+            "Formato de impressão do DANFE (tpImp): 0=sem DANFE, 1=retrato, 2=paisagem, "
+            "3=simplificado, 4=NFC-e, 5=NFC-e em mensagem eletrônica, "
+            "6=DANFE Simplificado Tipo 2 (NT 2026.002 v1.00)"
+        ),
+    )
+    tp_emis: str = Field(
+        default="1",
+        description=(
+            "Forma de emissão (tpEmis): 1=normal; 9=contingência off-line da NFC-e e da "
+            "NF-e com DANFE Simplificado Tipo 2 (redefinido por NT 2026.002 v1.00)"
+        ),
+    )
     tp_amb: TipoAmbiente = Field(..., description="Identificação do Ambiente: 1=produção, 2=homologação")
     fin_nfe: str = Field(default="1", description="Finalidade de emissão: 1=normal")
     ind_final: str = Field(..., description="Indica operação com consumidor final: 0=não, 1=sim")
-    ind_pres: str = Field(..., description="Indicador de presença do comprador no estabelecimento")
+    ind_pres: str = Field(
+        ...,
+        description=(
+            "Indicador de presença do comprador no estabelecimento; 4=operações não "
+            "presenciais com NFC-e e NF-e com DANFE Simplificado Tipo 2, com entrega "
+            "(redefinido por NT 2026.002 v1.00)"
+        ),
+    )
+    c_ind_op: str | None = Field(
+        default=None,
+        min_length=6,
+        max_length=6,
+        description=(
+            "Código indicador do local da operação de fornecimento (cIndOp), IBGE "
+            "municipality code. New in schema package 010e_v.1.02 "
+            "[Verified locally — PL_010e_v1.02, leiauteNFe_v4.00.xsd]"
+        ),
+    )
     proc_emi: str = Field(default="0", description="Processo de emissão: 0=aplicativo do contribuinte")
     ver_proc: str = Field(default="mcp-nfe-br", description="Versão do processo de emissão")
 

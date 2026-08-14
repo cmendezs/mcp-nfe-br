@@ -1,7 +1,10 @@
 """XSD validation for NF-e/NFC-e (modelo 55/65, schema 4.00) documents.
 
 Two schema variants are bundled under ``mcp_nfe_br/schemas/nfe/``, both
-derived from the official PL_010d package:
+derived from the official PL_010d package and patched with the PL_010e_v1.02
+delta (`tpImp=6`, redefined `tpEmis=9`/`indPres=4`, `cIndOp`, `ISUFEmit`, and
+the 0-5 `cMsg`/`xMsg` alert group in `protNFe` — BR-NFE-2026-08, verified
+against the official `PL_010e_v1.02.zip` schema package):
 
 - ``nfe_v4.00_unsigned.xsd`` / ``leiauteNFe_v4.00_unsigned.xsd`` — a
   derivative where ``<ds:Signature>`` (last child of ``<NFe>``) is changed
@@ -28,8 +31,8 @@ from mcp_einvoicing_core.xml_utils import safe_fromstring, safe_parser
 _SCHEMA_PACKAGE = "mcp_nfe_br.schemas.nfe"
 _SCHEMA_FILE_UNSIGNED = "nfe_v4.00_unsigned.xsd"
 _SCHEMA_FILE_SIGNED = "nfe_v4.00.xsd"
-_SCHEMA_VERSION_UNSIGNED = "NF-e/NFC-e 4.00 (PL_010d / NT 2026.004, unsigned variant)"
-_SCHEMA_VERSION_SIGNED = "NF-e/NFC-e 4.00 (PL_010d / NT 2026.004, official signed schema)"
+_SCHEMA_VERSION_UNSIGNED = "NF-e/NFC-e 4.00 (PL_010d / NT 2026.004 + PL_010e_v1.02 delta, unsigned variant)"
+_SCHEMA_VERSION_SIGNED = "NF-e/NFC-e 4.00 (PL_010d / NT 2026.004 + PL_010e_v1.02 delta, official signed schema)"
 
 _DS_SIGNATURE = "{http://www.w3.org/2000/09/xmldsig#}Signature"
 

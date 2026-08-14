@@ -43,7 +43,12 @@ from mcp_einvoicing_core.http_client import AuthMode, BaseEInvoicingClient
 from mcp_einvoicing_core.xml_utils import mark_untrusted_fields, safe_fromstring
 
 from mcp_nfe_br.models.invoice import TipoAmbiente
-from mcp_nfe_br.standards._sefaz_soap import parse_response_root, scrape_fields, soap_envelope
+from mcp_nfe_br.standards._sefaz_soap import (
+    parse_response_root,
+    scrape_alert_messages,
+    scrape_fields,
+    soap_envelope,
+)
 
 _NFE_NS = "http://www.portalfiscal.inf.br/nfe"
 
@@ -419,6 +424,13 @@ def parse_sefaz_response(response_xml: bytes) -> dict[str, object]:
         prot = scrape_fields(
             prot_nfe[0], ("chNFe", "tpAmb", "verAplic", "dhRecbto", "nProt", "digVal", "cStat", "xMotivo")
         )
+        # cStat=120 "autorizado com alerta" (NT 2026.002) — 0-5 cMsg/xMsg
+        # pairs, direct children of infProt. [Verified locally — BR-NFE-2026-08]
+        inf_prot = prot_nfe[0].xpath(".//*[local-name()='infProt']")
+        if inf_prot:
+            alerts = scrape_alert_messages(inf_prot[0])
+            if alerts:
+                prot["alerts"] = [mark_untrusted_fields(a, {"xMsg"}) for a in alerts]
         result["protNFe"] = mark_untrusted_fields(prot, _SEFAZ_UNTRUSTED_FIELDS)
 
     return mark_untrusted_fields(result, _SEFAZ_UNTRUSTED_FIELDS)

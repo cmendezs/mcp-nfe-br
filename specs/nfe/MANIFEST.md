@@ -13,7 +13,18 @@ the distilled compliance reference derived from these files.
 | Directory | Package | Status | Notes |
 |---|---|---|---|
 | `xsd/` | PL_010c (NT2022.002 v1.30) | **Current production schema** | Namespace `http://www.portalfiscal.inf.br/nfe`, schema 4.00. `TCnpj` = `[0-9]{14}`, `TCpf` = `[0-9]{11}`. |
-| `xsd_pl010d_cnpj_alfa/` | PL_010d (NT 2026.004 v1.01) | **Next schema** — homologation up to 2026-06-15, production from 2026-07-01 | `TCnpj` becomes `[0-9A-Z]{12}[0-9]{2}`; `TChNFe` (access key) becomes `[0-9]{6}[0-9A-Z]{12}[0-9]{26}`. |
+| `xsd_pl010d_cnpj_alfa/` | PL_010d (NT 2026.004 v1.01) | Superseded by `xsd_pl010d_v1.03/` | `TCnpj` becomes `[0-9A-Z]{12}[0-9]{2}`; `TChNFe` (access key) becomes `[0-9]{6}[0-9A-Z]{12}[0-9]{26}`. |
+| `xsd_pl010d_v1.03/` | PL_010d_v1.03 (CNPJ Alfanumérico point release, 10/07/2026, official) | CNPJ-alfa track — separate lineage from 010e, no DANFE Tipo 2 content | Full package: `NFe/`, `Evento/`, `CadConsultaCadastro/` folders. Diffed against `010e_v1.02` (2026-08-14): identical except 010e's DANFE-Tipo-2-specific delta is absent here — confirms the two lineages have not yet merged. |
+| `xsd_pl010e_v1.02/` | **PL_010e_v.1.02 (released 2026-07-10, official)** — bundles NT 2025.002 v1.40, NT 2026.002 v1.0, NT 2026.003 v1.0 | **Current next schema for DANFE Simplificado Tipo 2** — production since 2026-08-03 for the field-level delta | `[Verified locally — 2026-08-14, BR-NFE-2026-08]`. Delta vs. `PL_010d`: `tpImp` gains enum `6`; `tpEmis`/`indPres` documentation broadened (same enum values); new optional elements `cIndOp` (`ide` group, `[0-9]{6}`) and `ISUFEmit` (`emit` group, `[0-9]{8,9}`); `protNFe/infProt` gains a `maxOccurs="5"` `cMsg`/`xMsg` alert-message sequence (was effectively 0-1); `infNFeSupl/qrCode`'s V3-OFFLINE pattern widens the destinatário-ID segment to alphanumeric-CNPJ-or-CPF; `TTpNFCredito` gains enum `06`. This delta was hand-applied to `src/mcp_nfe_br/schemas/nfe/leiauteNFe_v4.00.xsd` and `leiauteNFe_v4.00_unsigned.xsd`, cited inline per element. |
+| `xsd_distdfe_v1.04/` | PL_NFeDistDFe_104 (distribution webservice release, 03/07/2026, official) | No code change needed | `distDFeInt_v1.01.xsd` payload shape (`tpAmb`/`cUFAutor`/`CNPJ`|`CPF`/`distNSU`|`consNSU`|`consChNFe`) is byte-identical in substance to what `SefazClient`'s `NFeDistribuicaoDFe` builder already implements (`[Verified locally — 2026-08-14]`). |
+| `xsd_eventos_rtc/` | Eventos_RTC (17 event XSDs, NT 2025.002-RTC) | `[NEED: not yet reviewed]` | Sourced 2026-08-14 but belongs to the separately-tracked IBS/CBS effort, not this item — deferred with the rest of the RTC event modeling. |
+
+`cIndOp`/`ISUFEmit` are **not documented anywhere in NT 2026.002 or NT 2026.003** — they
+were found only by diffing the official XSD directly against `PL_010d`. Working
+hypothesis: they belong to NT 2025.002-RTC (IBS/CBS place-of-supply / Zona Franca de
+Manaus) and were bundled into the 010e release opportunistically, not because they are
+DANFE-Tipo-2-specific. `[NEED: confirm against NT 2025.002 v1.50+ text — not yet
+cross-checked]`.
 
 ## PDFs (gitignored — see `*.pdf` entries in `.gitignore`)
 
@@ -31,6 +42,9 @@ the distilled compliance reference derived from these files.
 | `NT_2024.003- Produtos AGRO NF-e - v 1.10_Rev.pdf` | Agricultural products fields |
 | `NT_2020.001 v1.60 - Manifestação do destinatário.pdf` | Recipient manifestation events |
 | `NT2022.002v1.30a - Equiparação Exportação e outras alterações.pdf` | Export equivalence and other changes (source for `xsd/` PL_010c) |
+| `NT_2026.002_v1.00.pdf` | "NFCe/NFe - Emissão Offline, Autorização com Alerta e DANFE Simplificado Tipo 2" — new `tpImp=6`, redefines `tpEmis=9` and `indPres=4`, new `cStat=120` "autorizado com alerta" status and alert-message group (0-5 occurrences), CFOP/item-group business-rule restrictions when `tpImp=6`. Cronograma: phase 1 (W16-40) test 01/06/2026 / prod 15/06/2026; phase 2 (DANFE Tipo 2 field-level changes) test 01/07/2026 / **prod 03/08/2026 — already in effect**; phase 3 (alert structure, `cStat=120`) test 01/09/2026 / prod 05/10/2026 — not yet in effect. |
+| `NT_2026.002_v1.10_DANFE_Simpl_Tp2.pdf` | Same NT, version 1.10 (07/2026). Leiaute table (tpImp/tpEmis/indPres/cIndOp/ISUFEmit) is **identical** to v1.00 — only the validation-rule catalogue (§4) changed: rule `BA02-35` (and new companion `VC02-40`) moved from the 03/08/2026 wave to 05/10/2026; `VC02-50`/`W16-40`/`W16-50`/`W16-60` likewise deferred; 11 rules removed entirely (`BA05-10`, `BA06-10`, `BA12-10`-`BA15-10`, `BA20-10`, `BA20-20`, `I08-184`, `I08-186`, `VC02-50`). No impact on `mcp-nfe-br` since the business-rule catalogue is not enforced by the XSD-only validator. |
+| `NT_2026.003_v1.00 - DANFE Simplificado Tipo 2.pdf` | Printed auxiliary-document (DANFE) layout, QR-code composition (incl. new offline URL parameters), and public-consultation spec for DANFE Simplificado Tipo 2. Instituted by Ajuste SINIEF nº 13, 6 April 2026. Same cronograma as NT 2026.002 phase 2 (prod 03/08/2026). Out of `mcp-nfe-br` code scope — this package does not render DANFE PDFs; relevant only if a DANFE-rendering tool is ever added. |
 | `NT_2026.001_v1.02a - PAA NFe.pdf` | Padrão de Assinatura Avançada (PAA) — digital-certificate standard for advanced signature on behalf of the emitente. Read for BR-INV-3 (ICP-Brasil certificate retirement); does not mention "V10" or any certificate-chain retirement timeline. |
 | `MCT10Vol.IIv.3.0.pdf` | ICP-Brasil "Manual de Condutas Técnicas 10 — Volume II" (Carimbo do Tempo/timestamp-authority conformance testing), v3.0, 2021-11-10. Not NF-e-specific. Read for BR-INV-3; the only "V.10" hits are a requirement-numbering label (`REQUISITO V.10`), unrelated to certificate-chain versioning. Does not cover certificate retirement. |
 

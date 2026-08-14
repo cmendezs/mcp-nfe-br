@@ -190,6 +190,70 @@ def test_parse_sefaz_response_prot_nfe() -> None:
     assert "35220499999999999999550010020000001240556603" in parsed["protNFe"]["chNFe"]
 
 
+def test_parse_sefaz_response_prot_nfe_with_alert() -> None:
+    """cStat=120 "autorizado com alerta" (NT 2026.002) — 0-5 cMsg/xMsg pairs.
+
+    Regression test for BR-NFE-2026-08: `infProt` gained a 0-5 occurrence
+    `cMsg`/`xMsg` alert-message sequence, confirmed against the official
+    `PL_010e_v1.02.zip` schema package.
+    """
+    response_xml = b"""<?xml version="1.0" encoding="UTF-8"?>
+<soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope">
+  <soap:Body>
+    <nfeResultMsg xmlns="http://www.portalfiscal.inf.br/nfe/wsdl/NFeAutorizacao4">
+      <retEnviNFe xmlns="http://www.portalfiscal.inf.br/nfe" versao="4.00">
+        <tpAmb>2</tpAmb>
+        <cStat>104</cStat>
+        <xMotivo>Lote processado</xMotivo>
+        <protNFe versao="4.00">
+          <infProt>
+            <chNFe>35220499999999999999550010020000001240556603</chNFe>
+            <cStat>120</cStat>
+            <xMotivo>Autorizado o uso da NF-e, com alerta</xMotivo>
+            <nProt>135250000000001</nProt>
+            <cMsg>0328</cMsg>
+            <xMsg>Nota Fiscal emitida em ambiente de homologacao</xMsg>
+          </infProt>
+        </protNFe>
+      </retEnviNFe>
+    </nfeResultMsg>
+  </soap:Body>
+</soap:Envelope>"""
+    parsed = parse_sefaz_response(response_xml)
+    assert parsed["protNFe"]["cStat"] == "120"
+    alerts = parsed["protNFe"]["alerts"]
+    assert len(alerts) == 1
+    assert alerts[0]["cMsg"] == "0328"
+    # xMsg is free-text SEFAZ output — wrapped by mark_untrusted_fields.
+    assert "Nota Fiscal emitida em ambiente de homologacao" in alerts[0]["xMsg"]
+
+
+def test_parse_sefaz_response_prot_nfe_without_alert_has_no_alerts_key() -> None:
+    """A normal cStat=100 response (no alert group) must not add an `alerts` key."""
+    response_xml = b"""<?xml version="1.0" encoding="UTF-8"?>
+<soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope">
+  <soap:Body>
+    <nfeResultMsg xmlns="http://www.portalfiscal.inf.br/nfe/wsdl/NFeAutorizacao4">
+      <retEnviNFe xmlns="http://www.portalfiscal.inf.br/nfe" versao="4.00">
+        <tpAmb>2</tpAmb>
+        <cStat>104</cStat>
+        <xMotivo>Lote processado</xMotivo>
+        <protNFe versao="4.00">
+          <infProt>
+            <chNFe>35220499999999999999550010020000001240556603</chNFe>
+            <cStat>100</cStat>
+            <xMotivo>Autorizado o uso da NF-e</xMotivo>
+            <nProt>135250000000001</nProt>
+          </infProt>
+        </protNFe>
+      </retEnviNFe>
+    </nfeResultMsg>
+  </soap:Body>
+</soap:Envelope>"""
+    parsed = parse_sefaz_response(response_xml)
+    assert "alerts" not in parsed["protNFe"]
+
+
 # ---------------------------------------------------------------------------
 # Mocked-transport round-trips
 # ---------------------------------------------------------------------------

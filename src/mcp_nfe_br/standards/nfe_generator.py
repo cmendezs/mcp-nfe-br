@@ -147,6 +147,7 @@ def _emit_block(invoice: BRInvoice) -> str:
         xml_optional("IEST", emit.ie_st),
         xml_optional("IM", emit.im),
         xml_element("CRT", emit.crt.value),
+        xml_optional("ISUFEmit", emit.isuf_emit),
     ]
     return xml_element("emit", "".join(p for p in parts if p), unsafe=True)
 
@@ -722,6 +723,7 @@ def _ide_block(invoice: BRInvoice, *, cnf: str, cdv: str) -> str:
         xml_element("finNFe", invoice.fin_nfe),
         xml_element("indFinal", invoice.ind_final),
         xml_element("indPres", invoice.ind_pres),
+        xml_optional("cIndOp", invoice.c_ind_op),
         xml_element("procEmi", invoice.proc_emi),
         xml_element("verProc", invoice.ver_proc),
     ]

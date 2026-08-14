@@ -88,3 +88,21 @@ def scrape_fields(element: etree._Element, fields: tuple[str, ...]) -> dict[str,
 def parse_response_root(response_xml: bytes) -> etree._Element:
     """Parse a SEFAZ SOAP response body into an lxml element for `scrape_fields`."""
     return safe_fromstring(response_xml)
+
+
+def scrape_alert_messages(element: etree._Element) -> list[dict[str, str | None]]:
+    """Extract the `cStat=120` ("autorizado com alerta") alert-message group.
+
+    `element` must be scoped to a `protNFe`/`infProt` element, not the SOAP
+    response root — `cMsg`/`xMsg` also appear, unrelated, at the batch
+    (`TRetConsReciNFe`) level, and scoping avoids conflating the two.
+
+    NT 2026.002 v1.00 adds a 0-5 occurrence `cMsg`/`xMsg` sequence directly
+    inside `infProt`, confirmed structurally (`maxOccurs="5"`) against the
+    official `PL_010e_v1.02.zip` schema package's `leiauteNFe_v4.00.xsd`
+    (`[Verified locally]`, BR-NFE-2026-08). Pairs are matched by document
+    order since the sequence has no wrapping element name of its own.
+    """
+    c_msgs = element.xpath("./*[local-name()='cMsg']")
+    x_msgs = element.xpath("./*[local-name()='xMsg']")
+    return [{"cMsg": c.text, "xMsg": x.text} for c, x in zip(c_msgs, x_msgs, strict=False)]
