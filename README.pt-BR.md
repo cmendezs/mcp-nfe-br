@@ -174,7 +174,7 @@ Retorna `{"chave_acesso": ..., "cnf": ...}`.
 
 ## Ferramentas CT-e (modelo 57)
 
-A cobertura de CT-e (Conhecimento de Transporte Eletrônico) começou na v0.6.0. **O escopo v1 é intencionalmente restrito**: apenas modal rodoviário (outros modais retornam erro), apenas ICMS CST 00 (tributação normal), e nenhuma tabela de endpoints SEFAZ CT-e embutida/verificada — toda chamada SEFAZ abaixo exige `endpoint_override` explícito.
+A cobertura de CT-e (Conhecimento de Transporte Eletrônico) começou na v0.6.0. **O escopo v1 é intencionalmente restrito**: apenas modal rodoviário (outros modais retornam erro), apenas ICMS CST 00 (tributação normal), e nenhuma tabela de endpoints SEFAZ CT-e embutida/verificada — toda chamada SEFAZ abaixo exige `endpoint_override` explícito. Desde a v0.7.0, `br__generate_cte` também aceita os campos da Reforma Tributária do Consumo (IBS/CBS) introduzidos pela NT 2026.002 — `imp/IBSCBS`, `emit/ISUFEmit` e `ide/tpPagAnt`+`gPagAntecipado` — com as regras de negócio autocontidas da NT aplicadas na camada de modelo; regras que exigem consulta ao banco de dados da SEFAZ não são verificadas.
 
 ### `br__generate_cte`
 
