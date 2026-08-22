@@ -1,0 +1,89 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  # ── Tests ──────────────────────────────────────────────────────────────────
+  test:
+    name: Test (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          # No pip cache — uv manages its own cache via setup-uv
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+
+      - name: Install package + dev dependencies
+        # --no-sources: ignore [tool.uv.sources] workspace declarations so that
+        # mcp-einvoicing-core is resolved from PyPI (not a monorepo workspace
+        # that does not exist in this standalone repo context).
+        # --upgrade: bypass the committed uv.lock (generated inside the monorepo
+        # workspace where core resolves as a local path) and re-resolve all
+        # packages from PyPI to get the correct pinned versions for CI.
+        run: uv sync --all-extras --no-sources --upgrade
+
+      - name: Lint with ruff
+        run: uv run ruff check src/mcp_nfe_br/ tests/ audit/
+
+      - name: Type-check with mypy
+        # Non-blocking: run mypy for visibility but never fail the job.
+        run: uv run mypy src/mcp_nfe_br/ || true
+
+      - name: Run tests
+        run: uv run pytest --tb=short
+
+      - name: Upload coverage report
+        if: matrix.python-version == '3.11'
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: htmlcov/
+
+  # ── Pre-publish audit ──────────────────────────────────────────────────────
+  audit:
+    name: Pre-publish audit vs mcp-einvoicing-core
+    needs: test
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+
+      - name: Install package + dev dependencies
+        run: uv sync --all-extras --no-sources --upgrade
+
+      - name: Run pre-publish audit
+        # Exit code 2 = blocking failures → job fails
+        # Exit code 1 = warnings only     → job passes (informational)
+        run: uv run python audit/audit_vs_core.py --output audit/report.json --fail-on blocking
+
+      - name: Upload audit report
+        if: always()   # Upload even on failure so the report is inspectable
+        uses: actions/upload-artifact@v4
+        with:
+          name: audit-report
+          path: audit/report.json
