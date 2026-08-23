@@ -26,30 +26,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python-version }}
-          # No pip cache — uv manages its own cache via setup-uv
-
       - name: Install uv
-        uses: astral-sh/setup-uv@v3
+        uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
 
-      - name: Install package + dev dependencies
-        # --no-sources: ignore [tool.uv.sources] workspace declarations so that
-        # mcp-einvoicing-core is resolved from PyPI (not a monorepo workspace
-        # that does not exist in this standalone repo context).
-        # --upgrade: bypass the committed uv.lock (generated inside the monorepo
-        # workspace where core resolves as a local path) and re-resolve all
-        # packages from PyPI to get the correct pinned versions for CI.
-        run: uv sync --all-extras --no-sources --upgrade
+      - name: Set up Python ${{ matrix.python-version }}
+        run: uv python install ${{ matrix.python-version }}
 
-      - name: Lint with ruff
-        run: uv run ruff check src/mcp_nfe_br/ tests/ audit/
-
-      - name: Type-check with mypy
-        # Non-blocking: run mypy for visibility but never fail the job.
-        run: uv run mypy src/mcp_nfe_br/ || true
+      - name: Install dependencies
+        run: uv sync --all-extras --no-sources
 
       - name: Run tests
         run: uv run pytest --tb=short
@@ -61,19 +47,55 @@ jobs:
           name: coverage-report
           path: htmlcov/
 
-  # ── Pre-publish audit ──────────────────────────────────────────────────────
-  audit:
-    name: Pre-publish audit vs mcp-einvoicing-core
-    needs: test
+  # ── Lint & type check ────────────────────────────────────────────────────────
+  lint:
+    name: Lint & type check
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v4
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v3
+        uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
 
-      - name: Install package + dev dependencies
+      - name: Set up Python
+        run: uv python install 3.11
+
+      - name: Install dependencies
+        run: uv sync --all-extras --no-sources
+
+      - name: Ruff check
+        run: uv run ruff check src/mcp_nfe_br/ tests/ audit/
+
+      - name: Ruff format check
+        run: uv run ruff format --check src/mcp_nfe_br/ tests/ audit/
+
+      - name: Mypy
+        run: uv run mypy src/mcp_nfe_br/
+        continue-on-error: true  # Non-blocking: 37 pre-existing type errors, tracked separately
+
+  # ── Pre-publish audit ──────────────────────────────────────────────────────
+  audit:
+    name: Pre-publish audit vs mcp-einvoicing-core
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+
+      - name: Set up Python
+        run: uv python install 3.11
+
+      - name: Install dependencies
+        # --no-sources: resolve mcp-einvoicing-core from PyPI in this standalone repo.
+        # --upgrade: audit against the latest compatible core release, not whatever
+        # the committed uv.lock happens to pin.
         run: uv sync --all-extras --no-sources --upgrade
 
       - name: Run pre-publish audit
