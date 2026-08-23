@@ -119,6 +119,7 @@ def test_chave_acesso_valid_alphanumeric_cnpj_segment() -> None:
     alpha_key = "352606" + "AB22333000181X" + "550010000000011234567891"
     assert len(alpha_key) == 44
     import re
+
     assert re.match(r"^[0-9]{6}[0-9A-Z]{14}[0-9]{24}$", alpha_key)
 
 

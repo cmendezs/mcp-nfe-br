@@ -177,9 +177,7 @@ class NFSePrestador(BaseModel):
     end: NFSeEndereco | None = Field(default=None, description="Endereço do prestador")
     fone: str | None = Field(default=None, description="Telefone do prestador")
     email: str | None = Field(default=None, description="E-mail do prestador")
-    reg_trib: NFSeRegimeTributacao = Field(
-        ..., description="Regimes de tributação do prestador"
-    )
+    reg_trib: NFSeRegimeTributacao = Field(..., description="Regimes de tributação do prestador")
 
     @model_validator(mode="after")
     def check_one_document(self) -> NFSePrestador:
@@ -320,10 +318,12 @@ class NFSeTribMunicipal(BaseModel):
     """
 
     trib_issqn: NFSeTribISSQN = Field(
-        ..., description="Tributação do ISSQN: 1=tributável, 2=imunidade, 3=exportação, 4=não incidência"
+        ...,
+        description="Tributação do ISSQN: 1=tributável, 2=imunidade, 3=exportação, 4=não incidência",
     )
     tp_ret_issqn: NFSeTipoRetISSQN = Field(
-        ..., description="Tipo de retenção do ISSQN: 1=não retido, 2=retido pelo tomador, 3=retido pelo intermediário"
+        ...,
+        description="Tipo de retenção do ISSQN: 1=não retido, 2=retido pelo tomador, 3=retido pelo intermediário",
     )
     p_aliq: str | None = Field(
         default=None,
@@ -405,12 +405,8 @@ class NFSeValores(BaseModel):
     """
 
     v_serv: str = Field(..., description="Valor dos serviços (R$)")
-    trib_mun: NFSeTribMunicipal = Field(
-        ..., description="Tributação municipal (ISSQN)"
-    )
-    tot_trib: NFSeTotTrib = Field(
-        ..., description="Total aproximado de tributos (obrigatório)"
-    )
+    trib_mun: NFSeTribMunicipal = Field(..., description="Tributação municipal (ISSQN)")
+    tot_trib: NFSeTotTrib = Field(..., description="Total aproximado de tributos (obrigatório)")
 
 
 class NFSeDocument(InvoiceDocument):
@@ -445,7 +441,7 @@ class NFSeDocument(InvoiceDocument):
         ...,
         description=(
             "Data de competência — início da prestação (YYYY-MM-DD; TSData é ISO "
-            "com hífens apesar da anotação do XSD dizer \"AAAAMMDD\") "
+            'com hífens apesar da anotação do XSD dizer "AAAAMMDD") '
             "[Verified locally — tiposSimples_v1.01.xsd TSData]"
         ),
     )
@@ -460,9 +456,7 @@ class NFSeDocument(InvoiceDocument):
         description="Código IBGE do município emissor (7 dígitos)",
     )
     prest: NFSePrestador = Field(..., description="Informações do prestador")
-    toma: NFSeTomador | None = Field(
-        default=None, description="Informações do tomador (opcional)"
-    )
+    toma: NFSeTomador | None = Field(default=None, description="Informações do tomador (opcional)")
     serv: NFSeServ = Field(..., description="Informações do serviço")
     valores: NFSeValores = Field(..., description="Valores do serviço e tributação")
     ibscbs: BRGrupoIBSCBS | None = Field(

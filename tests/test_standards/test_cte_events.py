@@ -73,7 +73,11 @@ def test_build_correcao_event_xml_shape() -> None:
         cnpj="11222333000181",
         dh_evento="2026-07-03T10:00:00Z",
         correcoes=[
-            {"grupo_alterado": "rem", "campo_alterado": "xNome", "valor_alterado": "Nome Correto LTDA"}
+            {
+                "grupo_alterado": "rem",
+                "campo_alterado": "xNome",
+                "valor_alterado": "Nome Correto LTDA",
+            }
         ],
     )
     root = etree.fromstring(xml.encode("utf-8"))
@@ -151,7 +155,11 @@ def test_correcao_payload_validates_against_ev_cce_cte_xsd() -> None:
         cnpj="11222333000181",
         dh_evento="2026-07-03T10:00:00Z",
         correcoes=[
-            {"grupo_alterado": "rem", "campo_alterado": "xNome", "valor_alterado": "Nome Correto LTDA"},
+            {
+                "grupo_alterado": "rem",
+                "campo_alterado": "xNome",
+                "valor_alterado": "Nome Correto LTDA",
+            },
             {
                 "grupo_alterado": "det",
                 "campo_alterado": "xOutCat",

@@ -193,7 +193,9 @@ _CORRECT_CTE_KWARGS = {
     "c_orgao": "35",
     "cnpj": "11222333000181",
     "dh_evento": "2026-07-03T10:00:00Z",
-    "correcoes": [{"grupo_alterado": "rem", "campo_alterado": "xNome", "valor_alterado": "Novo Nome"}],
+    "correcoes": [
+        {"grupo_alterado": "rem", "campo_alterado": "xNome", "valor_alterado": "Novo Nome"}
+    ],
     "cert_path": "/tmp/does-not-exist.p12",
     "endpoint_override": "https://homolog.example/CTeRecepcaoEventoV4.asmx",
 }

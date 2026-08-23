@@ -63,9 +63,7 @@ def br__validate_nfe_xml(
     xml_content: Annotated[
         str | None, "Raw NF-e/NFC-e XML string. Provide either xml_content or xml_base64."
     ] = None,
-    xml_base64: Annotated[
-        str | None, "Base64-encoded NF-e/NFC-e XML bytes."
-    ] = None,
+    xml_base64: Annotated[str | None, "Base64-encoded NF-e/NFC-e XML bytes."] = None,
 ) -> dict[str, object]:
     """Validate an NF-e/NFC-e XML (modelo 55/65, schema 4.00) against the bundled PL_010d XSD.
 
@@ -85,18 +83,12 @@ def br__validate_nfe_xml(
 
 
 def br__sign_nfe(
-    cert_path: Annotated[
-        str, "Caminho local para o certificado ICP-Brasil A1 (.p12/.pfx)"
-    ],
+    cert_path: Annotated[str, "Caminho local para o certificado ICP-Brasil A1 (.p12/.pfx)"],
     xml_content: Annotated[
         str | None, "XML NF-e/NFC-e não assinado. Informe xml_content ou xml_base64."
     ] = None,
-    xml_base64: Annotated[
-        str | None, "XML NF-e/NFC-e não assinado, codificado em base64."
-    ] = None,
-    cert_password: Annotated[
-        str | None, "Senha do certificado A1, se houver"
-    ] = None,
+    xml_base64: Annotated[str | None, "XML NF-e/NFC-e não assinado, codificado em base64."] = None,
+    cert_password: Annotated[str | None, "Senha do certificado A1, se houver"] = None,
 ) -> dict[str, object]:
     """Apply an ICP-Brasil enveloped XML-DSig signature to an NF-e/NFC-e XML.
 
@@ -127,7 +119,8 @@ def br__build_access_key(
     c_uf: Annotated[str, "Código IBGE da UF do emitente (2 dígitos)"],
     dh_emi: Annotated[str, "Data e hora de emissão (ISO 8601, com fuso horário)"],
     cnpj: Annotated[
-        str, "CNPJ do emitente: 14 dígitos numéricos (PL_010c) ou 12 alfanuméricos + 2 dígitos (PL_010d)"
+        str,
+        "CNPJ do emitente: 14 dígitos numéricos (PL_010c) ou 12 alfanuméricos + 2 dígitos (PL_010d)",
     ],
     modelo: Annotated[str, "Modelo do documento fiscal: '55' (NF-e) ou '65' (NFC-e)"],
     serie: Annotated[str, "Série do documento fiscal"],

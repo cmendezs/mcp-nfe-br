@@ -50,9 +50,7 @@ def test_is_block_absent_when_none() -> None:
 
 
 def test_is_block_partial_fields_omitted() -> None:
-    line = make_line(
-        imposto_seletivo=BRGrupoImpostoSeletivo(v_is="5.00")
-    )
+    line = make_line(imposto_seletivo=BRGrupoImpostoSeletivo(v_is="5.00"))
     xml = NFeGenerator().generate(make_nfe(lines=[line]))
     assert "<IS>" in xml
     assert "<vIS>5.00</vIS>" in xml

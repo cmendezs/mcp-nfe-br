@@ -63,31 +63,23 @@ def test_icms30_isenta_com_st() -> None:
 
 
 def test_icms40_isenta() -> None:
-    xml = _generate_and_validate(
-        {"icms_cst": "40", "icms_rate": None, "icms_amount": None}
-    )
+    xml = _generate_and_validate({"icms_cst": "40", "icms_rate": None, "icms_amount": None})
     assert "<ICMS40>" in xml
     assert "<CST>40</CST>" in xml
 
 
 def test_icms41_nao_tributada() -> None:
-    xml = _generate_and_validate(
-        {"icms_cst": "41", "icms_rate": None, "icms_amount": None}
-    )
+    xml = _generate_and_validate({"icms_cst": "41", "icms_rate": None, "icms_amount": None})
     assert "<CST>41</CST>" in xml
 
 
 def test_icms50_suspensao() -> None:
-    xml = _generate_and_validate(
-        {"icms_cst": "50", "icms_rate": None, "icms_amount": None}
-    )
+    xml = _generate_and_validate({"icms_cst": "50", "icms_rate": None, "icms_amount": None})
     assert "<CST>50</CST>" in xml
 
 
 def test_icms51_diferimento() -> None:
-    xml = _generate_and_validate(
-        {"icms_cst": "51", "icms_rate": None, "icms_amount": None}
-    )
+    xml = _generate_and_validate({"icms_cst": "51", "icms_rate": None, "icms_amount": None})
     assert "<ICMS51>" in xml
 
 
@@ -136,9 +128,7 @@ def test_icms90_outras_com_bc_e_st() -> None:
 
 
 def test_icms90_outras_sem_campos_opcionais() -> None:
-    xml = _generate_and_validate(
-        {"icms_cst": "90", "icms_rate": None, "icms_amount": None}
-    )
+    xml = _generate_and_validate({"icms_cst": "90", "icms_rate": None, "icms_amount": None})
     assert "<ICMS90>" in xml
 
 
@@ -157,17 +147,13 @@ def test_csosn101_simples_com_credito() -> None:
 
 
 def test_csosn103_isencao_faixa_receita() -> None:
-    xml = _generate_and_validate(
-        {"icms_cst": "103", "icms_rate": None, "icms_amount": None}
-    )
+    xml = _generate_and_validate({"icms_cst": "103", "icms_rate": None, "icms_amount": None})
     assert "<ICMSSN102>" in xml
     assert "<CSOSN>103</CSOSN>" in xml
 
 
 def test_csosn300_imune() -> None:
-    xml = _generate_and_validate(
-        {"icms_cst": "300", "icms_rate": None, "icms_amount": None}
-    )
+    xml = _generate_and_validate({"icms_cst": "300", "icms_rate": None, "icms_amount": None})
     assert "<ICMSSN102>" in xml
     assert "<CSOSN>300</CSOSN>" in xml
 

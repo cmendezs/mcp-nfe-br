@@ -135,9 +135,7 @@ def _endereco_block(tag: str, end: BREndereco, *, include_fone: bool = True) -> 
 
 def _emit_block(invoice: BRInvoice) -> str:
     emit = invoice.emitente
-    doc_block = (
-        xml_element("CNPJ", emit.cnpj) if emit.cnpj else xml_element("CPF", emit.cpf or "")
-    )
+    doc_block = xml_element("CNPJ", emit.cnpj) if emit.cnpj else xml_element("CPF", emit.cpf or "")
     parts = [
         doc_block,
         xml_element("xNome", emit.x_nome),
@@ -178,9 +176,7 @@ def _icms_st_extra(line: BRInvoiceLine) -> str:
     return "".join(
         [
             xml_element("modBCST", line.icms_mod_bc_st or "4"),
-            xml_optional(
-                "pMVAST", _percent(line.icms_p_mva_st) if line.icms_p_mva_st else None
-            ),
+            xml_optional("pMVAST", _percent(line.icms_p_mva_st) if line.icms_p_mva_st else None),
             xml_optional(
                 "pRedBCST", _percent(line.icms_p_red_bc_st) if line.icms_p_red_bc_st else None
             ),
@@ -215,9 +211,7 @@ def _icms_outras_extra(line: BRInvoiceLine, v_prod: Decimal) -> str:
         parts += [
             xml_element("modBC", line.icms_mod_bc or "3"),
             xml_element("vBC", _d2(v_prod)),
-            xml_optional(
-                "pRedBC", _percent(line.icms_p_red_bc) if line.icms_p_red_bc else None
-            ),
+            xml_optional("pRedBC", _percent(line.icms_p_red_bc) if line.icms_p_red_bc else None),
             xml_element("pICMS", _percent(line.icms_rate or "0")),
             xml_element("vICMS", _d2(line.icms_amount or "0")),
         ]
@@ -453,40 +447,42 @@ def _ibs_cbs_block(line: BRInvoiceLine) -> str:
         return ""
 
     if g.ibs_uf is not None and g.ibs_uf.v_ibs_uf is None:
-        raise DocumentGenerationError(
-            "BR-TL-3: gIBSUF subgroup present but vIBSUF is missing"
-        )
+        raise DocumentGenerationError("BR-TL-3: gIBSUF subgroup present but vIBSUF is missing")
     if g.ibs_mun is not None and g.ibs_mun.v_ibs_mun is None:
-        raise DocumentGenerationError(
-            "BR-TL-3: gIBSMun subgroup present but vIBSMun is missing"
-        )
+        raise DocumentGenerationError("BR-TL-3: gIBSMun subgroup present but vIBSMun is missing")
     if g.cbs is not None and g.cbs.v_cbs is None:
-        raise DocumentGenerationError(
-            "BR-TL-3: gCBS subgroup present but vCBS is missing"
-        )
+        raise DocumentGenerationError("BR-TL-3: gCBS subgroup present but vCBS is missing")
 
     ibs_uf_xml = ""
     if g.ibs_uf is not None:
-        ibs_uf_inner = "".join([
-            xml_optional("pIBSUF", _percent(g.ibs_uf.p_ibs_uf) if g.ibs_uf.p_ibs_uf else None),
-            xml_optional("vIBSUF", _d2(g.ibs_uf.v_ibs_uf) if g.ibs_uf.v_ibs_uf else None),
-        ])
+        ibs_uf_inner = "".join(
+            [
+                xml_optional("pIBSUF", _percent(g.ibs_uf.p_ibs_uf) if g.ibs_uf.p_ibs_uf else None),
+                xml_optional("vIBSUF", _d2(g.ibs_uf.v_ibs_uf) if g.ibs_uf.v_ibs_uf else None),
+            ]
+        )
         ibs_uf_xml = xml_element("gIBSUF", ibs_uf_inner, unsafe=True)
 
     ibs_mun_xml = ""
     if g.ibs_mun is not None:
-        ibs_mun_inner = "".join([
-            xml_optional("pIBSMun", _percent(g.ibs_mun.p_ibs_mun) if g.ibs_mun.p_ibs_mun else None),
-            xml_optional("vIBSMun", _d2(g.ibs_mun.v_ibs_mun) if g.ibs_mun.v_ibs_mun else None),
-        ])
+        ibs_mun_inner = "".join(
+            [
+                xml_optional(
+                    "pIBSMun", _percent(g.ibs_mun.p_ibs_mun) if g.ibs_mun.p_ibs_mun else None
+                ),
+                xml_optional("vIBSMun", _d2(g.ibs_mun.v_ibs_mun) if g.ibs_mun.v_ibs_mun else None),
+            ]
+        )
         ibs_mun_xml = xml_element("gIBSMun", ibs_mun_inner, unsafe=True)
 
     cbs_xml = ""
     if g.cbs is not None:
-        cbs_inner = "".join([
-            xml_optional("pCBS", _percent(g.cbs.p_cbs) if g.cbs.p_cbs else None),
-            xml_optional("vCBS", _d2(g.cbs.v_cbs) if g.cbs.v_cbs else None),
-        ])
+        cbs_inner = "".join(
+            [
+                xml_optional("pCBS", _percent(g.cbs.p_cbs) if g.cbs.p_cbs else None),
+                xml_optional("vCBS", _d2(g.cbs.v_cbs) if g.cbs.v_cbs else None),
+            ]
+        )
         cbs_xml = xml_element("gCBS", cbs_inner, unsafe=True)
 
     parts = [
@@ -514,50 +510,76 @@ def _ibscbs_tot_xml(tot: BRGrupoIBSCBSTot) -> str:
         if ibs.ibs_uf is not None:
             ibs_uf_xml = xml_element(
                 "gIBSUF",
-                "".join([
-                    xml_optional("vDif", _d2(ibs.ibs_uf.v_dif) if ibs.ibs_uf.v_dif else None),
-                    xml_optional("vDevTrib", _d2(ibs.ibs_uf.v_dev_trib) if ibs.ibs_uf.v_dev_trib else None),
-                    xml_optional("vIBSUF", _d2(ibs.ibs_uf.v_ibs_uf) if ibs.ibs_uf.v_ibs_uf else None),
-                ]),
+                "".join(
+                    [
+                        xml_optional("vDif", _d2(ibs.ibs_uf.v_dif) if ibs.ibs_uf.v_dif else None),
+                        xml_optional(
+                            "vDevTrib",
+                            _d2(ibs.ibs_uf.v_dev_trib) if ibs.ibs_uf.v_dev_trib else None,
+                        ),
+                        xml_optional(
+                            "vIBSUF", _d2(ibs.ibs_uf.v_ibs_uf) if ibs.ibs_uf.v_ibs_uf else None
+                        ),
+                    ]
+                ),
                 unsafe=True,
             )
         ibs_mun_xml = ""
         if ibs.ibs_mun is not None:
             ibs_mun_xml = xml_element(
                 "gIBSMun",
-                "".join([
-                    xml_optional("vDif", _d2(ibs.ibs_mun.v_dif) if ibs.ibs_mun.v_dif else None),
-                    xml_optional("vDevTrib", _d2(ibs.ibs_mun.v_dev_trib) if ibs.ibs_mun.v_dev_trib else None),
-                    xml_optional("vIBSMun", _d2(ibs.ibs_mun.v_ibs_mun) if ibs.ibs_mun.v_ibs_mun else None),
-                ]),
+                "".join(
+                    [
+                        xml_optional("vDif", _d2(ibs.ibs_mun.v_dif) if ibs.ibs_mun.v_dif else None),
+                        xml_optional(
+                            "vDevTrib",
+                            _d2(ibs.ibs_mun.v_dev_trib) if ibs.ibs_mun.v_dev_trib else None,
+                        ),
+                        xml_optional(
+                            "vIBSMun", _d2(ibs.ibs_mun.v_ibs_mun) if ibs.ibs_mun.v_ibs_mun else None
+                        ),
+                    ]
+                ),
                 unsafe=True,
             )
-        ibs_inner = "".join([
-            ibs_uf_xml,
-            ibs_mun_xml,
-            xml_optional("vIBS", _d2(ibs.v_ibs) if ibs.v_ibs else None),
-            xml_optional("vCredPres", _d2(ibs.v_cred_pres) if ibs.v_cred_pres else None),
-            xml_optional("vCredPresCondSus", _d2(ibs.v_cred_pres_cond_sus) if ibs.v_cred_pres_cond_sus else None),
-        ])
+        ibs_inner = "".join(
+            [
+                ibs_uf_xml,
+                ibs_mun_xml,
+                xml_optional("vIBS", _d2(ibs.v_ibs) if ibs.v_ibs else None),
+                xml_optional("vCredPres", _d2(ibs.v_cred_pres) if ibs.v_cred_pres else None),
+                xml_optional(
+                    "vCredPresCondSus",
+                    _d2(ibs.v_cred_pres_cond_sus) if ibs.v_cred_pres_cond_sus else None,
+                ),
+            ]
+        )
         ibs_xml = xml_element("gIBS", ibs_inner, unsafe=True)
 
     cbs_xml = ""
     if tot.cbs is not None:
         cbs = tot.cbs
-        cbs_inner = "".join([
-            xml_optional("vDif", _d2(cbs.v_dif) if cbs.v_dif else None),
-            xml_optional("vDevTrib", _d2(cbs.v_dev_trib) if cbs.v_dev_trib else None),
-            xml_optional("vCBS", _d2(cbs.v_cbs) if cbs.v_cbs else None),
-            xml_optional("vCredPres", _d2(cbs.v_cred_pres) if cbs.v_cred_pres else None),
-            xml_optional("vCredPresCondSus", _d2(cbs.v_cred_pres_cond_sus) if cbs.v_cred_pres_cond_sus else None),
-        ])
+        cbs_inner = "".join(
+            [
+                xml_optional("vDif", _d2(cbs.v_dif) if cbs.v_dif else None),
+                xml_optional("vDevTrib", _d2(cbs.v_dev_trib) if cbs.v_dev_trib else None),
+                xml_optional("vCBS", _d2(cbs.v_cbs) if cbs.v_cbs else None),
+                xml_optional("vCredPres", _d2(cbs.v_cred_pres) if cbs.v_cred_pres else None),
+                xml_optional(
+                    "vCredPresCondSus",
+                    _d2(cbs.v_cred_pres_cond_sus) if cbs.v_cred_pres_cond_sus else None,
+                ),
+            ]
+        )
         cbs_xml = xml_element("gCBS", cbs_inner, unsafe=True)
 
-    inner = "".join([
-        xml_optional("vBCIBSCBS", _d2(tot.v_bc_ibscbs) if tot.v_bc_ibscbs else None),
-        ibs_xml,
-        cbs_xml,
-    ])
+    inner = "".join(
+        [
+            xml_optional("vBCIBSCBS", _d2(tot.v_bc_ibscbs) if tot.v_bc_ibscbs else None),
+            ibs_xml,
+            cbs_xml,
+        ]
+    )
     return xml_element("IBSCBSTot", inner, unsafe=True)
 
 
@@ -687,9 +709,7 @@ def _pag_block(invoice: BRInvoice) -> str:
     det_pags = []
     for pag in invoice.pagamentos:
         if pag.t_pag in _TPAG_REQUIRES_CNPJ and pag.cnpj_pag is None:
-            raise DocumentGenerationError(
-                f"BR-TL-1: cnpj_pag is required when tPag={pag.t_pag}"
-            )
+            raise DocumentGenerationError(f"BR-TL-1: cnpj_pag is required when tPag={pag.t_pag}")
         parts = [
             xml_optional("indPag", pag.ind_pag),
             xml_element("tPag", pag.t_pag),

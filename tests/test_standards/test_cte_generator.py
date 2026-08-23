@@ -91,7 +91,9 @@ def test_generate_ibscbs_and_pag_antecipado_validate_against_xsd() -> None:
                     v_ibs="0.10",
                     g_cbs=BRCteCBS(
                         p_cbs="0.00",
-                        g_alczfmcbs=BRCteALCZFMCBS(p_aliq_efet_reg_cbs="0.90", v_trib_reg_cbs="0.90"),
+                        g_alczfmcbs=BRCteALCZFMCBS(
+                            p_aliq_efet_reg_cbs="0.90", v_trib_reg_cbs="0.90"
+                        ),
                         v_cbs="0.00",
                     ),
                 ),

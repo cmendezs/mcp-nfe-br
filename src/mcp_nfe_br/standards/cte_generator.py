@@ -71,9 +71,7 @@ def _endereco_block(tag: str, end, *, include_fone: bool = False, fone: str | No
 
 def _emit_block(cte: BRCTeDocument) -> str:
     emit = cte.emitente
-    doc_block = (
-        xml_element("CNPJ", emit.cnpj) if emit.cnpj else xml_element("CPF", emit.cpf or "")
-    )
+    doc_block = xml_element("CNPJ", emit.cnpj) if emit.cnpj else xml_element("CPF", emit.cpf or "")
     parts = [
         doc_block,
         xml_optional("IE", emit.ie),
@@ -90,7 +88,9 @@ def _party_block(tag: str, ender_tag: str, party: BRCteParty | None) -> str:
     field order: CNPJ|CPF, IE?, xNome, fone?, ender<X>, email?."""
     if party is None:
         return ""
-    doc_block = xml_element("CNPJ", party.cnpj) if party.cnpj else xml_element("CPF", party.cpf or "")
+    doc_block = (
+        xml_element("CNPJ", party.cnpj) if party.cnpj else xml_element("CPF", party.cpf or "")
+    )
     parts = [
         doc_block,
         xml_optional("IE", party.ie),
@@ -152,7 +152,9 @@ def _tomador_block(cte: BRCTeDocument) -> str:
         return xml_element("toma3", xml_element("toma", tomador.papel.value), unsafe=True)
     outros = tomador.outros
     assert outros is not None  # guaranteed by BRCteTomador.check_one_choice
-    doc_block = xml_element("CNPJ", outros.cnpj) if outros.cnpj else xml_element("CPF", outros.cpf or "")
+    doc_block = (
+        xml_element("CNPJ", outros.cnpj) if outros.cnpj else xml_element("CPF", outros.cpf or "")
+    )
     parts = [
         xml_element("toma", "4"),
         doc_block,
@@ -168,7 +170,9 @@ def _tomador_block(cte: BRCTeDocument) -> str:
 def _v_prest_block(cte: BRCTeDocument) -> str:
     v_prest = cte.v_prest
     comps = "".join(
-        xml_element("Comp", xml_element("xNome", c.x_nome) + xml_element("vComp", c.v_comp), unsafe=True)
+        xml_element(
+            "Comp", xml_element("xNome", c.x_nome) + xml_element("vComp", c.v_comp), unsafe=True
+        )
         for c in v_prest.comp
     )
     parts = [
@@ -183,7 +187,10 @@ def _imp_block(cte: BRCTeDocument) -> str:
     icms = cte.imp.icms
     icms00 = xml_element(
         "ICMS00",
-        xml_element("CST", icms.cst) + xml_element("vBC", icms.v_bc) + xml_element("pICMS", icms.p_icms) + xml_element("vICMS", icms.v_icms),
+        xml_element("CST", icms.cst)
+        + xml_element("vBC", icms.v_bc)
+        + xml_element("pICMS", icms.p_icms)
+        + xml_element("vICMS", icms.v_icms),
         unsafe=True,
     )
     parts = [
@@ -197,14 +204,18 @@ def _imp_block(cte: BRCTeDocument) -> str:
 def _dif_block(tag: str, dif) -> str:
     if dif is None:
         return ""
-    return xml_element(tag, xml_element("pDif", dif.p_dif) + xml_element("vDif", dif.v_dif), unsafe=True)
+    return xml_element(
+        tag, xml_element("pDif", dif.p_dif) + xml_element("vDif", dif.v_dif), unsafe=True
+    )
 
 
 def _red_block(tag: str, red) -> str:
     if red is None:
         return ""
     return xml_element(
-        tag, xml_element("pRedAliq", red.p_red_aliq) + xml_element("pAliqEfet", red.p_aliq_efet), unsafe=True
+        tag,
+        xml_element("pRedAliq", red.p_red_aliq) + xml_element("pAliqEfet", red.p_aliq_efet),
+        unsafe=True,
     )
 
 
@@ -213,7 +224,8 @@ def _alczfmcbs_block(alc) -> str:
         return ""
     return xml_element(
         "gALCZFMCBS",
-        xml_element("pAliqEfetRegCBS", alc.p_aliq_efet_reg_cbs) + xml_element("vTribRegCBS", alc.v_trib_reg_cbs),
+        xml_element("pAliqEfetRegCBS", alc.p_aliq_efet_reg_cbs)
+        + xml_element("vTribRegCBS", alc.v_trib_reg_cbs),
         unsafe=True,
     )
 
@@ -253,7 +265,8 @@ def _estorno_cred_block(ec) -> str:
         return ""
     return xml_element(
         "gEstornoCred",
-        xml_element("vIBSEstCred", ec.v_ibs_est_cred) + xml_element("vCBSEstCred", ec.v_cbs_est_cred),
+        xml_element("vIBSEstCred", ec.v_ibs_est_cred)
+        + xml_element("vCBSEstCred", ec.v_cbs_est_cred),
         unsafe=True,
     )
 
@@ -322,7 +335,9 @@ def _inf_carga_block(cte: BRCTeDocument) -> str:
     inf_qs = "".join(
         xml_element(
             "infQ",
-            xml_element("cUnid", q.c_unid) + xml_element("tpMed", q.tp_med) + xml_element("qCarga", q.q_carga),
+            xml_element("cUnid", q.c_unid)
+            + xml_element("tpMed", q.tp_med)
+            + xml_element("qCarga", q.q_carga),
             unsafe=True,
         )
         for q in carga.inf_q
@@ -344,7 +359,9 @@ def _inf_modal_block(cte: BRCTeDocument) -> str:
             "[NEED: not modeled — see roadmap BR-CTE-8]."
         )
     rodo = xml_element("rodo", xml_element("RNTRC", modal_data.rntrc or ""), unsafe=True)
-    return xml_element("infModal", rodo, attrs={"versaoModal": modal_data.versao_modal}, unsafe=True)
+    return xml_element(
+        "infModal", rodo, attrs={"versaoModal": modal_data.versao_modal}, unsafe=True
+    )
 
 
 class CTeGenerator(BaseDocumentGenerator[InvoiceDocument]):

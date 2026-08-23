@@ -88,9 +88,7 @@ def br__validate_cte_xml(
     xml_content: Annotated[
         str | None, "Raw CT-e XML string. Provide either xml_content or xml_base64."
     ] = None,
-    xml_base64: Annotated[
-        str | None, "Base64-encoded CT-e XML bytes."
-    ] = None,
+    xml_base64: Annotated[str | None, "Base64-encoded CT-e XML bytes."] = None,
 ) -> dict[str, object]:
     """Validate a CT-e XML (modelo 57, schema 4.00) against the bundled PL_CTe_400 XSD.
 
@@ -268,14 +266,17 @@ async def br__submit_cte(
 
 async def br__cancel_cte(
     ch_cte: Annotated[str, "Chave de acesso do CT-e a cancelar (chCTe), 44 caracteres"],
-    c_orgao: Annotated[str, "Código IBGE da UF do autorizador (cOrgao), 2 dígitos (ou '90' para SUFRAMA)"],
+    c_orgao: Annotated[
+        str, "Código IBGE da UF do autorizador (cOrgao), 2 dígitos (ou '90' para SUFRAMA)"
+    ],
     cnpj: Annotated[str, "CNPJ do emitente do CT-e (autor do evento)"],
     dh_evento: Annotated[str, "Data e hora do evento (ISO 8601, UTC)"],
     n_prot: Annotated[str, "Número do protocolo de autorização do CT-e original (nProt)"],
     x_just: Annotated[str, "Justificativa do cancelamento"],
     cert_path: Annotated[str, "Caminho local para o certificado ICP-Brasil A1 (.p12/.pfx)"],
     endpoint_override: Annotated[
-        str, "URL completa do webservice CTeRecepcaoEventoV4 — obrigatório, ver docstring do módulo."
+        str,
+        "URL completa do webservice CTeRecepcaoEventoV4 — obrigatório, ver docstring do módulo.",
     ],
     tp_amb: Annotated[
         str, "Identificação do Ambiente (tpAmb): '1' = produção, '2' = homologação"
@@ -355,7 +356,9 @@ async def br__cancel_cte(
 
 async def br__correct_cte(
     ch_cte: Annotated[str, "Chave de acesso do CT-e a corrigir (chCTe), 44 caracteres"],
-    c_orgao: Annotated[str, "Código IBGE da UF do autorizador (cOrgao), 2 dígitos (ou '90' para SUFRAMA)"],
+    c_orgao: Annotated[
+        str, "Código IBGE da UF do autorizador (cOrgao), 2 dígitos (ou '90' para SUFRAMA)"
+    ],
     cnpj: Annotated[str, "CNPJ do emitente do CT-e (autor do evento)"],
     dh_evento: Annotated[str, "Data e hora do evento (ISO 8601, UTC)"],
     correcoes: Annotated[
@@ -367,7 +370,8 @@ async def br__correct_cte(
     ],
     cert_path: Annotated[str, "Caminho local para o certificado ICP-Brasil A1 (.p12/.pfx)"],
     endpoint_override: Annotated[
-        str, "URL completa do webservice CTeRecepcaoEventoV4 — obrigatório, ver docstring do módulo."
+        str,
+        "URL completa do webservice CTeRecepcaoEventoV4 — obrigatório, ver docstring do módulo.",
     ],
     tp_amb: Annotated[
         str, "Identificação do Ambiente (tpAmb): '1' = produção, '2' = homologação"

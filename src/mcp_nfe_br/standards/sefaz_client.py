@@ -218,25 +218,25 @@ _CUF_AUTORIZADOR: dict[str, str] = {
     "12": "SVRS",  # AC
     "27": "SVRS",  # AL
     "16": "SVRS",  # AP
-    "13": "AM",    # AM
-    "29": "BA",    # BA
-    "23": "CE",    # CE
+    "13": "AM",  # AM
+    "29": "BA",  # BA
+    "23": "CE",  # CE
     "53": "SVRS",  # DF
     "32": "SVRS",  # ES
-    "52": "GO",    # GO
+    "52": "GO",  # GO
     "21": "SVAN",  # MA
     "15": "SVRS",  # PA
     "25": "SVRS",  # PB
-    "26": "PE",    # PE
+    "26": "PE",  # PE
     "33": "SVRS",  # RJ
     "28": "SVRS",  # SE
     "17": "SVRS",  # TO
-    "35": "SP",    # SP
-    "31": "MG",    # MG
-    "41": "PR",    # PR
+    "35": "SP",  # SP
+    "31": "MG",  # MG
+    "41": "PR",  # PR
     "43": "SVRS",  # RS
-    "50": "MS",    # MS
-    "51": "MT",    # MT
+    "50": "MS",  # MS
+    "51": "MT",  # MT
     "22": "SVRS",  # PI
     "24": "SVRS",  # RN
     "11": "SVRS",  # RO
@@ -378,9 +378,7 @@ def build_dist_dfe_envelope(
     if document_id_type not in ("CNPJ", "CPF"):
         raise ValueError(f"document_id_type must be 'CNPJ' or 'CPF', got {document_id_type!r}")
 
-    dist_dfe_int = etree.Element(
-        f"{{{_NFE_NS}}}distDFeInt", nsmap={None: _NFE_NS}, versao="1.01"
-    )
+    dist_dfe_int = etree.Element(f"{{{_NFE_NS}}}distDFeInt", nsmap={None: _NFE_NS}, versao="1.01")
     etree.SubElement(dist_dfe_int, f"{{{_NFE_NS}}}tpAmb").text = tp_amb.value
     etree.SubElement(dist_dfe_int, f"{{{_NFE_NS}}}cUFAutor").text = c_uf_autor
     etree.SubElement(dist_dfe_int, f"{{{_NFE_NS}}}{document_id_type}").text = document_id
@@ -417,12 +415,15 @@ def parse_sefaz_response(response_xml: bytes) -> dict[str, object]:
     """
     root = parse_response_root(response_xml)
 
-    result = scrape_fields(root, ("cStat", "xMotivo", "tpAmb", "verAplic", "dhRecbto", "nRec", "cUF"))
+    result = scrape_fields(
+        root, ("cStat", "xMotivo", "tpAmb", "verAplic", "dhRecbto", "nRec", "cUF")
+    )
 
     prot_nfe = root.xpath(".//*[local-name()='protNFe']")
     if prot_nfe:
         prot = scrape_fields(
-            prot_nfe[0], ("chNFe", "tpAmb", "verAplic", "dhRecbto", "nProt", "digVal", "cStat", "xMotivo")
+            prot_nfe[0],
+            ("chNFe", "tpAmb", "verAplic", "dhRecbto", "nProt", "digVal", "cStat", "xMotivo"),
         )
         # cStat=120 "autorizado com alerta" (NT 2026.002) — 0-5 cMsg/xMsg
         # pairs, direct children of infProt. [Verified locally — BR-NFE-2026-08]

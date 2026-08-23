@@ -51,6 +51,4 @@ def test_server_json_env_vars_exist_in_source() -> None:
         for ev in pkg.get("environmentVariables", [])
     ]
     missing = [name for name in env_vars if name not in src_text]
-    assert not missing, (
-        f"server.json declares env vars not referenced in src/ or core: {missing}"
-    )
+    assert not missing, f"server.json declares env vars not referenced in src/ or core: {missing}"

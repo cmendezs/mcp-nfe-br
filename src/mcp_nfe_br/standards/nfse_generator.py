@@ -200,7 +200,10 @@ def _build_c_serv(cs: NFSeCServ) -> str:
 
 def _build_trib_mun(t: NFSeTribMunicipal) -> str:
     """Build `<tribMun>` per `TCTribMunicipal` order: tribISSQN, …, tpRetISSQN, pAliq?."""
-    parts: list[str] = [_el("tribISSQN", t.trib_issqn.value), _el("tpRetISSQN", t.tp_ret_issqn.value)]
+    parts: list[str] = [
+        _el("tribISSQN", t.trib_issqn.value),
+        _el("tpRetISSQN", t.tp_ret_issqn.value),
+    ]
     if t.p_aliq is not None:
         parts.append(_el("pAliq", t.p_aliq))
     return _wrap("tribMun", "".join(parts))

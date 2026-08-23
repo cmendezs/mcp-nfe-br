@@ -55,7 +55,9 @@ def test_cte_party_requires_exactly_one_of_cnpj_cpf() -> None:
     with pytest.raises(ValidationError, match="CNPJ ou CPF"):
         BRCteParty(x_nome="Teste", endereco=make_endereco())
     with pytest.raises(ValidationError, match="CNPJ ou CPF"):
-        BRCteParty(x_nome="Teste", endereco=make_endereco(), cnpj="11222333000181", cpf="11144477735")
+        BRCteParty(
+            x_nome="Teste", endereco=make_endereco(), cnpj="11222333000181", cpf="11144477735"
+        )
 
 
 def test_cte_party_rejects_invalid_cnpj() -> None:
@@ -127,7 +129,9 @@ def test_cte_accepts_ibscbs_when_route_and_parties_in_zfm() -> None:
                     v_ibs="0.10",
                     g_cbs=BRCteCBS(
                         p_cbs="0.00",
-                        g_alczfmcbs=BRCteALCZFMCBS(p_aliq_efet_reg_cbs="0.90", v_trib_reg_cbs="0.90"),
+                        g_alczfmcbs=BRCteALCZFMCBS(
+                            p_aliq_efet_reg_cbs="0.90", v_trib_reg_cbs="0.90"
+                        ),
                         v_cbs="0.00",
                     ),
                 )
@@ -154,7 +158,9 @@ def test_cte_rejects_devolucao_group_for_cte() -> None:
                     g_ibscbs=BRCteIBSCBS(
                         v_bc="100.00",
                         g_ibsuf=BRCteIBSUF(
-                            p_ibsuf="0.10", v_ibsuf="0.10", g_dev_trib=BRCteDevTrib(v_dev_trib="1.00")
+                            p_ibsuf="0.10",
+                            v_ibsuf="0.10",
+                            g_dev_trib=BRCteDevTrib(v_dev_trib="1.00"),
                         ),
                         g_ibsmun=BRCteIBSMun(p_ibsmun="0.00", v_ibsmun="0.00"),
                         v_ibs="0.10",
@@ -186,7 +192,9 @@ def test_cte_rejects_alczfmcbs_without_suframa() -> None:
                         v_ibs="0.10",
                         g_cbs=BRCteCBS(
                             p_cbs="0.00",
-                            g_alczfmcbs=BRCteALCZFMCBS(p_aliq_efet_reg_cbs="0.90", v_trib_reg_cbs="0.90"),
+                            g_alczfmcbs=BRCteALCZFMCBS(
+                                p_aliq_efet_reg_cbs="0.90", v_trib_reg_cbs="0.90"
+                            ),
                             v_cbs="0.00",
                         ),
                     )
@@ -210,7 +218,9 @@ def test_cte_rejects_alczfmcbs_route_outside_incentivized_area() -> None:
                         v_ibs="0.10",
                         g_cbs=BRCteCBS(
                             p_cbs="0.00",
-                            g_alczfmcbs=BRCteALCZFMCBS(p_aliq_efet_reg_cbs="0.90", v_trib_reg_cbs="0.90"),
+                            g_alczfmcbs=BRCteALCZFMCBS(
+                                p_aliq_efet_reg_cbs="0.90", v_trib_reg_cbs="0.90"
+                            ),
                             v_cbs="0.00",
                         ),
                     )
@@ -242,7 +252,9 @@ def test_cte_rejects_v_trib_reg_cbs_arithmetic_mismatch() -> None:
                         v_ibs="0.10",
                         g_cbs=BRCteCBS(
                             p_cbs="0.00",
-                            g_alczfmcbs=BRCteALCZFMCBS(p_aliq_efet_reg_cbs="0.90", v_trib_reg_cbs="99.99"),
+                            g_alczfmcbs=BRCteALCZFMCBS(
+                                p_aliq_efet_reg_cbs="0.90", v_trib_reg_cbs="99.99"
+                            ),
                             v_cbs="0.00",
                         ),
                     )

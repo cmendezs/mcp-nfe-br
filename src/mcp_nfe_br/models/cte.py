@@ -246,13 +246,16 @@ class BRCteTomador(BaseModel):
         default=None, description="Tomador 'outros' (toma4), com CNPJ/CPF próprio"
     )
     ind_ie_toma: str = Field(
-        ..., description="Indicador do papel do tomador na prestação: 1=contribuinte ICMS, 2=isento, 9=não contribuinte"
+        ...,
+        description="Indicador do papel do tomador na prestação: 1=contribuinte ICMS, 2=isento, 9=não contribuinte",
     )
 
     @model_validator(mode="after")
     def check_one_choice(self) -> BRCteTomador:
         if bool(self.papel) == bool(self.outros):
-            raise ValueError("Tomador deve informar exatamente um de `papel` (toma3) ou `outros` (toma4).")
+            raise ValueError(
+                "Tomador deve informar exatamente um de `papel` (toma3) ou `outros` (toma4)."
+            )
         return self
 
 
@@ -272,7 +275,9 @@ class BRCteVPrest(BaseModel):
 
     v_tprest: str = Field(..., description="Valor Total da Prestação do Serviço")
     v_rec: str = Field(..., description="Valor a Receber")
-    comp: list[BRCteVPrestComp] = Field(default_factory=list, description="Componentes do valor da prestação")
+    comp: list[BRCteVPrestComp] = Field(
+        default_factory=list, description="Componentes do valor da prestação"
+    )
 
 
 class BRCteInfModal(BaseModel):
@@ -288,7 +293,9 @@ class BRCteInfModal(BaseModel):
     """
 
     modal: CTeModal = Field(..., description="Modal do transporte")
-    versao_modal: str = Field(default="4.00", description="Versão do leiaute específico do modal (versaoModal)")
+    versao_modal: str = Field(
+        default="4.00", description="Versão do leiaute específico do modal (versaoModal)"
+    )
     rntrc: str | None = Field(
         default=None,
         description="Registro Nacional de Transportadores Rodoviários de Carga — mandatory for modal rodoviário.",
@@ -310,7 +317,9 @@ class BRCteICMS00(BaseModel):
     `[NEED: not modeled — extend in a follow-up BR-CTE item]`.
     """
 
-    cst: str = Field(default="00", description="Classificação Tributária do Serviço: 00 = tributação normal")
+    cst: str = Field(
+        default="00", description="Classificação Tributária do Serviço: 00 = tributação normal"
+    )
     v_bc: str = Field(..., description="Valor da BC do ICMS")
     p_icms: str = Field(..., description="Alíquota do ICMS")
     v_icms: str = Field(..., description="Valor do ICMS")
@@ -337,25 +346,33 @@ class BRCteDevTrib(BaseModel):
     `BRCTeDocument.check_no_devolucao_for_cte`, which rejects it if set.
     """
 
-    p_dev_trib: str | None = Field(default=None, description="Percentual de devolução do tributo (pDevTrib)")
+    p_dev_trib: str | None = Field(
+        default=None, description="Percentual de devolução do tributo (pDevTrib)"
+    )
     v_dev_trib: str = Field(..., description="Valor do tributo devolvido (vDevTrib)")
 
 
 class BRCteRed(BaseModel):
     """Redução de alíquota (`TRed`)."""
 
-    p_red_aliq: str = Field(..., description="Percentual de redução de alíquota do cClassTrib (pRedAliq)")
-    p_aliq_efet: str = Field(..., description="Alíquota efetiva aplicada à base de cálculo (pAliqEfet)")
+    p_red_aliq: str = Field(
+        ..., description="Percentual de redução de alíquota do cClassTrib (pRedAliq)"
+    )
+    p_aliq_efet: str = Field(
+        ..., description="Alíquota efetiva aplicada à base de cálculo (pAliqEfet)"
+    )
 
 
 class BRCteALCZFMCBS(BaseModel):
     """Operações em áreas incentivadas com CBS zero (`TALCZFMCBS`, `gCBS/gALCZFMCBS`)."""
 
     p_aliq_efet_reg_cbs: str = Field(
-        ..., description="Alíquota efetiva de referência da CBS fora de áreas/regimes incentivados (pAliqEfetRegCBS)"
+        ...,
+        description="Alíquota efetiva de referência da CBS fora de áreas/regimes incentivados (pAliqEfetRegCBS)",
     )
     v_trib_reg_cbs: str = Field(
-        ..., description="Valor da CBS calculado para a operação fora de áreas/regimes incentivados (vTribRegCBS)"
+        ...,
+        description="Valor da CBS calculado para a operação fora de áreas/regimes incentivados (vTribRegCBS)",
     )
 
 
@@ -372,11 +389,19 @@ class BRCteTribRegular(BaseModel):
     Informs how the operation would be taxed if a resolutory/suspensive
     condition were not met (e.g. ZFM/ALC operations under Art. 442 §4)."""
 
-    cst_reg: str = Field(..., description="CST do IBS/CBS caso não cumprida a condição resolutória/suspensiva")
-    c_class_trib_reg: str = Field(..., description="cClassTrib caso não cumprida a condição resolutória/suspensiva")
-    p_aliq_efet_reg_ibsuf: str = Field(..., description="Alíquota efetiva do IBS da UF nesse cenário")
+    cst_reg: str = Field(
+        ..., description="CST do IBS/CBS caso não cumprida a condição resolutória/suspensiva"
+    )
+    c_class_trib_reg: str = Field(
+        ..., description="cClassTrib caso não cumprida a condição resolutória/suspensiva"
+    )
+    p_aliq_efet_reg_ibsuf: str = Field(
+        ..., description="Alíquota efetiva do IBS da UF nesse cenário"
+    )
     v_trib_reg_ibsuf: str = Field(..., description="Valor do IBS da UF nesse cenário")
-    p_aliq_efet_reg_ibsmun: str = Field(..., description="Alíquota efetiva do IBS do Município nesse cenário")
+    p_aliq_efet_reg_ibsmun: str = Field(
+        ..., description="Alíquota efetiva do IBS do Município nesse cenário"
+    )
     v_trib_reg_ibsmun: str = Field(..., description="Valor do IBS do Município nesse cenário")
     p_aliq_efet_reg_cbs: str = Field(..., description="Alíquota efetiva da CBS nesse cenário")
     v_trib_reg_cbs: str = Field(..., description="Valor da CBS nesse cenário")
@@ -386,24 +411,36 @@ class BRCteTribCompraGov(BaseModel):
     """Tributação em Compra Governamental (`TTribCompraGov`, `imp/IBSCBS/gIBSCBS/gTribCompraGov`)."""
 
     p_aliq_ibsuf: str = Field(..., description="Alíquota IBS da UF utilizada")
-    v_trib_ibsuf: str = Field(..., description="Valor do Tributo do IBS da UF, sem aplicação do Art. 473 da LC 214/25")
+    v_trib_ibsuf: str = Field(
+        ..., description="Valor do Tributo do IBS da UF, sem aplicação do Art. 473 da LC 214/25"
+    )
     p_aliq_ibsmun: str = Field(..., description="Alíquota IBS do Município utilizada")
     v_trib_ibsmun: str = Field(
-        ..., description="Valor do Tributo do IBS do Município, sem aplicação do Art. 473 da LC 214/25"
+        ...,
+        description="Valor do Tributo do IBS do Município, sem aplicação do Art. 473 da LC 214/25",
     )
     p_aliq_cbs: str = Field(..., description="Alíquota CBS utilizada")
-    v_trib_cbs: str = Field(..., description="Valor do Tributo da CBS, sem aplicação do Art. 473 da LC 214/25")
+    v_trib_cbs: str = Field(
+        ..., description="Valor do Tributo da CBS, sem aplicação do Art. 473 da LC 214/25"
+    )
 
 
 class BRCteIBSUF(BaseModel):
     """Grupo do IBS de competência da UF (`imp/IBSCBS/gIBSCBS/gIBSUF`)."""
 
-    p_ibsuf: str = Field(..., description="Alíquota do IBS de competência da UF, em percentual (pIBSUF)")
-    g_dif: BRCteDif | None = Field(default=None, description="Grupo de campos do diferimento (gDif)")
-    g_dev_trib: BRCteDevTrib | None = Field(
-        default=None, description="Grupo de devolução de tributos (gDevTrib) — sempre rejeitado para CT-e"
+    p_ibsuf: str = Field(
+        ..., description="Alíquota do IBS de competência da UF, em percentual (pIBSUF)"
     )
-    g_red: BRCteRed | None = Field(default=None, description="Grupo de campos da redução de alíquota (gRed)")
+    g_dif: BRCteDif | None = Field(
+        default=None, description="Grupo de campos do diferimento (gDif)"
+    )
+    g_dev_trib: BRCteDevTrib | None = Field(
+        default=None,
+        description="Grupo de devolução de tributos (gDevTrib) — sempre rejeitado para CT-e",
+    )
+    g_red: BRCteRed | None = Field(
+        default=None, description="Grupo de campos da redução de alíquota (gRed)"
+    )
     v_ibsuf: str = Field(..., description="Valor do IBS de competência da UF (vIBSUF)")
 
 
@@ -411,11 +448,16 @@ class BRCteIBSMun(BaseModel):
     """Grupo do IBS de competência do Município (`imp/IBSCBS/gIBSCBS/gIBSMun`)."""
 
     p_ibsmun: str = Field(..., description="Alíquota do IBS Municipal, em percentual (pIBSMun)")
-    g_dif: BRCteDif | None = Field(default=None, description="Grupo de campos do diferimento (gDif)")
-    g_dev_trib: BRCteDevTrib | None = Field(
-        default=None, description="Grupo de devolução de tributos (gDevTrib) — sempre rejeitado para CT-e"
+    g_dif: BRCteDif | None = Field(
+        default=None, description="Grupo de campos do diferimento (gDif)"
     )
-    g_red: BRCteRed | None = Field(default=None, description="Grupo de campos da redução de alíquota (gRed)")
+    g_dev_trib: BRCteDevTrib | None = Field(
+        default=None,
+        description="Grupo de devolução de tributos (gDevTrib) — sempre rejeitado para CT-e",
+    )
+    g_red: BRCteRed | None = Field(
+        default=None, description="Grupo de campos da redução de alíquota (gRed)"
+    )
     v_ibsmun: str = Field(..., description="Valor do IBS Municipal (vIBSMun)")
 
 
@@ -423,13 +465,19 @@ class BRCteCBS(BaseModel):
     """Grupo de Tributação da CBS (`imp/IBSCBS/gIBSCBS/gCBS`)."""
 
     p_cbs: str = Field(..., description="Alíquota da CBS, em percentual (pCBS)")
-    g_dif: BRCteDif | None = Field(default=None, description="Grupo de campos do diferimento (gDif)")
-    g_dev_trib: BRCteDevTrib | None = Field(
-        default=None, description="Grupo de devolução de tributos (gDevTrib) — sempre rejeitado para CT-e"
+    g_dif: BRCteDif | None = Field(
+        default=None, description="Grupo de campos do diferimento (gDif)"
     )
-    g_red: BRCteRed | None = Field(default=None, description="Grupo de campos da redução de alíquota (gRed)")
+    g_dev_trib: BRCteDevTrib | None = Field(
+        default=None,
+        description="Grupo de devolução de tributos (gDevTrib) — sempre rejeitado para CT-e",
+    )
+    g_red: BRCteRed | None = Field(
+        default=None, description="Grupo de campos da redução de alíquota (gRed)"
+    )
     g_alczfmcbs: BRCteALCZFMCBS | None = Field(
-        default=None, description="Grupo de operações em áreas incentivadas (ALC/ZFM) — CBS alíquota zero (gALCZFMCBS)"
+        default=None,
+        description="Grupo de operações em áreas incentivadas (ALC/ZFM) — CBS alíquota zero (gALCZFMCBS)",
     )
     v_cbs: str = Field(..., description="Valor da CBS (vCBS)")
 
@@ -438,8 +486,12 @@ class BRCteIBSCBS(BaseModel):
     """Grupo completo IBS/CBS (`TCIBS`, `imp/IBSCBS/gIBSCBS`)."""
 
     v_bc: str = Field(..., description="Valor da base de cálculo comum a IBS/CBS (vBC)")
-    g_ibsuf: BRCteIBSUF = Field(..., description="Grupo de informações do IBS de competência da UF (gIBSUF)")
-    g_ibsmun: BRCteIBSMun = Field(..., description="Grupo de informações do IBS de competência do Município (gIBSMun)")
+    g_ibsuf: BRCteIBSUF = Field(
+        ..., description="Grupo de informações do IBS de competência da UF (gIBSUF)"
+    )
+    g_ibsmun: BRCteIBSMun = Field(
+        ..., description="Grupo de informações do IBS de competência do Município (gIBSMun)"
+    )
     v_ibs: str = Field(..., description="Valor do IBS — soma de vIBSUF e vIBSMun (vIBS)")
     g_cbs: BRCteCBS = Field(..., description="Grupo de informações da CBS (gCBS)")
     g_trib_regular: BRCteTribRegular | None = Field(
@@ -462,14 +514,24 @@ class BRCteImpIBSCBS(BaseModel):
     RV-rule-to-validator mapping and outstanding `[NEED]` markers.
     """
 
-    cst: str = Field(..., min_length=3, max_length=3, description="Código Situação Tributária do IBS/CBS (CST)")
-    c_class_trib: str = Field(
-        ..., min_length=6, max_length=6, description="Código de Classificação Tributária do IBS/CBS (cClassTrib)"
+    cst: str = Field(
+        ..., min_length=3, max_length=3, description="Código Situação Tributária do IBS/CBS (CST)"
     )
-    ind_doacao: str | None = Field(default=None, description="Indicador de doação (indDoacao): '1' quando aplicável")
-    g_ibscbs: BRCteIBSCBS | None = Field(default=None, description="Grupo de informações do IBS/CBS (gIBSCBS)")
+    c_class_trib: str = Field(
+        ...,
+        min_length=6,
+        max_length=6,
+        description="Código de Classificação Tributária do IBS/CBS (cClassTrib)",
+    )
+    ind_doacao: str | None = Field(
+        default=None, description="Indicador de doação (indDoacao): '1' quando aplicável"
+    )
+    g_ibscbs: BRCteIBSCBS | None = Field(
+        default=None, description="Grupo de informações do IBS/CBS (gIBSCBS)"
+    )
     g_estorno_cred: BRCteEstornoCred | None = Field(
-        default=None, description="Grupo de estorno de crédito, conforme indicador no cClassTrib (gEstornoCred)"
+        default=None,
+        description="Grupo de estorno de crédito, conforme indicador no cClassTrib (gEstornoCred)",
     )
 
 
@@ -487,7 +549,10 @@ class BRCteImp(BaseModel):
 class BRCteInfQ(BaseModel):
     """Informações de quantidades da Carga (Grupo `infCarga/infQ`)."""
 
-    c_unid: str = Field(..., description="Código da Unidade de Medida: 00=M3, 01=KG, 02=TON, 03=UNIDADE, 04=LITROS, 05=MMBTU")
+    c_unid: str = Field(
+        ...,
+        description="Código da Unidade de Medida: 00=M3, 01=KG, 02=TON, 03=UNIDADE, 04=LITROS, 05=MMBTU",
+    )
     tp_med: str = Field(..., description="Tipo da Medida (texto livre, ex.: PESO BRUTO)")
     q_carga: str = Field(..., description="Quantidade")
 
@@ -496,11 +561,16 @@ class BRCteInfCarga(BaseModel):
     """Informações da Carga do CT-e (Grupo `infCTeNorm/infCarga`)."""
 
     v_carga: str | None = Field(
-        default=None, description="Valor total da carga — obrigatório em todos os modais exceto dutoviário"
+        default=None,
+        description="Valor total da carga — obrigatório em todos os modais exceto dutoviário",
     )
     pro_pred: str = Field(..., max_length=60, description="Produto predominante")
-    x_out_cat: str | None = Field(default=None, max_length=30, description="Outras características da carga")
-    inf_q: list[BRCteInfQ] = Field(..., min_length=1, description="Informações de quantidades da carga")
+    x_out_cat: str | None = Field(
+        default=None, max_length=30, description="Outras características da carga"
+    )
+    inf_q: list[BRCteInfQ] = Field(
+        ..., min_length=1, description="Informações de quantidades da carga"
+    )
 
 
 _ZFM_MUNICIPIOS: frozenset[str] = frozenset({"1302603", "1303569", "1301902"})
@@ -512,7 +582,9 @@ _ALC_GROUPS: tuple[frozenset[str], ...] = (
     frozenset({"1100106"}),  # Guajará-Mirim (RO)
     frozenset({"1400100", "1400159"}),  # Boa Vista / Bonfim (RR)
     frozenset({"1600303", "1600600"}),  # Macapá / Santana (AP)
-    frozenset({"1200104", "1200252", "1200203"}),  # Brasileia / Epitaciolândia / Cruzeiro do Sul (AC)
+    frozenset(
+        {"1200104", "1200252", "1200203"}
+    ),  # Brasileia / Epitaciolândia / Cruzeiro do Sul (AC)
 )
 """ALC (Área de Livre Comércio) groups — municípios within the same group are
 mutually paired for the CBS zero-rate route check (RV 6.004). `[Verified
@@ -561,9 +633,13 @@ class BRCTeDocument(InvoiceDocument):
     rule that applies to the EN 16931/NF-e pathway.
     """
 
-    buyer: InvoiceParty | None = Field(default=None, description="Não utilizado por CT-e — ver docstring do módulo.")
+    buyer: InvoiceParty | None = Field(
+        default=None, description="Não utilizado por CT-e — ver docstring do módulo."
+    )
 
-    mod: CTeModelo = Field(default=CTeModelo.CTE, description="Modelo do documento fiscal: 57 (CT-e)")
+    mod: CTeModelo = Field(
+        default=CTeModelo.CTE, description="Modelo do documento fiscal: 57 (CT-e)"
+    )
     serie: str = Field(..., max_length=3, description="Série do documento fiscal")
     n_ct: str = Field(..., description="Número do CT-e (nCT)")
     chave_acesso: str | None = Field(
@@ -574,33 +650,58 @@ class BRCTeDocument(InvoiceDocument):
     )
     nat_op: str = Field(..., description="Natureza da Operação")
     tp_serv: CTeTipoServico = Field(..., description="Tipo do Serviço")
-    tp_cte: CTeFinalidade = Field(default=CTeFinalidade.NORMAL, description="Tipo do CT-e (finalidade)")
+    tp_cte: CTeFinalidade = Field(
+        default=CTeFinalidade.NORMAL, description="Tipo do CT-e (finalidade)"
+    )
     modal: CTeModal = Field(..., description="Modal do transporte")
     dh_emi: str = Field(..., description="Data e hora de emissão, com fuso horário (ISO 8601)")
     c_uf: str = Field(..., min_length=2, max_length=2, description="Código IBGE da UF do emitente")
-    cfop: str = Field(..., min_length=4, max_length=4, description="Código Fiscal de Operações e Prestações")
+    cfop: str = Field(
+        ..., min_length=4, max_length=4, description="Código Fiscal de Operações e Prestações"
+    )
     tp_amb: str = Field(..., description="Identificação do Ambiente: 1=produção, 2=homologação")
 
     # Grupo ide — rota (mandatory: cMunIni/xMunIni/UFIni/cMunFim/xMunFim/UFFim/retira)
-    c_mun_ini: str = Field(..., min_length=7, max_length=7, description="Código IBGE do município de início da prestação")
+    c_mun_ini: str = Field(
+        ...,
+        min_length=7,
+        max_length=7,
+        description="Código IBGE do município de início da prestação",
+    )
     x_mun_ini: str = Field(..., description="Nome do município de início da prestação")
     uf_ini: str = Field(..., min_length=2, max_length=2, description="UF de início da prestação")
-    c_mun_fim: str = Field(..., min_length=7, max_length=7, description="Código IBGE do município de término da prestação")
+    c_mun_fim: str = Field(
+        ...,
+        min_length=7,
+        max_length=7,
+        description="Código IBGE do município de término da prestação",
+    )
     x_mun_fim: str = Field(..., description="Nome do município de término da prestação")
     uf_fim: str = Field(..., min_length=2, max_length=2, description="UF de término da prestação")
-    retira: str = Field(..., description="Indicador se o recebedor retira no aeroporto/filial/porto/estação: 0=sim, 1=não")
+    retira: str = Field(
+        ...,
+        description="Indicador se o recebedor retira no aeroporto/filial/porto/estação: 0=sim, 1=não",
+    )
 
     # Grupo de partes
     emitente: BRCteEmitente = Field(..., description="Dados do emitente (Grupo emit)")
     remetente: BRCteRemetente = Field(..., description="Dados do remetente (Grupo rem)")
-    expedidor: BRCteExpedidor | None = Field(default=None, description="Dados do expedidor (Grupo exped)")
-    recebedor: BRCteRecebedor | None = Field(default=None, description="Dados do recebedor (Grupo receb)")
-    destinatario: BRCteDestinatario | None = Field(default=None, description="Dados do destinatário (Grupo dest)")
+    expedidor: BRCteExpedidor | None = Field(
+        default=None, description="Dados do expedidor (Grupo exped)"
+    )
+    recebedor: BRCteRecebedor | None = Field(
+        default=None, description="Dados do recebedor (Grupo receb)"
+    )
+    destinatario: BRCteDestinatario | None = Field(
+        default=None, description="Dados do destinatário (Grupo dest)"
+    )
     tomador: BRCteTomador = Field(..., description="Tomador do serviço (toma3/toma4)")
 
     v_prest: BRCteVPrest = Field(..., description="Valores da prestação de serviço (Grupo vPrest)")
     imp: BRCteImp = Field(..., description="Informações relativas aos impostos (Grupo imp)")
-    inf_carga: BRCteInfCarga = Field(..., description="Informações da carga (Grupo infCTeNorm/infCarga)")
+    inf_carga: BRCteInfCarga = Field(
+        ..., description="Informações da carga (Grupo infCTeNorm/infCarga)"
+    )
     inf_modal: BRCteInfModal = Field(..., description="Informações do modal (Grupo infModal)")
 
     # Grupo ide — Antecipação de Pagamento (NT 2026.002 §7). Only meaningful
@@ -621,7 +722,9 @@ class BRCTeDocument(InvoiceDocument):
         ),
     )
 
-    lines: list = Field(default_factory=list, description="Não utilizado por CT-e — ver docstring do módulo.")
+    lines: list = Field(
+        default_factory=list, description="Não utilizado por CT-e — ver docstring do módulo."
+    )
 
     @field_validator("chave_acesso", mode="after")
     @classmethod
@@ -629,7 +732,9 @@ class BRCTeDocument(InvoiceDocument):
         if v is None:
             return v
         if not re.match(r"^[0-9]{44}$", v):
-            raise ValueError(f"Chave de acesso do CT-e fora do formato esperado (44 dígitos): {v!r}")
+            raise ValueError(
+                f"Chave de acesso do CT-e fora do formato esperado (44 dígitos): {v!r}"
+            )
         return v
 
     @model_validator(mode="after")
@@ -672,7 +777,9 @@ class BRCTeDocument(InvoiceDocument):
     def check_pag_antecipado_no_duplicates(self) -> BRCTeDocument:
         """NT 2026.002 RV 7.011."""
         if len(self.pag_antecipado) != len(set(self.pag_antecipado)):
-            raise ValueError("Chaves de acesso repetidas em ide/gPagAntecipado (NT 2026.002 RV 7.011).")
+            raise ValueError(
+                "Chaves de acesso repetidas em ide/gPagAntecipado (NT 2026.002 RV 7.011)."
+            )
         return self
 
     @model_validator(mode="after")
@@ -705,7 +812,11 @@ class BRCTeDocument(InvoiceDocument):
         if ibscbs is None or ibscbs.g_ibscbs is None:
             return self
         g = ibscbs.g_ibscbs
-        if g.g_ibsuf.g_dev_trib is not None or g.g_ibsmun.g_dev_trib is not None or g.g_cbs.g_dev_trib is not None:
+        if (
+            g.g_ibsuf.g_dev_trib is not None
+            or g.g_ibsmun.g_dev_trib is not None
+            or g.g_cbs.g_dev_trib is not None
+        ):
             raise ValueError(
                 "Grupo de devolução de tributos (gDevTrib) não é permitido para CT-e — só é "
                 "aceito em NF3e/NFCom/NFAg/NFGas (NT 2026.002 RV 5.001-003)."
@@ -749,7 +860,9 @@ class BRCTeDocument(InvoiceDocument):
 
         tomador_party = _resolve_tomador_party(self)
         tomador_is_pj = tomador_party is not None and tomador_party.cnpj is not None
-        tomador_mun = tomador_party.endereco.c_mun if tomador_is_pj and tomador_party is not None else None
+        tomador_mun = (
+            tomador_party.endereco.c_mun if tomador_is_pj and tomador_party is not None else None
+        )
 
         parties_mun = [self.c_mun_ini, self.c_mun_fim, self.emitente.endereco.c_mun]
         if tomador_mun is not None:
@@ -792,7 +905,9 @@ class BRCTeDocument(InvoiceDocument):
             v_trib_declared = Decimal(alc.v_trib_reg_cbs)
         except InvalidOperation:
             return self
-        expected = (v_bc * p_aliq / Decimal("100")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+        expected = (v_bc * p_aliq / Decimal("100")).quantize(
+            Decimal("0.01"), rounding=ROUND_HALF_UP
+        )
         if expected != v_trib_declared:
             raise ValueError(
                 f"vTribRegCBS ({v_trib_declared}) não corresponde a vBC x pAliqEfetRegCBS / 100 "

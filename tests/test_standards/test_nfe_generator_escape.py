@@ -13,7 +13,7 @@ from lxml import etree
 from mcp_nfe_br.standards.nfe_generator import NFeGenerator
 from tests.conftest import make_emitente, make_endereco, make_line, make_nfe
 
-_SPECIAL = '& < > " \''
+_SPECIAL = "& < > \" '"
 _ENCODED = ("&amp;", "&lt;", "&gt;")
 
 # Pattern that catches a bare & not followed by amp;/lt;/gt;/quot;/apos;

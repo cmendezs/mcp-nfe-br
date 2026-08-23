@@ -706,6 +706,7 @@ def run_check_6() -> CheckResult:
         )
     else:
         from mcp_einvoicing_core import BaseDocumentGenerator
+
         gen_cls = getattr(gen_mod, "NFSeGenerator", None)
         if gen_cls and issubclass(gen_cls, BaseDocumentGenerator):
             result.findings.append(
@@ -743,6 +744,7 @@ def run_check_6() -> CheckResult:
         )
     else:
         from mcp_einvoicing_core import BaseDocumentValidator
+
         val_cls = getattr(val_mod, "NFSeXSDValidator", None)
         if val_cls and issubclass(val_cls, BaseDocumentValidator):
             result.findings.append(
@@ -848,6 +850,7 @@ def run_check_8() -> CheckResult:
         )
     else:
         from mcp_einvoicing_core import BaseDocumentGenerator
+
         gen_cls = getattr(gen_mod, "CTeGenerator", None)
         if gen_cls and issubclass(gen_cls, BaseDocumentGenerator):
             result.findings.append(
@@ -885,6 +888,7 @@ def run_check_8() -> CheckResult:
         )
     else:
         from mcp_einvoicing_core import BaseDocumentValidator
+
         val_cls = getattr(val_mod, "CTeXSDValidator", None)
         if val_cls and issubclass(val_cls, BaseDocumentValidator):
             result.findings.append(
@@ -922,6 +926,7 @@ def run_check_8() -> CheckResult:
         )
     else:
         from mcp_einvoicing_core.http_client import BaseEInvoicingClient
+
         client_cls = getattr(client_mod, "SefazCTeClient", None)
         if client_cls and issubclass(client_cls, BaseEInvoicingClient):
             result.findings.append(
@@ -957,33 +962,74 @@ def run_check_8() -> CheckResult:
 # ---------------------------------------------------------------------------
 
 _CORE_CAPABILITIES: list[tuple[str, str, list[str]]] = [
-    ("cii_ubl_conversion", "mcp_einvoicing_core.convert", [
-        "convert_wire_format",
-    ]),
-    ("peppol_participant_lookup", "mcp_einvoicing_core.peppol", [
-        "PeppolSMPClient",
-    ]),
-    ("en16931_cii_parsing", "mcp_einvoicing_core.wire_formats", [
-        "EN16931CIIParser", "EN16931CIISerializer",
-    ]),
-    ("en16931_ubl_parsing", "mcp_einvoicing_core.wire_formats", [
-        "EN16931UBLParser", "EN16931UBLSerializer",
-    ]),
-    ("schematron_validation", "mcp_einvoicing_core.schematron", [
-        "SchematronValidator",
-    ]),
-    ("xades_xmldsig_signing", "mcp_einvoicing_core.digital_signature", [
-        "XAdESEPESSigner", "XMLDSigSigner",
-    ]),
-    ("http_client", "mcp_einvoicing_core.http_client", [
-        "BaseEInvoicingClient",
-    ]),
-    ("routing_identifier_validation", "mcp_einvoicing_core.routing", [
-        "RoutingIdentifier",
-    ]),
-    ("peppol_as4_transport", "mcp_einvoicing_core.peppol.transport", [
-        "AS4MessageEnvelope", "AS4TransportClient", "PeppolTransmitter",
-    ]),
+    (
+        "cii_ubl_conversion",
+        "mcp_einvoicing_core.convert",
+        [
+            "convert_wire_format",
+        ],
+    ),
+    (
+        "peppol_participant_lookup",
+        "mcp_einvoicing_core.peppol",
+        [
+            "PeppolSMPClient",
+        ],
+    ),
+    (
+        "en16931_cii_parsing",
+        "mcp_einvoicing_core.wire_formats",
+        [
+            "EN16931CIIParser",
+            "EN16931CIISerializer",
+        ],
+    ),
+    (
+        "en16931_ubl_parsing",
+        "mcp_einvoicing_core.wire_formats",
+        [
+            "EN16931UBLParser",
+            "EN16931UBLSerializer",
+        ],
+    ),
+    (
+        "schematron_validation",
+        "mcp_einvoicing_core.schematron",
+        [
+            "SchematronValidator",
+        ],
+    ),
+    (
+        "xades_xmldsig_signing",
+        "mcp_einvoicing_core.digital_signature",
+        [
+            "XAdESEPESSigner",
+            "XMLDSigSigner",
+        ],
+    ),
+    (
+        "http_client",
+        "mcp_einvoicing_core.http_client",
+        [
+            "BaseEInvoicingClient",
+        ],
+    ),
+    (
+        "routing_identifier_validation",
+        "mcp_einvoicing_core.routing",
+        [
+            "RoutingIdentifier",
+        ],
+    ),
+    (
+        "peppol_as4_transport",
+        "mcp_einvoicing_core.peppol.transport",
+        [
+            "AS4MessageEnvelope",
+            "AS4TransportClient",
+            "PeppolTransmitter",
+        ],
+    ),
 ]
 
 _INTENTIONAL_PARALLEL_IMPLEMENTATIONS: dict[tuple[str, str], str] = {}
@@ -997,11 +1043,15 @@ def run_check_7() -> CheckResult:
 
     pkg_root = Path(__file__).parent.parent / "src" / "mcp_nfe_br"
     if not pkg_root.is_dir():
-        result.findings.append(CheckFinding(
-            check_id="CHECK_7", tag="[SKIP]", severity=SEVERITY_OK,
-            symbol="mcp_nfe_br",
-            message="Package source directory not found; skipping parallel-implementation scan.",
-        ))
+        result.findings.append(
+            CheckFinding(
+                check_id="CHECK_7",
+                tag="[SKIP]",
+                severity=SEVERITY_OK,
+                symbol="mcp_nfe_br",
+                message="Package source directory not found; skipping parallel-implementation scan.",
+            )
+        )
         return result
 
     defined_names: dict[str, str] = {}
@@ -1022,35 +1072,47 @@ def run_check_7() -> CheckResult:
 
             override_key = (cap_tag, symbol)
             if override_key in _INTENTIONAL_PARALLEL_IMPLEMENTATIONS:
-                result.findings.append(CheckFinding(
-                    check_id="CHECK_7", tag="[OVERRIDE]", severity=SEVERITY_OK,
-                    symbol=symbol,
-                    message=(
-                        f"Parallel implementation of {symbol} ({cap_tag}) in "
-                        f"{defined_names[symbol]} is intentional: "
-                        f"{_INTENTIONAL_PARALLEL_IMPLEMENTATIONS[override_key]}"
-                    ),
-                ))
+                result.findings.append(
+                    CheckFinding(
+                        check_id="CHECK_7",
+                        tag="[OVERRIDE]",
+                        severity=SEVERITY_OK,
+                        symbol=symbol,
+                        message=(
+                            f"Parallel implementation of {symbol} ({cap_tag}) in "
+                            f"{defined_names[symbol]} is intentional: "
+                            f"{_INTENTIONAL_PARALLEL_IMPLEMENTATIONS[override_key]}"
+                        ),
+                    )
+                )
                 continue
 
             found_any = True
-            result.findings.append(CheckFinding(
-                check_id="CHECK_7", tag="[PARALLEL]", severity=SEVERITY_WARNING,
-                symbol=symbol,
-                message=(
-                    f"Country package defines {symbol!r} in {defined_names[symbol]}, "
-                    f"which mirrors core capability {cap_tag!r} from {core_module}. "
-                    "Delegate to the core symbol or register in "
-                    "_INTENTIONAL_PARALLEL_IMPLEMENTATIONS with a justification."
-                ),
-            ))
+            result.findings.append(
+                CheckFinding(
+                    check_id="CHECK_7",
+                    tag="[PARALLEL]",
+                    severity=SEVERITY_WARNING,
+                    symbol=symbol,
+                    message=(
+                        f"Country package defines {symbol!r} in {defined_names[symbol]}, "
+                        f"which mirrors core capability {cap_tag!r} from {core_module}. "
+                        "Delegate to the core symbol or register in "
+                        "_INTENTIONAL_PARALLEL_IMPLEMENTATIONS with a justification."
+                    ),
+                )
+            )
 
     if not found_any and not result.findings:
-        result.findings.append(CheckFinding(
-            check_id="CHECK_7", tag="[OK]", severity=SEVERITY_OK,
-            symbol="*",
-            message="No parallel implementations of core capabilities detected.",
-        ))
+        result.findings.append(
+            CheckFinding(
+                check_id="CHECK_7",
+                tag="[OK]",
+                severity=SEVERITY_OK,
+                symbol="*",
+                message="No parallel implementations of core capabilities detected.",
+            )
+        )
 
     return result
 
@@ -1077,41 +1139,82 @@ def _smoke_nfe() -> tuple[str, bool, list[str]]:
     from mcp_nfe_br.standards.nfe_generator import NFeGenerator
     from mcp_nfe_br.validators.nfe_xsd import NFeXSDValidator
 
-    endereco = BREndereco.model_validate({
-        "x_lgr": "Rua Teste", "nro": "123", "x_bairro": "Centro",
-        "c_mun": "3550308", "x_mun": "Sao Paulo", "uf": "SP", "cep": "01000000",
-    })
-    emitente = BREmitente.model_validate({
-        "cnpj": "11222333000181", "x_nome": "Empresa Teste LTDA",
-        "ender_emit": endereco, "ie": "123456789", "crt": RegimeTributario.REGIME_NORMAL,
-    })
-    line = BRInvoiceLine.model_validate({
-        "line_number": 1, "description": "Produto Teste", "unit_price": "100.00",
-        "total_price": "100.00", "c_prod": "P001", "ncm": "61091000", "cfop": "5102",
-        "u_com": "UN", "q_com": "1", "v_un_com": "100.00", "v_prod": "100.00",
-        "u_trib": "UN", "q_trib": "1", "v_un_trib": "100.00", "icms_cst": "00",
-        "icms_rate": "18", "icms_amount": "18.00", "pis_cst": "01", "pis_amount": "1.65",
-        "cofins_cst": "01", "cofins_amount": "7.60",
-    })
-    doc = BRInvoice.model_validate({
-        "document_type": "55", "date": "2026-06-13", "number": "1",
-        "seller": InvoiceParty(
-            tax_id=TaxIdentifier(country_code="BR", identifier="11222333000181"),
-            name="Empresa Teste LTDA",
-        ),
-        "buyer": InvoiceParty(
-            tax_id=TaxIdentifier(country_code="BR", identifier="11144477735"),
-            name="Cliente Teste",
-        ),
-        "modelo": NFeModelo.NFE, "serie": "1", "nnf": "1",
-        "natureza_operacao": "Venda de mercadoria", "tipo_operacao": TipoOperacao.SAIDA,
-        "c_uf": "35", "dh_emi": "2026-06-13T10:00:00-03:00", "id_dest": "1",
-        "c_mun_fg": "3550308", "tp_amb": TipoAmbiente.HOMOLOGACAO,
-        "ind_final": "1", "ind_pres": "1", "emitente": emitente,
-        "destinatario": {"cpf": "11144477735", "x_nome": "Cliente Teste", "ind_ie_dest": "9"},
-        "pagamentos": [BRPagamento(t_pag="01", v_pag="100.00")],
-        "lines": [line],
-    })
+    endereco = BREndereco.model_validate(
+        {
+            "x_lgr": "Rua Teste",
+            "nro": "123",
+            "x_bairro": "Centro",
+            "c_mun": "3550308",
+            "x_mun": "Sao Paulo",
+            "uf": "SP",
+            "cep": "01000000",
+        }
+    )
+    emitente = BREmitente.model_validate(
+        {
+            "cnpj": "11222333000181",
+            "x_nome": "Empresa Teste LTDA",
+            "ender_emit": endereco,
+            "ie": "123456789",
+            "crt": RegimeTributario.REGIME_NORMAL,
+        }
+    )
+    line = BRInvoiceLine.model_validate(
+        {
+            "line_number": 1,
+            "description": "Produto Teste",
+            "unit_price": "100.00",
+            "total_price": "100.00",
+            "c_prod": "P001",
+            "ncm": "61091000",
+            "cfop": "5102",
+            "u_com": "UN",
+            "q_com": "1",
+            "v_un_com": "100.00",
+            "v_prod": "100.00",
+            "u_trib": "UN",
+            "q_trib": "1",
+            "v_un_trib": "100.00",
+            "icms_cst": "00",
+            "icms_rate": "18",
+            "icms_amount": "18.00",
+            "pis_cst": "01",
+            "pis_amount": "1.65",
+            "cofins_cst": "01",
+            "cofins_amount": "7.60",
+        }
+    )
+    doc = BRInvoice.model_validate(
+        {
+            "document_type": "55",
+            "date": "2026-06-13",
+            "number": "1",
+            "seller": InvoiceParty(
+                tax_id=TaxIdentifier(country_code="BR", identifier="11222333000181"),
+                name="Empresa Teste LTDA",
+            ),
+            "buyer": InvoiceParty(
+                tax_id=TaxIdentifier(country_code="BR", identifier="11144477735"),
+                name="Cliente Teste",
+            ),
+            "modelo": NFeModelo.NFE,
+            "serie": "1",
+            "nnf": "1",
+            "natureza_operacao": "Venda de mercadoria",
+            "tipo_operacao": TipoOperacao.SAIDA,
+            "c_uf": "35",
+            "dh_emi": "2026-06-13T10:00:00-03:00",
+            "id_dest": "1",
+            "c_mun_fg": "3550308",
+            "tp_amb": TipoAmbiente.HOMOLOGACAO,
+            "ind_final": "1",
+            "ind_pres": "1",
+            "emitente": emitente,
+            "destinatario": {"cpf": "11144477735", "x_nome": "Cliente Teste", "ind_ie_dest": "9"},
+            "pagamentos": [BRPagamento(t_pag="01", v_pag="100.00")],
+            "lines": [line],
+        }
+    )
     xml = NFeGenerator().generate(doc)
     result = NFeXSDValidator().validate(xml)
     return "NF-e", result.valid, result.errors
@@ -1140,46 +1243,67 @@ def _smoke_nfse() -> tuple[str, bool, list[str]]:
     from mcp_nfe_br.standards.nfse_generator import NFSeGenerator
     from mcp_nfe_br.validators.nfse_xsd import NFSeXSDValidator
 
-    endereco = NFSeEndereco.model_validate({
-        "x_lgr": "Rua Teste", "nro": "123", "x_bairro": "Centro",
-        "c_mun": "3550308", "cep": "01000000",
-    })
-    prestador = NFSePrestador.model_validate({
-        "cnpj": "11222333000181", "x_nome": "Prestador Teste LTDA", "end": endereco,
-        "reg_trib": NFSeRegimeTributacao(
-            op_simp_nac=NFSeOpSimplesNacional.NAO_OPTANTE, reg_esp_trib="0"
-        ),
-    })
-    tomador = NFSeTomador.model_validate({
-        "cpf": "11144477735", "x_nome": "Tomador Teste", "end": endereco,
-    })
-    doc = NFSeDocument.model_validate({
-        "document_type": "DPS", "date": "2026-07-01", "number": "1",
-        "seller": InvoiceParty(
-            tax_id=TaxIdentifier(country_code="BR", identifier="11222333000181"),
-            name="Prestador Teste LTDA",
-        ),
-        "buyer": InvoiceParty(
-            tax_id=TaxIdentifier(country_code="BR", identifier="11144477735"),
-            name="Tomador Teste",
-        ),
-        "tp_amb": TipoAmbiente.HOMOLOGACAO, "serie": "1", "n_dps": "1",
-        "d_compet": "2026-07-01", "c_loc_emi": "3550308",
-        "prest": prestador, "toma": tomador,
-        "serv": NFSeServ(
-            loc_prest=NFSeLocPrest(c_loc_prestacao="3550308"),
-            c_serv=NFSeCServ(c_trib_nac="010101", x_desc_serv="Serviço de teste"),
-        ),
-        "valores": NFSeValores(
-            v_serv="100.00",
-            trib_mun=NFSeTribMunicipal(
-                trib_issqn=NFSeTribISSQN.TRIBUTAVEL,
-                tp_ret_issqn=NFSeTipoRetISSQN.NAO_RETIDO,
-                p_aliq="5.00",
+    endereco = NFSeEndereco.model_validate(
+        {
+            "x_lgr": "Rua Teste",
+            "nro": "123",
+            "x_bairro": "Centro",
+            "c_mun": "3550308",
+            "cep": "01000000",
+        }
+    )
+    prestador = NFSePrestador.model_validate(
+        {
+            "cnpj": "11222333000181",
+            "x_nome": "Prestador Teste LTDA",
+            "end": endereco,
+            "reg_trib": NFSeRegimeTributacao(
+                op_simp_nac=NFSeOpSimplesNacional.NAO_OPTANTE, reg_esp_trib="0"
             ),
-            tot_trib=NFSeTotTrib(ind_tot_trib="0"),
-        ),
-    })
+        }
+    )
+    tomador = NFSeTomador.model_validate(
+        {
+            "cpf": "11144477735",
+            "x_nome": "Tomador Teste",
+            "end": endereco,
+        }
+    )
+    doc = NFSeDocument.model_validate(
+        {
+            "document_type": "DPS",
+            "date": "2026-07-01",
+            "number": "1",
+            "seller": InvoiceParty(
+                tax_id=TaxIdentifier(country_code="BR", identifier="11222333000181"),
+                name="Prestador Teste LTDA",
+            ),
+            "buyer": InvoiceParty(
+                tax_id=TaxIdentifier(country_code="BR", identifier="11144477735"),
+                name="Tomador Teste",
+            ),
+            "tp_amb": TipoAmbiente.HOMOLOGACAO,
+            "serie": "1",
+            "n_dps": "1",
+            "d_compet": "2026-07-01",
+            "c_loc_emi": "3550308",
+            "prest": prestador,
+            "toma": tomador,
+            "serv": NFSeServ(
+                loc_prest=NFSeLocPrest(c_loc_prestacao="3550308"),
+                c_serv=NFSeCServ(c_trib_nac="010101", x_desc_serv="Serviço de teste"),
+            ),
+            "valores": NFSeValores(
+                v_serv="100.00",
+                trib_mun=NFSeTribMunicipal(
+                    trib_issqn=NFSeTribISSQN.TRIBUTAVEL,
+                    tp_ret_issqn=NFSeTipoRetISSQN.NAO_RETIDO,
+                    p_aliq="5.00",
+                ),
+                tot_trib=NFSeTotTrib(ind_tot_trib="0"),
+            ),
+        }
+    )
     xml = NFSeGenerator().generate(doc)
     result = NFSeXSDValidator().validate(xml)
     return "NFS-e", result.valid, result.errors
@@ -1208,38 +1332,72 @@ def _smoke_cte() -> tuple[str, bool, list[str]]:
     from mcp_nfe_br.standards.cte_generator import CTeGenerator
     from mcp_nfe_br.validators.cte_xsd import CTeXSDValidator
 
-    endereco = BREndereco.model_validate({
-        "x_lgr": "Rua Teste", "nro": "123", "x_bairro": "Centro",
-        "c_mun": "3550308", "x_mun": "Sao Paulo", "uf": "SP", "cep": "01000000",
-    })
-    emitente = BRCteEmitente.model_validate({
-        "cnpj": "11222333000181", "x_nome": "Transportadora Teste LTDA",
-        "ie": "123456789", "endereco": endereco, "crt": RegimeTributario.REGIME_NORMAL,
-    })
-    remetente = BRCteRemetente.model_validate({
-        "cnpj": "11444777000161", "x_nome": "Remetente Teste LTDA", "endereco": endereco,
-    })
-    doc = BRCTeDocument.model_validate({
-        "document_type": "57", "date": "2026-07-03", "number": "1",
-        "seller": InvoiceParty(
-            tax_id=TaxIdentifier(country_code="BR", identifier="11222333000181"),
-            name="Transportadora Teste LTDA",
-        ),
-        "mod": CTeModelo.CTE, "serie": "1", "n_ct": "1",
-        "nat_op": "Prestação de serviço de transporte", "tp_serv": CTeTipoServico.NORMAL,
-        "modal": CTeModal.RODOVIARIO, "dh_emi": "2026-07-03T10:00:00-03:00", "c_uf": "35",
-        "cfop": "5352", "tp_amb": "2", "c_mun_ini": "3550308", "x_mun_ini": "Sao Paulo",
-        "uf_ini": "SP", "c_mun_fim": "3304557", "x_mun_fim": "Rio de Janeiro",
-        "uf_fim": "RJ", "retira": "1", "emitente": emitente, "remetente": remetente,
-        "tomador": BRCteTomador(papel=CTeTomadorPapel.REMETENTE, ind_ie_toma="1"),
-        "v_prest": BRCteVPrest(v_tprest="100.00", v_rec="100.00"),
-        "imp": BRCteImp(icms=BRCteICMS00(v_bc="100.00", p_icms="12.00", v_icms="12.00")),
-        "inf_carga": BRCteInfCarga(
-            v_carga="1000.00", pro_pred="Eletrônicos",
-            inf_q=[BRCteInfQ(c_unid="01", tp_med="PESO BRUTO", q_carga="100.0000")],
-        ),
-        "inf_modal": BRCteInfModal(modal=CTeModal.RODOVIARIO, rntrc="12345678"),
-    })
+    endereco = BREndereco.model_validate(
+        {
+            "x_lgr": "Rua Teste",
+            "nro": "123",
+            "x_bairro": "Centro",
+            "c_mun": "3550308",
+            "x_mun": "Sao Paulo",
+            "uf": "SP",
+            "cep": "01000000",
+        }
+    )
+    emitente = BRCteEmitente.model_validate(
+        {
+            "cnpj": "11222333000181",
+            "x_nome": "Transportadora Teste LTDA",
+            "ie": "123456789",
+            "endereco": endereco,
+            "crt": RegimeTributario.REGIME_NORMAL,
+        }
+    )
+    remetente = BRCteRemetente.model_validate(
+        {
+            "cnpj": "11444777000161",
+            "x_nome": "Remetente Teste LTDA",
+            "endereco": endereco,
+        }
+    )
+    doc = BRCTeDocument.model_validate(
+        {
+            "document_type": "57",
+            "date": "2026-07-03",
+            "number": "1",
+            "seller": InvoiceParty(
+                tax_id=TaxIdentifier(country_code="BR", identifier="11222333000181"),
+                name="Transportadora Teste LTDA",
+            ),
+            "mod": CTeModelo.CTE,
+            "serie": "1",
+            "n_ct": "1",
+            "nat_op": "Prestação de serviço de transporte",
+            "tp_serv": CTeTipoServico.NORMAL,
+            "modal": CTeModal.RODOVIARIO,
+            "dh_emi": "2026-07-03T10:00:00-03:00",
+            "c_uf": "35",
+            "cfop": "5352",
+            "tp_amb": "2",
+            "c_mun_ini": "3550308",
+            "x_mun_ini": "Sao Paulo",
+            "uf_ini": "SP",
+            "c_mun_fim": "3304557",
+            "x_mun_fim": "Rio de Janeiro",
+            "uf_fim": "RJ",
+            "retira": "1",
+            "emitente": emitente,
+            "remetente": remetente,
+            "tomador": BRCteTomador(papel=CTeTomadorPapel.REMETENTE, ind_ie_toma="1"),
+            "v_prest": BRCteVPrest(v_tprest="100.00", v_rec="100.00"),
+            "imp": BRCteImp(icms=BRCteICMS00(v_bc="100.00", p_icms="12.00", v_icms="12.00")),
+            "inf_carga": BRCteInfCarga(
+                v_carga="1000.00",
+                pro_pred="Eletrônicos",
+                inf_q=[BRCteInfQ(c_unid="01", tp_med="PESO BRUTO", q_carga="100.0000")],
+            ),
+            "inf_modal": BRCteInfModal(modal=CTeModal.RODOVIARIO, rntrc="12345678"),
+        }
+    )
     xml = CTeGenerator().generate(doc)
     result = CTeXSDValidator().validate(xml)
     return "CT-e", result.valid, result.errors

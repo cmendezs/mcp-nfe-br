@@ -25,18 +25,14 @@ class TestSubmitNfse:
     @pytest.mark.asyncio
     async def test_submit_nfse_read_only_blocked(self, monkeypatch):
         monkeypatch.setenv("BR_READ_ONLY", "1")
-        result = await br__submit_nfse(
-            client_id="id", client_secret="secret", xml_content="<DPS/>"
-        )
+        result = await br__submit_nfse(client_id="id", client_secret="secret", xml_content="<DPS/>")
         assert "error" in result
 
     @pytest.mark.asyncio
     async def test_submit_nfse_requires_confirmation(self):
         if os.environ.get("BR_READ_ONLY") == "1":
             pytest.skip("BR_READ_ONLY is set")
-        result = await br__submit_nfse(
-            client_id="id", client_secret="secret", xml_content="<DPS/>"
-        )
+        result = await br__submit_nfse(client_id="id", client_secret="secret", xml_content="<DPS/>")
         assert "pending" in str(result).lower() or "confirmation" in str(result).lower()
 
     @pytest.mark.asyncio
@@ -100,8 +96,6 @@ class TestSecretNotInLogs:
     @pytest.mark.asyncio
     async def test_submit_nfse_password_not_in_logs(self, caplog):
         secret = "GOVBR_SECRET_MUST_NOT_LEAK"
-        await br__submit_nfse(
-            client_id="id", client_secret=secret, xml_content="<DPS/>"
-        )
+        await br__submit_nfse(client_id="id", client_secret=secret, xml_content="<DPS/>")
         for record in caplog.records:
             assert secret not in record.getMessage()

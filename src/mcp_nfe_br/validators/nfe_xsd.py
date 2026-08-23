@@ -31,8 +31,12 @@ from mcp_einvoicing_core.xml_utils import safe_fromstring, safe_parser
 _SCHEMA_PACKAGE = "mcp_nfe_br.schemas.nfe"
 _SCHEMA_FILE_UNSIGNED = "nfe_v4.00_unsigned.xsd"
 _SCHEMA_FILE_SIGNED = "nfe_v4.00.xsd"
-_SCHEMA_VERSION_UNSIGNED = "NF-e/NFC-e 4.00 (PL_010d / NT 2026.004 + PL_010e_v1.02 delta, unsigned variant)"
-_SCHEMA_VERSION_SIGNED = "NF-e/NFC-e 4.00 (PL_010d / NT 2026.004 + PL_010e_v1.02 delta, official signed schema)"
+_SCHEMA_VERSION_UNSIGNED = (
+    "NF-e/NFC-e 4.00 (PL_010d / NT 2026.004 + PL_010e_v1.02 delta, unsigned variant)"
+)
+_SCHEMA_VERSION_SIGNED = (
+    "NF-e/NFC-e 4.00 (PL_010d / NT 2026.004 + PL_010e_v1.02 delta, official signed schema)"
+)
 
 _DS_SIGNATURE = "{http://www.w3.org/2000/09/xmldsig#}Signature"
 

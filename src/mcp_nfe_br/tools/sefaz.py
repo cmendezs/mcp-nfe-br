@@ -64,7 +64,8 @@ async def br__submit_nfe(
     id_lote: Annotated[str, "Identificador do lote (idLote), até 15 dígitos"],
     cert_path: Annotated[str, "Caminho local para o certificado ICP-Brasil A1 (.p12/.pfx)"],
     xml_content: Annotated[
-        str | None, "XML NF-e/NFC-e assinado (saída de br__sign_nfe). Informe xml_content ou xml_base64."
+        str | None,
+        "XML NF-e/NFC-e assinado (saída de br__sign_nfe). Informe xml_content ou xml_base64.",
     ] = None,
     xml_base64: Annotated[str | None, "XML NF-e/NFC-e assinado, codificado em base64."] = None,
     tp_amb: Annotated[
@@ -145,7 +146,9 @@ async def br__distribute_dfe(
         str | None, "distNSU/ultNSU — último NSU recebido (modo distribuição em lote)"
     ] = None,
     nsu: Annotated[str | None, "consNSU/NSU — NSU específico a consultar"] = None,
-    ch_nfe: Annotated[str | None, "consChNFe/chNFe — chave de acesso (44 caracteres) a consultar"] = None,
+    ch_nfe: Annotated[
+        str | None, "consChNFe/chNFe — chave de acesso (44 caracteres) a consultar"
+    ] = None,
     cert_password: Annotated[str | None, "Senha do certificado A1, se houver"] = None,
     endpoint_override: Annotated[
         str | None,

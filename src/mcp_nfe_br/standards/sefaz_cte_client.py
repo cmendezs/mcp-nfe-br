@@ -187,12 +187,15 @@ def parse_cte_sefaz_response(response_xml: bytes) -> dict[str, object]:
     """
     root = parse_response_root(response_xml)
 
-    result = scrape_fields(root, ("cStat", "xMotivo", "tpAmb", "verAplic", "dhRecbto", "nRec", "cUF"))
+    result = scrape_fields(
+        root, ("cStat", "xMotivo", "tpAmb", "verAplic", "dhRecbto", "nRec", "cUF")
+    )
 
     prot_cte = root.xpath(".//*[local-name()='protCTe']")
     if prot_cte:
         prot = scrape_fields(
-            prot_cte[0], ("chCTe", "tpAmb", "verAplic", "dhRecbto", "nProt", "digVal", "cStat", "xMotivo")
+            prot_cte[0],
+            ("chCTe", "tpAmb", "verAplic", "dhRecbto", "nProt", "digVal", "cStat", "xMotivo"),
         )
         result["protCTe"] = mark_untrusted_fields(prot, _CTE_UNTRUSTED_FIELDS)
 

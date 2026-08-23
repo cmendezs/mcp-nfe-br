@@ -68,9 +68,7 @@ def br__validate_nfse_xml(
     xml_content: Annotated[
         str | None, "XML DPS ou NFSe como string. Informe xml_content ou xml_base64."
     ] = None,
-    xml_base64: Annotated[
-        str | None, "XML DPS ou NFSe codificado em base64."
-    ] = None,
+    xml_base64: Annotated[str | None, "XML DPS ou NFSe codificado em base64."] = None,
 ) -> dict[str, object]:
     """Validar um DPS ou NFSe contra o XSD v1.01 do ADN.
 
@@ -89,18 +87,13 @@ def br__validate_nfse_xml(
 
 
 def br__sign_nfse(
-    cert_path: Annotated[
-        str, "Caminho local para o certificado ICP-Brasil A1 (.p12/.pfx)"
-    ],
+    cert_path: Annotated[str, "Caminho local para o certificado ICP-Brasil A1 (.p12/.pfx)"],
     xml_content: Annotated[
-        str | None, "DPS não assinado (saída de br__generate_nfse). Informe xml_content ou xml_base64."
+        str | None,
+        "DPS não assinado (saída de br__generate_nfse). Informe xml_content ou xml_base64.",
     ] = None,
-    xml_base64: Annotated[
-        str | None, "DPS não assinado codificado em base64."
-    ] = None,
-    cert_password: Annotated[
-        str | None, "Senha do certificado A1, se houver"
-    ] = None,
+    xml_base64: Annotated[str | None, "DPS não assinado codificado em base64."] = None,
+    cert_password: Annotated[str | None, "Senha do certificado A1, se houver"] = None,
 ) -> dict[str, object]:
     """Aplicar assinatura XML-DSig ICP-Brasil ao DPS da NFS-e Nacional.
 

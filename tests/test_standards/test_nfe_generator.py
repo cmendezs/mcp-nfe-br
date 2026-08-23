@@ -46,7 +46,9 @@ def test_generate_rejects_non_br_invoice() -> None:
     buyer = InvoiceParty(
         tax_id=TaxIdentifier(country_code="BR", identifier="11222333000181"), name="Y"
     )
-    doc = InvoiceDocument(document_type="55", date="2026-06-13", number="1", seller=seller, buyer=buyer)
+    doc = InvoiceDocument(
+        document_type="55", date="2026-06-13", number="1", seller=seller, buyer=buyer
+    )
     with pytest.raises(DocumentGenerationError, match="BRInvoice"):
         NFeGenerator().generate(doc)
 
@@ -65,7 +67,11 @@ def test_generate_rejects_unsupported_pis_cst() -> None:
 
 def test_generate_omits_optional_tax_groups_when_none() -> None:
     invoice = make_nfe(
-        lines=[make_line(pis_cst=None, pis_amount=None, cofins_cst=None, cofins_amount=None, ipi_cst=None)]
+        lines=[
+            make_line(
+                pis_cst=None, pis_amount=None, cofins_cst=None, cofins_amount=None, ipi_cst=None
+            )
+        ]
     )
     xml = NFeGenerator().generate(invoice)
     assert "<PIS>" not in xml

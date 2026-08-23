@@ -139,7 +139,8 @@ class BRDestinatario(BaseModel):
     x_nome: str | None = Field(default=None, description="Razão social ou nome do destinatário")
     ender_dest: BREndereco | None = Field(default=None, description="Endereço do destinatário")
     ind_ie_dest: str = Field(
-        ..., description="Indicador da IE do destinatário: 1=contribuinte ICMS, 2=isento, 9=não contribuinte"
+        ...,
+        description="Indicador da IE do destinatário: 1=contribuinte ICMS, 2=isento, 9=não contribuinte",
     )
     ie: str | None = Field(default=None, description="Inscrição Estadual do destinatário")
     email: str | None = Field(default=None, description="E-mail do destinatário")
@@ -281,9 +282,7 @@ class BRGrupoIBSCBS(BaseModel):
         default=None,
         description="Valor do IBS, soma de vIBSUF e vIBSMun (UB54a)",
     )
-    cbs: BRGrupoCBS | None = Field(
-        default=None, description="Grupo de informações da CBS (UB55)"
-    )
+    cbs: BRGrupoCBS | None = Field(default=None, description="Grupo de informações da CBS (UB55)")
 
 
 class BRGrupoIBSUFTot(BaseModel):
@@ -307,9 +306,7 @@ class BRGrupoIBSMunTot(BaseModel):
     v_dev_trib: str | None = Field(
         default=None, description="Valor total de devolução de tributos do IBS Municipal (W44)"
     )
-    v_ibs_mun: str | None = Field(
-        default=None, description="Valor total do IBS do Município (W46)"
-    )
+    v_ibs_mun: str | None = Field(default=None, description="Valor total do IBS do Município (W46)")
 
 
 class BRGrupoIBSTot(BaseModel):
@@ -378,9 +375,7 @@ class BRInvoiceLine(InvoiceLineItem):
 
     c_prod: str = Field(..., description="Código do produto/serviço")
     c_ean: str = Field(default="SEM GTIN", description="GTIN/EAN do produto, ou 'SEM GTIN'")
-    c_ean_trib: str = Field(
-        default="SEM GTIN", description="GTIN/EAN tributável, ou 'SEM GTIN'"
-    )
+    c_ean_trib: str = Field(default="SEM GTIN", description="GTIN/EAN tributável, ou 'SEM GTIN'")
     ncm: str = Field(
         ..., min_length=8, max_length=8, description="Código NCM (Nomenclatura Comum do Mercosul)"
     )
@@ -449,27 +444,18 @@ class BRInvoiceLine(InvoiceLineItem):
         default=None,
         description="Percentual de redução da BC do ICMS ST (pRedBCST).",
     )
-    icms_v_bc_st: str | None = Field(
-        default=None, description="Valor da BC do ICMS ST (vBCST)."
-    )
-    icms_p_icms_st: str | None = Field(
-        default=None, description="Alíquota do ICMS ST (pICMSST)."
-    )
-    icms_v_icms_st: str | None = Field(
-        default=None, description="Valor do ICMS ST (vICMSST)."
-    )
+    icms_v_bc_st: str | None = Field(default=None, description="Valor da BC do ICMS ST (vBCST).")
+    icms_p_icms_st: str | None = Field(default=None, description="Alíquota do ICMS ST (pICMSST).")
+    icms_v_icms_st: str | None = Field(default=None, description="Valor do ICMS ST (vICMSST).")
     icms_v_bc_st_ret: str | None = Field(
         default=None,
         description=(
-            "Valor da BC do ICMS ST retido anteriormente (vBCSTRet) — "
-            "CST 60 / CSOSN 500."
+            "Valor da BC do ICMS ST retido anteriormente (vBCSTRet) — CST 60 / CSOSN 500."
         ),
     )
     icms_p_st: str | None = Field(
         default=None,
-        description=(
-            "Alíquota suportada pelo consumidor final (pST) — CST 60 / CSOSN 500."
-        ),
+        description=("Alíquota suportada pelo consumidor final (pST) — CST 60 / CSOSN 500."),
     )
     icms_v_icms_subst: str | None = Field(
         default=None,
@@ -480,9 +466,7 @@ class BRInvoiceLine(InvoiceLineItem):
     )
     icms_v_icms_st_ret: str | None = Field(
         default=None,
-        description=(
-            "Valor do ICMS ST retido anteriormente (vICMSSTRet) — CST 60 / CSOSN 500."
-        ),
+        description=("Valor do ICMS ST retido anteriormente (vICMSSTRet) — CST 60 / CSOSN 500."),
     )
     icms_p_cred_sn: str | None = Field(
         default=None,
@@ -493,10 +477,7 @@ class BRInvoiceLine(InvoiceLineItem):
     )
     icms_v_cred_icms_sn: str | None = Field(
         default=None,
-        description=(
-            "Valor do crédito do ICMS do Simples Nacional (vCredICMSSN) — "
-            "CSOSN 101/201."
-        ),
+        description=("Valor do crédito do ICMS do Simples Nacional (vCredICMSSN) — CSOSN 101/201."),
     )
     ipi_cst: str | None = Field(default=None, description="Código de Situação Tributária do IPI")
     ipi_rate: str | None = Field(default=None, description="Alíquota do IPI (%)")
@@ -526,7 +507,9 @@ class BRInvoice(InvoiceDocument):
     `dest`/`total`/`transp`/`pag` groups.
     """
 
-    modelo: NFeModelo = Field(..., description="Modelo do documento fiscal: 55 (NF-e) ou 65 (NFC-e)")
+    modelo: NFeModelo = Field(
+        ..., description="Modelo do documento fiscal: 55 (NF-e) ou 65 (NFC-e)"
+    )
     serie: str = Field(..., max_length=3, description="Série do documento fiscal")
     nnf: str = Field(..., description="Número do documento fiscal (nNF)")
     chave_acesso: str | None = Field(
@@ -558,6 +541,7 @@ class BRInvoice(InvoiceDocument):
                 f"+ 24 dígitos): {v!r}"
             )
         return v
+
     natureza_operacao: str = Field(..., description="Natureza da Operação")
     tipo_operacao: TipoOperacao = Field(..., description="Tipo de Operação: 0=entrada, 1=saída")
     protocolo_autorizacao: str | None = Field(
@@ -594,7 +578,9 @@ class BRInvoice(InvoiceDocument):
             "NF-e com DANFE Simplificado Tipo 2 (redefinido por NT 2026.002 v1.00)"
         ),
     )
-    tp_amb: TipoAmbiente = Field(..., description="Identificação do Ambiente: 1=produção, 2=homologação")
+    tp_amb: TipoAmbiente = Field(
+        ..., description="Identificação do Ambiente: 1=produção, 2=homologação"
+    )
     fin_nfe: str = Field(default="1", description="Finalidade de emissão: 1=normal")
     ind_final: str = Field(..., description="Indica operação com consumidor final: 0=não, 1=sim")
     ind_pres: str = Field(
@@ -615,7 +601,9 @@ class BRInvoice(InvoiceDocument):
             "[Verified locally — PL_010e_v1.02, leiauteNFe_v4.00.xsd]"
         ),
     )
-    proc_emi: str = Field(default="0", description="Processo de emissão: 0=aplicativo do contribuinte")
+    proc_emi: str = Field(
+        default="0", description="Processo de emissão: 0=aplicativo do contribuinte"
+    )
     ver_proc: str = Field(default="mcp-nfe-br", description="Versão do processo de emissão")
 
     # Grupo emit / dest
@@ -625,9 +613,7 @@ class BRInvoice(InvoiceDocument):
     )
 
     # Grupo transp / pag
-    mod_frete: str = Field(
-        default="9", description="Modalidade do frete (modFrete): 9=sem frete"
-    )
+    mod_frete: str = Field(default="9", description="Modalidade do frete (modFrete): 9=sem frete")
     pagamentos: list[BRPagamento] = Field(
         ..., min_length=1, description="Formas de pagamento (Grupo pag/detPag)"
     )

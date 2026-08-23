@@ -47,7 +47,10 @@ def test_build_autorizacao_envelope_shape() -> None:
 
 def test_build_dist_dfe_envelope_dist_nsu() -> None:
     envelope = build_dist_dfe_envelope(
-        TipoAmbiente.PRODUCAO, c_uf_autor="35", document_id="99999999999999", ult_nsu="000000000000001"
+        TipoAmbiente.PRODUCAO,
+        c_uf_autor="35",
+        document_id="99999999999999",
+        ult_nsu="000000000000001",
     )
     xml = envelope.decode("utf-8")
 
@@ -77,7 +80,9 @@ def test_build_dist_dfe_envelope_cons_ch_nfe() -> None:
 
 def test_build_dist_dfe_envelope_requires_exactly_one_mode() -> None:
     with pytest.raises(ValueError):
-        build_dist_dfe_envelope(TipoAmbiente.PRODUCAO, c_uf_autor="35", document_id="99999999999999")
+        build_dist_dfe_envelope(
+            TipoAmbiente.PRODUCAO, c_uf_autor="35", document_id="99999999999999"
+        )
     with pytest.raises(ValueError):
         build_dist_dfe_envelope(
             TipoAmbiente.PRODUCAO,
@@ -121,9 +126,33 @@ def test_get_endpoint_unconfigured_cuf_raises() -> None:
 
 # BR-LC-1: all 27 UFs must resolve to a non-empty https:// URL.
 _ALL_CUFS = [
-    "12", "27", "16", "13", "29", "23", "53", "32", "52", "21",
-    "15", "25", "26", "33", "28", "17", "35", "31", "41", "43",
-    "50", "51", "22", "24", "11", "14", "42",
+    "12",
+    "27",
+    "16",
+    "13",
+    "29",
+    "23",
+    "53",
+    "32",
+    "52",
+    "21",
+    "15",
+    "25",
+    "26",
+    "33",
+    "28",
+    "17",
+    "35",
+    "31",
+    "41",
+    "43",
+    "50",
+    "51",
+    "22",
+    "24",
+    "11",
+    "14",
+    "42",
 ]
 
 
