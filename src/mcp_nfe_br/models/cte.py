@@ -56,12 +56,14 @@ self-consistency and CNPJ-Base match) are enforced as `model_validator`s on
 Also discovered while diffing the schema package, but explicitly **out of
 scope** for this change (different Notas Técnicas, not NT 2026.002):
 a new `TCTeSimp` document type and a `pgtoVinc`/`TPagamentoRTC` group both
-belong to NT 2026.001 ("VincPgto"); the CT-e access-key type (`TChDFe`)
-changed schema-wide from `[0-9]{44}` to `[0-9]{6}[A-Z0-9]{12}[0-9]{26}`
-(alphanumeric-CNPJ-ready) but `chave_acesso`'s own validator was left as
-`[0-9]{44}` — only the new `pag_antecipado` field uses the new pattern,
-since that's what the verified schema actually declares for `TChDFe`
-today. See br.md CT-e section and roadmap-2026.md for tracking.
+belong to NT 2026.001 ("VincPgto") and remain unimplemented.
+
+The CT-e access-key type (`TChDFe`) also changed schema-wide (same
+`PL_CTe_400_NT2026.002` package) from `[0-9]{44}` to
+`[0-9]{6}[A-Z0-9]{12}[0-9]{26}` (alphanumeric-CNPJ-ready). As of BR-CTE-23
+this pattern is applied to `chave_acesso`'s validator, `build_cte_access_key`,
+and the `pag_antecipado` field alike, matching `TChDFe` in the bundled
+schema. See br.md CT-e section and roadmap-2026.md for tracking.
 """
 
 from __future__ import annotations
@@ -646,7 +648,11 @@ class BRCTeDocument(InvoiceDocument):
         default=None,
         min_length=44,
         max_length=44,
-        description="Chave de acesso (44 caracteres), formato CTe[0-9]{44} no atributo Id de infCte.",
+        description=(
+            "Chave de acesso (44 caracteres), formato "
+            "CTe[0-9]{6}[A-Z0-9]{12}[0-9]{26} no atributo Id de infCte "
+            "(TChDFe, alphanumeric-CNPJ-ready)."
+        ),
     )
     nat_op: str = Field(..., description="Natureza da Operação")
     tp_serv: CTeTipoServico = Field(..., description="Tipo do Serviço")
@@ -731,9 +737,10 @@ class BRCTeDocument(InvoiceDocument):
     def check_chave_acesso_format(cls, v: str | None) -> str | None:
         if v is None:
             return v
-        if not re.match(r"^[0-9]{44}$", v):
+        if not re.match(r"^[0-9]{6}[A-Z0-9]{12}[0-9]{26}$", v):
             raise ValueError(
-                f"Chave de acesso do CT-e fora do formato esperado (44 dígitos): {v!r}"
+                "Chave de acesso do CT-e fora do formato esperado "
+                f"(TChDFe, 44 caracteres [0-9]{{6}}[A-Z0-9]{{12}}[0-9]{{26}}): {v!r}"
             )
         return v
 
@@ -746,11 +753,10 @@ class BRCTeDocument(InvoiceDocument):
     @field_validator("pag_antecipado", mode="after")
     @classmethod
     def check_pag_antecipado_format(cls, v: list[str]) -> list[str]:
-        """`chCTePagAnt` uses the new alphanumeric-ready `TChDFe` type
-        (`[0-9]{6}[A-Z0-9]{12}[0-9]{26}`), distinct from this document's own
-        `chave_acesso` (still validated as `[0-9]{44}` — see
-        `check_chave_acesso_format` and br.md CT-e section for why the two
-        are not unified in this change)."""
+        """`chCTePagAnt` uses the alphanumeric-ready `TChDFe` type
+        (`[0-9]{6}[A-Z0-9]{12}[0-9]{26}`), the same pattern now enforced on
+        this document's own `chave_acesso` as of BR-CTE-23 (see
+        `check_chave_acesso_format`)."""
         for key in v:
             if not re.match(r"^[0-9]{6}[A-Z0-9]{12}[0-9]{26}$", key):
                 raise ValueError(

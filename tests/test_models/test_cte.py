@@ -101,8 +101,24 @@ def test_cte_v_prest_comp_defaults_empty() -> None:
 
 
 def test_cte_chave_acesso_format_validation() -> None:
-    with pytest.raises(ValidationError, match="44 dígitos"):
+    # First 6 chars must be numeric (cUF+AAMM), so a leading letter is rejected.
+    with pytest.raises(ValidationError, match="TChDFe"):
         make_cte(chave_acesso="X" * 44)
+
+
+def test_cte_chave_acesso_accepts_alphanumeric_cnpj() -> None:
+    # TChDFe (BR-CTE-23): 6 numeric + 12 alphanumeric CNPJ root+branch + 26 numeric.
+    key = "352508" + "12ABC345DE01" + "0" * 26
+    assert len(key) == 44
+    cte = make_cte(chave_acesso=key)
+    assert cte.chave_acesso == key
+
+
+def test_cte_chave_acesso_accepts_legacy_all_numeric() -> None:
+    # All-numeric keys remain valid (backward-compatible with the old [0-9]{44}).
+    key = "0" * 44
+    cte = make_cte(chave_acesso=key)
+    assert cte.chave_acesso == key
 
 
 # --- Reforma Tributária do Consumo (NT 2026.002) — closes GitHub issue cmendezs/mcp-nfe-br#5 ---
