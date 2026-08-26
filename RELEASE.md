@@ -1,5 +1,12 @@
 # mcp-nfe-br — Release Notes
 
+## v0.8.0 (2026-08-26) — CT-e access key `TChDFe` alphanumeric-CNPJ (BR-CTE-23)
+
+Follow-up to v0.7.0, closing the `TChDFe` item deliberately deferred there.
+
+- **[BR-CTE-23]** The CT-e access-key type `TChDFe` was loosened schema-wide from `[0-9]{44}` to `[0-9]{6}[A-Z0-9]{12}[0-9]{26}` (alphanumeric-CNPJ-ready) in `PL_CTe_400_NT2026.002`. `chave_acesso`'s field validator (`models/cte.py`) and `build_cte_access_key`'s CNPJ regex (`utils/cte_access_key.py`, now `[0-9A-Z]{12}[0-9]{2}`, mirroring the NF-e builder) were updated to match; the shared mod-11 check digit is already alphanumeric-safe (`ord(char)-48`), so no separate code path was needed. Confirmed `[Verified locally]` against `tiposGeralCTe_v4.00.xsd` (`TChDFe`) and `cteTiposBasico_v4.00.xsd` (`infCte/@Id`). Resolves the `[NEED: verify]` marker in `cte_access_key.py`.
+- All-numeric keys remain valid (backward-compatible). New tests cover alphanumeric and legacy all-numeric keys; format-error assertion updated. 301 tests passing (1 skipped); audit gate 0 blocking. Core pin unchanged (BR is non-CII, unaffected by core v1.21.0).
+
 ## v0.7.0 (2026-08-17) — CT-e IBS/CBS, Reforma Tributária do Consumo (NT 2026.002, BR-CTE-2026-08)
 
 Closes GitHub issue cmendezs/mcp-nfe-br#5, filed by the regulatory watch (2026-W34). Full NT PDF (`CTe_Nota_Tecnica_2026_002 v1.01.pdf`) and the schema package (`PL_CTe_400_NT2026.002 RTC_1.00.zip`) were sourced and reviewed directly (`specs/cte/`).
