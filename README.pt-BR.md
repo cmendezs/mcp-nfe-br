@@ -16,8 +16,6 @@
 
 **Status atual (v0.6.5):** geração, assinatura ICP-Brasil, validação XSD e submissão gated à SEFAZ/ADN estão implementadas para NF-e/NFC-e (modelo 55/65, schema 4.00) e NFS-e Nacional (ADN, schema v1.01). NF-e/NFC-e agora também cobre o delta do schema `010e_v.1.02` (DANFE Simplificado Tipo 2 — `tpImp=6`, `cIndOp`, `ISUFEmit`, e o grupo de mensagens de alerta na resposta da SEFAZ) sobre a base `PL_010d`. A cobertura de **CT-e (modelo 57)** — geração, assinatura, validação e submissão de eventos SEFAZ (cancelamento, Carta de Correção) — começou na v0.6.0. O escopo v1 é intencionalmente restrito: **apenas modal rodoviário**, **apenas ICMS CST 00**, e **nenhuma tabela de endpoints de webservice CT-e embutida/verificada** (toda chamada SEFAZ CT-e exige `endpoint_override` explícito). Veja a seção "Ferramentas CT-e (modelo 57)" abaixo e `context-library/countries/br.md` (no repositório de origem) para a referência completa em nível de campo.
 
----
-
 ## Instalação
 
 ### Requisitos
@@ -45,11 +43,22 @@ cd mcp-nfe-br
 uv sync --all-extras
 ```
 
----
-
 ## Configuração
 
-Adicione o servidor à configuração do seu cliente MCP. Para o Claude Desktop, edite `claude_desktop_config.json`:
+Este servidor não requer credenciais para funcionar. As variáveis de ambiente abaixo são
+alternâncias opcionais de segurança/log:
+
+### Variáveis de ambiente
+
+| Variável | Descrição | Padrão |
+|---|---|---|
+| `BR_READ_ONLY` | Defina como `1` para desativar as ferramentas de escrita SEFAZ (`br__submit_nfe`, `br__distribute_dfe`, `br__submit_nfse`, `br__cancel_nfse`). Modo seguro para exploração. O ambiente SEFAZ (produção/homologação) é selecionado por chamada via o argumento `tp_amb`. | — |
+| `BR_CTE_READ_ONLY` | Defina como `1` para desativar as ferramentas de escrita CT-e (`br__submit_cte`, `br__cancel_cte`, `br__correct_cte`). Mantida distinta de `BR_READ_ONLY` para que NF-e e CT-e possam ser controladas independentemente. | — |
+| `LOG_LEVEL` | Nível de log: `DEBUG`, `INFO`, `WARNING`, `ERROR` | `INFO` |
+
+## Integração com Claude Desktop
+
+Para usar este servidor com o Claude, adicione esta configuração ao seu arquivo `claude_desktop_config.json`:
 
 ```json
 {
@@ -76,15 +85,45 @@ Para uma instalação local de desenvolvimento:
 }
 ```
 
-### Variáveis de ambiente
+## Integração com Cursor
 
-| Variável | Descrição | Padrão |
-|---|---|---|
-| `BR_READ_ONLY` | Defina como `1` para desativar as ferramentas de escrita SEFAZ (`br__submit_nfe`, `br__distribute_dfe`, `br__submit_nfse`, `br__cancel_nfse`). Modo seguro para exploração. O ambiente SEFAZ (produção/homologação) é selecionado por chamada via o argumento `tp_amb`. | — |
-| `BR_CTE_READ_ONLY` | Defina como `1` para desativar as ferramentas de escrita CT-e (`br__submit_cte`, `br__cancel_cte`, `br__correct_cte`). Mantida distinta de `BR_READ_ONLY` para que NF-e e CT-e possam ser controladas independentemente. | — |
-| `LOG_LEVEL` | Nível de log: `DEBUG`, `INFO`, `WARNING`, `ERROR` | `INFO` |
+O Cursor suporta servidores MCP via stdio. Adicione a configuração em:
+- **Global** (todos os projetos): `~/.cursor/mcp.json`
+- **Projeto** (apenas este repositório): `.cursor/mcp.json`
 
----
+```json
+{
+  "mcpServers": {
+    "nfe-br": {
+      "command": "uvx",
+      "args": ["mcp-nfe-br"]
+    }
+  }
+}
+```
+
+Recarregue a janela do Cursor (`Ctrl+Shift+P` depois *Reload Window*) para aplicar as mudanças.
+
+## Integração com Kiro
+
+O Kiro suporta servidores MCP através de seu arquivo de configuração dedicado. Dois níveis estão disponíveis:
+- **Global** (todos os projetos): `~/.kiro/settings/mcp.json`
+- **Workspace** (apenas este repositório): `.kiro/settings/mcp.json`
+
+```json
+{
+  "mcpServers": {
+    "nfe-br": {
+      "command": "uvx",
+      "args": ["mcp-nfe-br"],
+      "disabled": false,
+      "autoApprove": []
+    }
+  }
+}
+```
+
+O arquivo é recarregado automaticamente ao salvar. Você também pode abrir a configuração pela paleta de comandos (`Cmd+Shift+P` / `Ctrl+Shift+P`) e depois *MCP*.
 
 ## Ferramentas disponíveis
 
@@ -170,8 +209,6 @@ Monta uma chave de acesso (`chNFe`, 44 caracteres) com dígito verificador módu
 
 Retorna `{"chave_acesso": ..., "cnf": ...}`.
 
----
-
 ## Ferramentas CT-e (modelo 57)
 
 A cobertura de CT-e (Conhecimento de Transporte Eletrônico) começou na v0.6.0. **O escopo v1 é intencionalmente restrito**: apenas modal rodoviário (outros modais retornam erro), apenas ICMS CST 00 (tributação normal), e nenhuma tabela de endpoints SEFAZ CT-e embutida/verificada — toda chamada SEFAZ abaixo exige `endpoint_override` explícito. Desde a v0.7.0, `br__generate_cte` também aceita os campos da Reforma Tributária do Consumo (IBS/CBS) introduzidos pela NT 2026.002 — `imp/IBSCBS`, `emit/ISUFEmit` e `ide/tpPagAnt`+`gPagAntecipado` — com as regras de negócio autocontidas da NT aplicadas na camada de modelo; regras que exigem consulta ao banco de dados da SEFAZ não são verificadas.
@@ -218,8 +255,6 @@ Solicita o cancelamento de um CT-e autorizado (evento `110111`, `CTeRecepcaoEven
 Emite uma Carta de Correção Eletrônica (evento `110110`, `CTeRecepcaoEventoV4`). Conforme o Art. 58-B do CONVÊNIO/SINIEF 06/89, a CC-e não pode alterar valores de impostos, dados cadastrais das partes, ou a data de emissão/saída. Requer confirmação.
 
 Ainda não implementado: `br__distribute_cte_dfe` (`CTeDistribuicaoDFe`) — a especificação embutida confirma o formato do payload da requisição, mas não o nome do método, o namespace WSDL, ou o elemento wrapper da mensagem do webservice.
-
----
 
 ## Arquitetura
 
@@ -281,8 +316,6 @@ mcp-nfe-br/
 - Campos de Grupo I (NCM, CFOP, ICMS/IPI/PIS/COFINS) em `BRInvoiceLine`
 - Validação de CPF/CNPJ (incluindo o CNPJ alfanumérico da NT 2026.004)
 
----
-
 ## Contribuindo
 
 Contribuições são bem-vindas. Abra uma issue para discutir mudanças significativas antes de enviar um pull request.
@@ -295,8 +328,6 @@ uv run pytest
 uv run ruff check src/mcp_nfe_br tests audit
 uv run mypy src/mcp_nfe_br
 ```
-
----
 
 ## Outros servidores MCP de faturação eletrônica
 
@@ -313,14 +344,6 @@ uv run mypy src/mcp_nfe_br
 | 🇪🇸 Espanha | [mcp-facturacion-electronica-es](https://github.com/cmendezs/mcp-facturacion-electronica-es) |
 | 🇦🇪 Emirados Árabes Unidos | [mcp-einvoicing-ae](https://github.com/cmendezs/mcp-einvoicing-ae) |
 
----
-
 ## Licença
 
-Este projeto está licenciado sob **Apache 2.0**. Veja [LICENSE](LICENSE) para detalhes.
-
----
-
-## Changelog
-
-Veja [RELEASE.md](RELEASE.md) para o histórico completo de versões.
+Este projeto está licenciado sob **Apache 2.0**. Veja [LICENSE](LICENSE) para detalhes. Para o histórico completo de versões, veja [CHANGELOG.md](CHANGELOG.md).

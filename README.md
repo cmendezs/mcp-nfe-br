@@ -16,8 +16,6 @@
 
 **Current status (v0.6.5):** NF-e/NFC-e (modelo 55/65, schema 4.00) and NFS-e Nacional (ADN, schema v1.01) generation, ICP-Brasil signing, XSD validation, and gated SEFAZ/ADN submission are implemented. NF-e/NFC-e now also covers the `010e_v.1.02` schema delta (DANFE Simplificado Tipo 2 — `tpImp=6`, `cIndOp`, `ISUFEmit`, and the SEFAZ alert-message response group) on top of the `PL_010d` base. **CT-e (modelo 57)** generation/signing/validation and SEFAZ event submission (cancelamento, Carta de Correção) were added starting v0.6.0 — v1 scope is intentionally narrow: **modal rodoviário only**, **ICMS CST 00 only**, and **no bundled/verified CT-e webservice endpoint table** (every SEFAZ CT-e call requires an explicit `endpoint_override`). See the "CT-e (modelo 57)" tools section below and `context-library/countries/br.md` (in the source repo) for the full field-level reference.
 
----
-
 ## Installation
 
 ### Requirements
@@ -45,11 +43,22 @@ cd mcp-nfe-br
 uv sync --all-extras
 ```
 
----
-
 ## Configuration
 
-Add the server to your MCP client configuration. For Claude Desktop, edit `claude_desktop_config.json`:
+This server needs no credentials to run. The environment variables below are optional
+safety/logging toggles:
+
+### Environment variables
+
+| Variable | Description | Default |
+|---|---|---|
+| `BR_READ_ONLY` | Master switch. Set to `1` to disable write tools across **all** sub-formats: NF-e/NFC-e (`br__submit_nfe`, `br__distribute_dfe`), NFS-e (`br__submit_nfse`, `br__cancel_nfse`), and CT-e (`br__submit_cte`, `br__cancel_cte`, `br__correct_cte`). Safe mode for exploration. The SEFAZ environment (production/homologation) is selected per call via the `tp_amb` argument. | — |
+| `BR_CTE_READ_ONLY` | Set to `1` to disable *only* the CT-e write tools (`br__submit_cte`, `br__cancel_cte`, `br__correct_cte`), leaving NF-e/NFS-e writes enabled. Independent of `BR_READ_ONLY` — either variable set to `1` is sufficient to block CT-e writes; you do not need both. | — |
+| `LOG_LEVEL` | Log level: `DEBUG`, `INFO`, `WARNING`, `ERROR` | `INFO` |
+
+## Claude Desktop integration
+
+To use this server with Claude, add this configuration to your `claude_desktop_config.json` file:
 
 ```json
 {
@@ -62,7 +71,7 @@ Add the server to your MCP client configuration. For Claude Desktop, edit `claud
 }
 ```
 
-For a local development installation:
+For a local development install:
 
 ```json
 {
@@ -76,15 +85,45 @@ For a local development installation:
 }
 ```
 
-### Environment variables
+## Cursor integration
 
-| Variable | Description | Default |
-|---|---|---|
-| `BR_READ_ONLY` | Master switch. Set to `1` to disable write tools across **all** sub-formats: NF-e/NFC-e (`br__submit_nfe`, `br__distribute_dfe`), NFS-e (`br__submit_nfse`, `br__cancel_nfse`), and CT-e (`br__submit_cte`, `br__cancel_cte`, `br__correct_cte`). Safe mode for exploration. The SEFAZ environment (production/homologation) is selected per call via the `tp_amb` argument. | — |
-| `BR_CTE_READ_ONLY` | Set to `1` to disable *only* the CT-e write tools (`br__submit_cte`, `br__cancel_cte`, `br__correct_cte`), leaving NF-e/NFS-e writes enabled. Independent of `BR_READ_ONLY` — either variable set to `1` is sufficient to block CT-e writes; you do not need both. | — |
-| `LOG_LEVEL` | Log level: `DEBUG`, `INFO`, `WARNING`, `ERROR` | `INFO` |
+Cursor supports MCP servers via stdio. Add the configuration in:
+- **Global** (all projects): `~/.cursor/mcp.json`
+- **Project** (this repository only): `.cursor/mcp.json`
 
----
+```json
+{
+  "mcpServers": {
+    "nfe-br": {
+      "command": "uvx",
+      "args": ["mcp-nfe-br"]
+    }
+  }
+}
+```
+
+Reload the Cursor window (`Ctrl+Shift+P` then *Reload Window*) to apply the changes.
+
+## Kiro integration
+
+Kiro supports MCP servers via its dedicated configuration file. Two levels are available:
+- **Global** (all projects): `~/.kiro/settings/mcp.json`
+- **Workspace** (this repository only): `.kiro/settings/mcp.json`
+
+```json
+{
+  "mcpServers": {
+    "nfe-br": {
+      "command": "uvx",
+      "args": ["mcp-nfe-br"],
+      "disabled": false,
+      "autoApprove": []
+    }
+  }
+}
+```
+
+The file is automatically reloaded on save. You can also open the config via the command palette (`Cmd+Shift+P` / `Ctrl+Shift+P`) then *MCP*.
 
 ## Available tools
 
@@ -170,8 +209,6 @@ Builds an access key (`chNFe`, 44 characters) with a modulo 11 check digit, from
 
 Returns `{"chave_acesso": ..., "cnf": ...}`.
 
----
-
 ## CT-e (modelo 57) tools
 
 CT-e (Conhecimento de Transporte Eletrônico) coverage started at v0.6.0. **v1 scope is intentionally narrow**: modal rodoviário only (other modais raise an error), ICMS CST 00 (tributação normal) only, and no bundled/verified SEFAZ CT-e endpoint table — every SEFAZ call below requires an explicit `endpoint_override`. Since v0.7.0, `br__generate_cte` also accepts the Reforma Tributária do Consumo (IBS/CBS) fields introduced by NT 2026.002 — `imp/IBSCBS`, `emit/ISUFEmit`, and `ide/tpPagAnt`+`gPagAntecipado` — with the NT's self-contained business rules enforced at the model layer; rules that require a live SEFAZ database lookup are not checked.
@@ -218,8 +255,6 @@ Requests cancellation of an authorized CT-e (event `110111`, `CTeRecepcaoEventoV
 Issues a Carta de Correção Eletrônica (event `110110`, `CTeRecepcaoEventoV4`). Per Art. 58-B of CONVÊNIO/SINIEF 06/89, a CC-e cannot alter tax values, party registration data, or the issue/departure date. Gated.
 
 Not yet implemented: `br__distribute_cte_dfe` (`CTeDistribuicaoDFe`) — the bundled specification confirms the request payload shape but not the webservice's method name, WSDL namespace, or message-wrapper element.
-
----
 
 ## Architecture
 
@@ -281,8 +316,6 @@ mcp-nfe-br/
 - Group I fields (NCM, CFOP, ICMS/IPI/PIS/COFINS) in `BRInvoiceLine`
 - CPF/CNPJ validation (including the alphanumeric CNPJ from NT 2026.004)
 
----
-
 ## Contributing
 
 Contributions are welcome. Please open an issue to discuss significant changes before submitting a pull request.
@@ -295,8 +328,6 @@ uv run pytest
 uv run ruff check src/mcp_nfe_br tests audit
 uv run mypy src/mcp_nfe_br
 ```
-
----
 
 ## Other e-invoicing MCP servers
 
@@ -313,14 +344,6 @@ uv run mypy src/mcp_nfe_br
 | 🇪🇸 Spain | [mcp-facturacion-electronica-es](https://github.com/cmendezs/mcp-facturacion-electronica-es) |
 | 🇦🇪 United Arab Emirates | [mcp-einvoicing-ae](https://github.com/cmendezs/mcp-einvoicing-ae) |
 
----
-
 ## License
 
-This project is licensed under **Apache 2.0**. See [LICENSE](LICENSE) for details.
-
----
-
-## Changelog
-
-See [RELEASE.md](RELEASE.md) for the full version history.
+This project is licensed under **Apache 2.0**. See [LICENSE](LICENSE) for details. For the full version history, see [CHANGELOG.md](CHANGELOG.md).
