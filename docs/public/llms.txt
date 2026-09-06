@@ -1,0 +1,17 @@
+# mcp-nfe-br
+
+> MCP server for Brazilian electronic invoicing (NF-e / NFC-e)
+
+## Docs
+
+- [Overview](https://cmendezs.github.io/mcp-nfe-br/): the full README — what this server does, installation, configuration, available tools
+- [Tools](https://cmendezs.github.io/mcp-nfe-br/tools/): full MCP tool reference
+- [Changelog](https://cmendezs.github.io/mcp-nfe-br/changelog/): version history
+- [Contributing](https://cmendezs.github.io/mcp-nfe-br/contributing/): dev setup and PR checklist
+- [Security](https://cmendezs.github.io/mcp-nfe-br/security/): vulnerability disclosure policy
+
+## Links
+
+- [PyPI](https://pypi.org/project/mcp-nfe-br/)
+- [MCP registry](https://registry.modelcontextprotocol.io/v0/servers?search=io.github.cmendezs/mcp-nfe-br)
+- [GitHub](https://github.com/cmendezs/mcp-nfe-br)
