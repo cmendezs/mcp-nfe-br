@@ -1,12 +1,12 @@
 {
-  "generated_at": "2026-08-11T12:17:15.358698+00:00",
+  "generated_at": "2026-09-06T10:11:31.136909+00:00",
   "pkg_name": "mcp-nfe-br",
-  "pkg_version": "0.6.2",
-  "core_version": "1.16.2",
+  "pkg_version": "0.8.0",
+  "core_version": "1.30.0",
   "core_version_compatible": true,
   "exit_code": 1,
   "total_blocking": 0,
-  "total_warnings": 7,
+  "total_warnings": 11,
   "checks": [
     {
       "check_id": "CHECK_1",
@@ -15,7 +15,7 @@
       "skipped": false,
       "skip_reason": "",
       "blocking_count": 0,
-      "warning_count": 7,
+      "warning_count": 11,
       "findings": [
         {
           "check_id": "CHECK_1",
@@ -75,6 +75,13 @@
         },
         {
           "check_id": "CHECK_1",
+          "tag": "[MISSING]",
+          "severity": "WARNING",
+          "symbol": "mcp_einvoicing_core.base_server.Callable",
+          "message": "Core symbol 'Callable' is neither imported by mcp-nfe-br nor marked as an intentional override. Add to _INTENTIONAL_OVERRIDES if this is deliberate."
+        },
+        {
+          "check_id": "CHECK_1",
           "tag": "[OK]",
           "severity": "OK",
           "symbol": "mcp_einvoicing_core.base_server.DocumentValidationResult",
@@ -103,10 +110,10 @@
         },
         {
           "check_id": "CHECK_1",
-          "tag": "[MISSING]",
-          "severity": "WARNING",
+          "tag": "[OVERRIDE]",
+          "severity": "OK",
           "symbol": "mcp_einvoicing_core.base_server.Generic",
-          "message": "Core symbol 'Generic' is neither imported by mcp-nfe-br nor marked as an intentional override. Add to _INTENTIONAL_OVERRIDES if this is deliberate."
+          "message": "Intentionally overridden by mcp-nfe-br."
         },
         {
           "check_id": "CHECK_1",
@@ -138,10 +145,10 @@
         },
         {
           "check_id": "CHECK_1",
-          "tag": "[MISSING]",
-          "severity": "WARNING",
+          "tag": "[OVERRIDE]",
+          "severity": "OK",
           "symbol": "mcp_einvoicing_core.base_server.TypeVar",
-          "message": "Core symbol 'TypeVar' is neither imported by mcp-nfe-br nor marked as an intentional override. Add to _INTENTIONAL_OVERRIDES if this is deliberate."
+          "message": "Intentionally overridden by mcp-nfe-br."
         },
         {
           "check_id": "CHECK_1",
@@ -180,17 +187,31 @@
         },
         {
           "check_id": "CHECK_1",
-          "tag": "[MISSING]",
-          "severity": "WARNING",
+          "tag": "[OVERRIDE]",
+          "severity": "OK",
           "symbol": "mcp_einvoicing_core.digital_signature.CAdESSigner",
-          "message": "Core symbol 'CAdESSigner' is neither imported by mcp-nfe-br nor marked as an intentional override. Add to _INTENTIONAL_OVERRIDES if this is deliberate."
+          "message": "Intentionally overridden by mcp-nfe-br."
+        },
+        {
+          "check_id": "CHECK_1",
+          "tag": "[OVERRIDE]",
+          "severity": "OK",
+          "symbol": "mcp_einvoicing_core.digital_signature.CAdESSignerConfig",
+          "message": "Intentionally overridden by mcp-nfe-br."
         },
         {
           "check_id": "CHECK_1",
           "tag": "[MISSING]",
           "severity": "WARNING",
-          "symbol": "mcp_einvoicing_core.digital_signature.CAdESSignerConfig",
-          "message": "Core symbol 'CAdESSignerConfig' is neither imported by mcp-nfe-br nor marked as an intentional override. Add to _INTENTIONAL_OVERRIDES if this is deliberate."
+          "symbol": "mcp_einvoicing_core.digital_signature.SelloDigitalSigner",
+          "message": "Core symbol 'SelloDigitalSigner' is neither imported by mcp-nfe-br nor marked as an intentional override. Add to _INTENTIONAL_OVERRIDES if this is deliberate."
+        },
+        {
+          "check_id": "CHECK_1",
+          "tag": "[MISSING]",
+          "severity": "WARNING",
+          "symbol": "mcp_einvoicing_core.digital_signature.SelloDigitalSignerConfig",
+          "message": "Core symbol 'SelloDigitalSignerConfig' is neither imported by mcp-nfe-br nor marked as an intentional override. Add to _INTENTIONAL_OVERRIDES if this is deliberate."
         },
         {
           "check_id": "CHECK_1",
@@ -266,13 +287,6 @@
           "check_id": "CHECK_1",
           "tag": "[OVERRIDE]",
           "severity": "OK",
-          "symbol": "mcp_einvoicing_core.digital_signature.timezone",
-          "message": "Intentionally overridden by mcp-nfe-br."
-        },
-        {
-          "check_id": "CHECK_1",
-          "tag": "[OVERRIDE]",
-          "severity": "OK",
           "symbol": "mcp_einvoicing_core.download_rules.DownloadSpec",
           "message": "Intentionally overridden by mcp-nfe-br."
         },
@@ -317,6 +331,13 @@
           "severity": "OK",
           "symbol": "mcp_einvoicing_core.download_rules.main",
           "message": "Intentionally overridden by mcp-nfe-br."
+        },
+        {
+          "check_id": "CHECK_1",
+          "tag": "[MISSING]",
+          "severity": "WARNING",
+          "symbol": "mcp_einvoicing_core.en16931.Annotated",
+          "message": "Core symbol 'Annotated' is neither imported by mcp-nfe-br nor marked as an intentional override. Add to _INTENTIONAL_OVERRIDES if this is deliberate."
         },
         {
           "check_id": "CHECK_1",
@@ -518,13 +539,6 @@
           "check_id": "CHECK_1",
           "tag": "[OVERRIDE]",
           "severity": "OK",
-          "symbol": "mcp_einvoicing_core.http_client.Enum",
-          "message": "Intentionally overridden by mcp-nfe-br."
-        },
-        {
-          "check_id": "CHECK_1",
-          "tag": "[OVERRIDE]",
-          "severity": "OK",
           "symbol": "mcp_einvoicing_core.http_client.Field",
           "message": "Intentionally overridden by mcp-nfe-br."
         },
@@ -562,6 +576,13 @@
           "severity": "OK",
           "symbol": "mcp_einvoicing_core.http_client.PlatformError",
           "message": "Imported and used."
+        },
+        {
+          "check_id": "CHECK_1",
+          "tag": "[MISSING]",
+          "severity": "WARNING",
+          "symbol": "mcp_einvoicing_core.http_client.StrEnum",
+          "message": "Core symbol 'StrEnum' is neither imported by mcp-nfe-br nor marked as an intentional override. Add to _INTENTIONAL_OVERRIDES if this is deliberate."
         },
         {
           "check_id": "CHECK_1",
@@ -705,10 +726,10 @@
         },
         {
           "check_id": "CHECK_1",
-          "tag": "[OVERRIDE]",
-          "severity": "OK",
-          "symbol": "mcp_einvoicing_core.peppol.Enum",
-          "message": "Intentionally overridden by mcp-nfe-br."
+          "tag": "[MISSING]",
+          "severity": "WARNING",
+          "symbol": "mcp_einvoicing_core.peppol.Callable",
+          "message": "Core symbol 'Callable' is neither imported by mcp-nfe-br nor marked as an intentional override. Add to _INTENTIONAL_OVERRIDES if this is deliberate."
         },
         {
           "check_id": "CHECK_1",
@@ -754,6 +775,13 @@
         },
         {
           "check_id": "CHECK_1",
+          "tag": "[MISSING]",
+          "severity": "WARNING",
+          "symbol": "mcp_einvoicing_core.peppol.StrEnum",
+          "message": "Core symbol 'StrEnum' is neither imported by mcp-nfe-br nor marked as an intentional override. Add to _INTENTIONAL_OVERRIDES if this is deliberate."
+        },
+        {
+          "check_id": "CHECK_1",
           "tag": "[OVERRIDE]",
           "severity": "OK",
           "symbol": "mcp_einvoicing_core.peppol.dataclass",
@@ -765,6 +793,13 @@
           "severity": "OK",
           "symbol": "mcp_einvoicing_core.peppol.field",
           "message": "Intentionally overridden by mcp-nfe-br."
+        },
+        {
+          "check_id": "CHECK_1",
+          "tag": "[MISSING]",
+          "severity": "WARNING",
+          "symbol": "mcp_einvoicing_core.peppol.resolve_naptr",
+          "message": "Core symbol 'resolve_naptr' is neither imported by mcp-nfe-br nor marked as an intentional override. Add to _INTENTIONAL_OVERRIDES if this is deliberate."
         },
         {
           "check_id": "CHECK_1",
@@ -845,10 +880,10 @@
         },
         {
           "check_id": "CHECK_1",
-          "tag": "[MISSING]",
-          "severity": "WARNING",
+          "tag": "[OVERRIDE]",
+          "severity": "OK",
           "symbol": "mcp_einvoicing_core.schematron.SaxonSchematronValidator",
-          "message": "Core symbol 'SaxonSchematronValidator' is neither imported by mcp-nfe-br nor marked as an intentional override. Add to _INTENTIONAL_OVERRIDES if this is deliberate."
+          "message": "Intentionally overridden by mcp-nfe-br."
         },
         {
           "check_id": "CHECK_1",
@@ -873,6 +908,13 @@
         },
         {
           "check_id": "CHECK_1",
+          "tag": "[MISSING]",
+          "severity": "WARNING",
+          "symbol": "mcp_einvoicing_core.schematron.XSDValidator",
+          "message": "Core symbol 'XSDValidator' is neither imported by mcp-nfe-br nor marked as an intentional override. Add to _INTENTIONAL_OVERRIDES if this is deliberate."
+        },
+        {
+          "check_id": "CHECK_1",
           "tag": "[OVERRIDE]",
           "severity": "OK",
           "symbol": "mcp_einvoicing_core.schematron.abstractmethod",
@@ -894,17 +936,17 @@
         },
         {
           "check_id": "CHECK_1",
-          "tag": "[MISSING]",
-          "severity": "WARNING",
+          "tag": "[OVERRIDE]",
+          "severity": "OK",
           "symbol": "mcp_einvoicing_core.schematron.get_xslt_version",
-          "message": "Core symbol 'get_xslt_version' is neither imported by mcp-nfe-br nor marked as an intentional override. Add to _INTENTIONAL_OVERRIDES if this is deliberate."
+          "message": "Intentionally overridden by mcp-nfe-br."
         },
         {
           "check_id": "CHECK_1",
-          "tag": "[MISSING]",
-          "severity": "WARNING",
+          "tag": "[OVERRIDE]",
+          "severity": "OK",
           "symbol": "mcp_einvoicing_core.schematron.load_schematron_validator",
-          "message": "Core symbol 'load_schematron_validator' is neither imported by mcp-nfe-br nor marked as an intentional override. Add to _INTENTIONAL_OVERRIDES if this is deliberate."
+          "message": "Intentionally overridden by mcp-nfe-br."
         },
         {
           "check_id": "CHECK_1",
@@ -933,6 +975,13 @@
           "severity": "OK",
           "symbol": "mcp_einvoicing_core.xml_utils.Decimal",
           "message": "Intentionally overridden by mcp-nfe-br."
+        },
+        {
+          "check_id": "CHECK_1",
+          "tag": "[MISSING]",
+          "severity": "WARNING",
+          "symbol": "mcp_einvoicing_core.xml_utils.DiscouragedCharacterError",
+          "message": "Core symbol 'DiscouragedCharacterError' is neither imported by mcp-nfe-br nor marked as an intentional override. Add to _INTENTIONAL_OVERRIDES if this is deliberate."
         },
         {
           "check_id": "CHECK_1",
@@ -996,6 +1045,13 @@
           "severity": "OK",
           "symbol": "mcp_einvoicing_core.xml_utils.safe_parser",
           "message": "Imported and used."
+        },
+        {
+          "check_id": "CHECK_1",
+          "tag": "[MISSING]",
+          "severity": "WARNING",
+          "symbol": "mcp_einvoicing_core.xml_utils.sanitize_xml_text",
+          "message": "Core symbol 'sanitize_xml_text' is neither imported by mcp-nfe-br nor marked as an intentional override. Add to _INTENTIONAL_OVERRIDES if this is deliberate."
         },
         {
           "check_id": "CHECK_1",
@@ -1301,7 +1357,7 @@
           "tag": "[OK]",
           "severity": "OK",
           "symbol": "mcp-einvoicing-core",
-          "message": "Installed: 1.16.2 | Declared range: >=1.13.1,<2.0.0 | Compatible: True"
+          "message": "Installed: 1.30.0 | Declared range: >=1.13.1,<2.0.0 | Compatible: True"
         }
       ]
     },
