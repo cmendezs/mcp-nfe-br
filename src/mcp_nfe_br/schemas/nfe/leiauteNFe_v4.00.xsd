@@ -588,7 +588,10 @@ Preencher com &quot;2B&quot;, quando se tratar de Cupom Fiscal emitido por máqu
 											<xs:documentation>Endereço do emitente</xs:documentation>
 										</xs:annotation>
 									</xs:element>
-									<xs:element name="IE" type="TIe">
+									<!-- IE now optional (was required): NT 2026.007 v1.00 issuance path for taxpayers
+									     exclusively subject to IBS/CBS. Homologação 2026-09-01, produção 2026-11-03 (future).
+									     [Verified locally — PL_010f_v1.04, leiauteNFe_v4.00.xsd] -->
+									<xs:element name="IE" type="TIe" minOccurs="0">
 										<xs:annotation>
 											<xs:documentation>Inscrição Estadual do Emitente</xs:documentation>
 										</xs:annotation>
@@ -5651,7 +5654,8 @@ Substituição Tributaria;</xs:documentation>
 											<xs:documentation>Valores totais da NF com IBS / CBS</xs:documentation>
 										</xs:annotation>
 									</xs:element>
-									<xs:element name="vNFTot" type="TDec_1302Opc" minOccurs="0">
+									<!-- vNFTot type renamed TDec_1302Opc -> TDec_1302, NT 2026.007 v1.00 / PL_010f_v1.04 (minOccurs=0 unchanged, no functional impact observed). [Verified locally — PL_010f_v1.04, leiauteNFe_v4.00.xsd] -->
+									<xs:element name="vNFTot" type="TDec_1302" minOccurs="0">
 										<xs:annotation>
 											<xs:documentation>Valor Total da NF considerando os impostos por fora IBS, CBS e IS</xs:documentation>
 										</xs:annotation>

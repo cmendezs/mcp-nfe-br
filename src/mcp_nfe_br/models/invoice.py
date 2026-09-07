@@ -94,6 +94,10 @@ class BREmitente(BaseModel):
     x_nome: str = Field(..., description="Razão social ou nome do emitente")
     x_fant: str | None = Field(default=None, description="Nome fantasia")
     ender_emit: BREndereco = Field(..., description="Endereço do emitente")
+    # NT 2026.007 v1.00 / PL_010f_v1.04 made emit/IE optional at the XSD level for
+    # taxpayers exclusively subject to IBS/CBS (produção 2026-11-03, still future).
+    # Deliberately kept required here: no IBS/CBS-exclusive-taxpayer classification
+    # field exists yet to gate the relaxation correctly. Revisit closer to that date.
     ie: str = Field(..., description="Inscrição Estadual")
     ie_st: str | None = Field(default=None, description="IE do Substituto Tributário")
     im: str | None = Field(default=None, description="Inscrição Municipal")

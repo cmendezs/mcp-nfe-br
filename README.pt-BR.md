@@ -14,7 +14,7 @@
 
 `mcp-nfe-br` é um servidor [MCP (Model Context Protocol)](https://modelcontextprotocol.io) que fornece ferramentas para a emissão e validação de documentos fiscais eletrônicos brasileiros: **NF-e (modelo 55)**, **NFC-e (modelo 65)**, **NFS-e Nacional** (ADN) e **CT-e (modelo 57)**. Este servidor faz parte da família `mcp-einvoicing-*` / `mcp-*-*`, construída sobre [`mcp-einvoicing-core`](https://github.com/cmendezs/mcp-einvoicing-core), que fornece o modelo de dados base, utilitários HTTP/OAuth2, e a infraestrutura comum de servidores MCP.
 
-**Status atual (v0.6.5):** geração, assinatura ICP-Brasil, validação XSD e submissão gated à SEFAZ/ADN estão implementadas para NF-e/NFC-e (modelo 55/65, schema 4.00) e NFS-e Nacional (ADN, schema v1.01). NF-e/NFC-e agora também cobre o delta do schema `010e_v.1.02` (DANFE Simplificado Tipo 2 — `tpImp=6`, `cIndOp`, `ISUFEmit`, e o grupo de mensagens de alerta na resposta da SEFAZ) sobre a base `PL_010d`. A cobertura de **CT-e (modelo 57)** — geração, assinatura, validação e submissão de eventos SEFAZ (cancelamento, Carta de Correção) — começou na v0.6.0. O escopo v1 é intencionalmente restrito: **apenas modal rodoviário**, **apenas ICMS CST 00**, e **nenhuma tabela de endpoints de webservice CT-e embutida/verificada** (toda chamada SEFAZ CT-e exige `endpoint_override` explícito). Veja a seção "Ferramentas CT-e (modelo 57)" abaixo e `context-library/countries/br.md` (no repositório de origem) para a referência completa em nível de campo.
+**Status atual (v0.6.5):** geração, assinatura ICP-Brasil, validação XSD e submissão gated à SEFAZ/ADN estão implementadas para NF-e/NFC-e (modelo 55/65, schema 4.00) e NFS-e Nacional (ADN, schema v1.01). NF-e/NFC-e agora também cobre o delta do schema `010e_v.1.02` (DANFE Simplificado Tipo 2 — `tpImp=6`, `cIndOp`, `ISUFEmit`, e o grupo de mensagens de alerta na resposta da SEFAZ) e o delta `010f_v.1.04` (NT 2026.007 — `emit/IE` opcional para contribuintes exclusivos de IBS/CBS, produção em 2026-11-03) sobre a base `PL_010d`. A cobertura de **CT-e (modelo 57)** — geração, assinatura, validação e submissão de eventos SEFAZ (cancelamento, Carta de Correção) — começou na v0.6.0. O escopo v1 é intencionalmente restrito: **apenas modal rodoviário**, **apenas ICMS CST 00**, e **nenhuma tabela de endpoints de webservice CT-e embutida/verificada** (toda chamada SEFAZ CT-e exige `endpoint_override` explícito). Veja a seção "Ferramentas CT-e (modelo 57)" abaixo e `context-library/countries/br.md` (no repositório de origem) para a referência completa em nível de campo.
 
 ## Instalação
 
@@ -177,7 +177,7 @@ Cobertura da fase 1 para os grupos de tributos por item:
 
 ### `br__validate_nfe_xml`
 
-Valida um XML NF-e/NFC-e 4.00 contra o XSD oficial PL_010d, com o delta do `PL_010e_v.1.02` aplicado (variante local "sem assinatura", veja nota abaixo).
+Valida um XML NF-e/NFC-e 4.00 contra o XSD oficial PL_010d, com os deltas do `PL_010e_v.1.02` e `PL_010f_v.1.04` aplicados (variante local "sem assinatura", veja nota abaixo).
 
 | Parâmetro | Tipo | Obrigatório | Descrição |
 |---|---|---|---|

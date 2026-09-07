@@ -1,5 +1,30 @@
 # mcp-nfe-br — Release Notes
 
+## v0.8.1 (2026-09-07) — NF-e/NFC-e schema PL_010f_v1.04 (NT 2026.007, regulatory-update)
+
+Closes GitHub issue cmendezs/mcp-nfe-br#6, filed by the regulatory watch. SEFAZ published NF-e/NFC-e
+XML schema package `PL_010f_v1.04` on 2026-08-31, bundling NT 2026.007 v1.00 and NT 2025.002 v1.50
+on top of `PL_010e_v1.02`. Package sourced and reviewed directly (`specs/nfe/xsd_pl010f_v1.04/`).
+
+- **[regulatory-update]** Diffed the official `PL_010f_v1.04` package against the bundled
+  `PL_010e_v1.02`: the only substantive change in `leiauteNFe_v4.00.xsd` is NT 2026.007's
+  IE-optional issuance path — `emit/IE` gains `minOccurs="0"` (was required), for taxpayers
+  exclusively subject to IBS/CBS. Homologação 2026-09-01, **produção 2026-11-03 (still future)**.
+  Hand-applied to `leiauteNFe_v4.00.xsd` and `leiauteNFe_v4.00_unsigned.xsd`, cited inline, same
+  pattern as the 010e delta. `br__validate_nfe_xml`'s schema-version metadata updated accordingly.
+- **Deliberately not implemented**: `BREmitente.ie` (Pydantic field) stays required. Production
+  enforcement of the IE-optional path is still future, and there is no IBS/CBS-exclusive-taxpayer
+  classification field yet to gate the relaxation correctly — the XSD is now more permissive than
+  the model, which is a safe direction (no invalid document can be emitted as a result). Tracked as
+  an open (not blocked) roadmap item, activation trigger 2026-11-03.
+- Cosmetic: `vNFTot`'s declared type renamed `TDec_1302Opc` → `TDec_1302` in the same package (type
+  definitions are byte-identical; `vNFTot` already carried `minOccurs="0"`) — no functional impact.
+- The rest of `PL_010f_v1.04`'s diff against `010e` is entirely inside `DFeTiposBasicos_v1.00.xsd`'s
+  `TMonofasia` (IBS/CBS single-phase-taxation) group — part of the already-deferred NT 2025.002
+  v1.40→v1.50 RTC modeling effort, not re-implemented here (see `specs/nfe/MANIFEST.md`).
+- 301 tests passing (1 skipped); audit gate 0 blocking. Patched XSDs re-verified to compile
+  (`lxml.etree.XMLSchema`) and the generate→XSD smoke check (audit CHECK_9) still passes.
+
 ## v0.8.0 (2026-08-26) — CT-e access key `TChDFe` alphanumeric-CNPJ (BR-CTE-23)
 
 Follow-up to v0.7.0, closing the `TChDFe` item deliberately deferred there.
