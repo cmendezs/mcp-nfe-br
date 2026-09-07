@@ -338,6 +338,7 @@ uv run mypy src/mcp_nfe_br
 | 🇧🇷 Brasil | [mcp-nfe-br](https://github.com/cmendezs/mcp-nfe-br) |
 | 🇫🇷 França | [mcp-facture-electronique-fr](https://github.com/cmendezs/mcp-facture-electronique-fr) |
 | 🇩🇪 Alemanha | [mcp-einvoicing-de](https://github.com/cmendezs/mcp-einvoicing-de) |
+| 🇮🇳 Índia | [mcp-einvoicing-in](https://github.com/cmendezs/mcp-einvoicing-in) |
 | 🇮🇹 Itália | [mcp-fattura-elettronica-it](https://github.com/cmendezs/mcp-fattura-elettronica-it) |
 | 🇲🇽 México | [mcp-cfdi-mx](https://github.com/cmendezs/mcp-cfdi-mx) |
 | 🇵🇱 Polônia | [mcp-ksef-pl](https://github.com/cmendezs/mcp-ksef-pl) |
