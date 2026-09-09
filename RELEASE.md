@@ -1,5 +1,28 @@
 # mcp-nfe-br — Release Notes
 
+## v0.8.2 (2026-09-09) — SEFAZ raw-SOAP clients adopt the shared 429/503 retry policy (CORE-3)
+
+Step 6 (country wave 2) of `audit/2026-09-audit-core.md`'s execution ladder, in the workspace
+root repo. Completes CORE-3's own recommended fix, which named `BaseEInvoicingClient._request`,
+the Peppol AS4 client, and BR's raw-SOAP path as the three adopters of a shared HTTP transport
+hardening layer.
+
+- **[CORE-3]** `SefazClient` (NF-e) and `SefazCTeClient` (CT-e) already inherited the hardened
+  `httpx.AsyncClient` (TLS 1.2 floor, `EINVOICING_CERT_PINS` pinning, `trust_env=False`) via
+  `_get_client()`/`_get_httpx_client()` — their raw-SOAP `_post_soap` only ever bypassed
+  `BaseEInvoicingClient._request`'s business logic, never client construction. What was missing
+  was `_request`'s 429/503 retry loop; both clients' `_post_soap` now retry via the same
+  `compute_retry_delay`/`self._max_retries` policy `_request` and (since core v1.33.0)
+  `AS4TransportClient` use.
+- BE/AE/SG checked for the same gap and need no code change: BE's `tools/lookup.py` already
+  uses `BaseEInvoicingClient` directly; AE only mentions `PeppolTransmitter` in a docstring; SG
+  has no HTTP client code at all.
+- `mcp-einvoicing-core` floor pin bumped to `>=1.33.0,<2.0.0`.
+- New tests: `test_post_soap_retries_on_503_then_succeeds`,
+  `test_post_soap_gives_up_after_max_retries`, in both `test_sefaz_client.py` and
+  `test_sefaz_cte_client.py`. 305 tests passing (1 skipped, pre-existing); audit gate 0
+  blocking (15 pre-existing warnings, unrelated).
+
 ## v0.8.1 (2026-09-07) — NF-e/NFC-e schema PL_010f_v1.04 (NT 2026.007, regulatory-update)
 
 Closes GitHub issue cmendezs/mcp-nfe-br#6, filed by the regulatory watch. SEFAZ published NF-e/NFC-e
