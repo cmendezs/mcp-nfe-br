@@ -394,3 +394,72 @@ async def test_post_soap_raises_platform_error_on_http_failure() -> None:
         await client.consultar_status_servico()
     # BR-SH-2: raw response body must not appear in the PlatformError message.
     assert "internal error" not in str(exc_info.value)
+
+
+# ---------------------------------------------------------------------------
+# 429/503 retry (CORE-3, core audit Step 6)
+# ---------------------------------------------------------------------------
+
+
+class _QueuedResponseClient(SefazClient):
+    """SefazClient subclass returning one queued response per HTTP call."""
+
+    def __init__(self, *args: object, responses: list[httpx.Response], **kwargs: object) -> None:
+        self._responses = list(responses)
+        self.request_count = 0
+        super().__init__(*args, **kwargs)  # type: ignore[arg-type]
+
+    def _get_httpx_client(self) -> httpx.AsyncClient:
+        def handler(request: httpx.Request) -> httpx.Response:
+            self.request_count += 1
+            return self._responses.pop(0)
+
+        return httpx.AsyncClient(transport=httpx.MockTransport(handler))
+
+
+_STATUS_SERVICO_OK = b"""<?xml version="1.0" encoding="UTF-8"?>
+<soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope">
+  <soap:Body>
+    <retConsStatServ xmlns="http://www.portalfiscal.inf.br/nfe" versao="4.00">
+      <tpAmb>2</tpAmb>
+      <cUF>43</cUF>
+      <cStat>107</cStat>
+      <xMotivo>Servico em Operacao</xMotivo>
+    </retConsStatServ>
+  </soap:Body>
+</soap:Envelope>"""
+
+
+@pytest.mark.asyncio
+async def test_post_soap_retries_on_503_then_succeeds() -> None:
+    client = _QueuedResponseClient(
+        cuf="43",
+        tp_amb=TipoAmbiente.HOMOLOGACAO,
+        cert_path="/tmp/does-not-need-to-exist.p12",
+        service="status_servico",
+        responses=[
+            httpx.Response(503, headers={"Retry-After": "0"}),
+            httpx.Response(200, content=_STATUS_SERVICO_OK),
+        ],
+    )
+
+    result = await client.consultar_status_servico()
+
+    assert result["cStat"] == "107"
+    assert client.request_count == 2
+
+
+@pytest.mark.asyncio
+async def test_post_soap_gives_up_after_max_retries() -> None:
+    client = _QueuedResponseClient(
+        cuf="43",
+        tp_amb=TipoAmbiente.HOMOLOGACAO,
+        cert_path="/tmp/does-not-need-to-exist.p12",
+        service="status_servico",
+        responses=[httpx.Response(503, headers={"Retry-After": "0"}) for _ in range(4)],
+    )
+    client._max_retries = 3
+
+    with pytest.raises(PlatformError):
+        await client.consultar_status_servico()
+    assert client.request_count == 4

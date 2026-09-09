@@ -37,9 +37,12 @@ Services Disponibilizados"), captured 2026-06-18.
 
 from __future__ import annotations
 
+import asyncio
+import logging
+
 from lxml import etree
 from mcp_einvoicing_core.exceptions import PlatformError
-from mcp_einvoicing_core.http_client import AuthMode, BaseEInvoicingClient
+from mcp_einvoicing_core.http_client import AuthMode, BaseEInvoicingClient, compute_retry_delay
 from mcp_einvoicing_core.xml_utils import mark_untrusted_fields, safe_fromstring
 
 from mcp_nfe_br.models.invoice import TipoAmbiente
@@ -49,6 +52,8 @@ from mcp_nfe_br.standards._sefaz_soap import (
     scrape_fields,
     soap_envelope,
 )
+
+logger = logging.getLogger(__name__)
 
 _NFE_NS = "http://www.portalfiscal.inf.br/nfe"
 
@@ -476,14 +481,37 @@ class SefazClient(BaseEInvoicingClient):
         Bypasses `BaseEInvoicingClient._request` (JSON/form/multipart-oriented,
         no support for a raw body + custom `Content-Type`) and instead uses
         the long-lived `httpx.AsyncClient` from `_get_client()` directly —
-        the documented transport-injection seam also used by tests.
+        the documented transport-injection seam also used by tests. That
+        client is `_get_httpx_client()`'s standard hardened build (TLS 1.2
+        floor, `EINVOICING_CERT_PINS` pinning, `trust_env=False`, unchanged
+        by CORE-3's core v1.33.0 refactor), so this raw-bytes path was
+        already on the shared foundation; the one piece `_request` had and
+        this bypass did not is the 429/503 retry loop, added here via the
+        same `compute_retry_delay`/`self._max_retries` policy (CORE-3, core
+        audit Step 6).
         """
         client = await self._get_client()
-        response = await client.post(
-            self._base_url,
-            content=envelope,
-            headers={"Content-Type": "application/soap+xml; charset=utf-8"},
-        )
+        response = None
+        for attempt in range(self._max_retries + 1):
+            response = await client.post(
+                self._base_url,
+                content=envelope,
+                headers={"Content-Type": "application/soap+xml; charset=utf-8"},
+            )
+            if response.status_code in (429, 503) and attempt < self._max_retries:
+                delay = compute_retry_delay(response, attempt)
+                logger.warning(
+                    "SEFAZ webservice returned HTTP %d — retrying in %.1fs (attempt %d/%d)",
+                    response.status_code,
+                    delay,
+                    attempt + 1,
+                    self._max_retries,
+                )
+                await asyncio.sleep(delay)
+                continue
+            break
+
+        assert response is not None  # loop always runs at least once
         if not response.is_success:
             raise PlatformError(
                 response.status_code,

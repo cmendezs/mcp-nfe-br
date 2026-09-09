@@ -43,16 +43,20 @@ MOC/NT set]`. See roadmap `BR-CTE-13` for the deferred item.
 
 from __future__ import annotations
 
+import asyncio
 import base64
 import gzip
+import logging
 
 from lxml import etree
 from mcp_einvoicing_core.exceptions import PlatformError
-from mcp_einvoicing_core.http_client import AuthMode, BaseEInvoicingClient
+from mcp_einvoicing_core.http_client import AuthMode, BaseEInvoicingClient, compute_retry_delay
 from mcp_einvoicing_core.xml_utils import mark_untrusted_fields, safe_fromstring
 
 from mcp_nfe_br.models.invoice import TipoAmbiente
 from mcp_nfe_br.standards._sefaz_soap import parse_response_root, scrape_fields, soap_envelope
+
+logger = logging.getLogger(__name__)
 
 _CTE_NS = "http://www.portalfiscal.inf.br/cte"
 
@@ -233,13 +237,30 @@ class SefazCTeClient(BaseEInvoicingClient):
 
     async def _post_soap(self, envelope: bytes) -> dict[str, object]:
         """POST a SOAP 1.2 envelope and parse the response — see
-        `SefazClient._post_soap` for the transport-injection rationale."""
+        `SefazClient._post_soap` for the transport-injection rationale and
+        the CORE-3 retry-loop note (core audit Step 6)."""
         client = await self._get_client()
-        response = await client.post(
-            self._base_url,
-            content=envelope,
-            headers={"Content-Type": "application/soap+xml; charset=utf-8"},
-        )
+        response = None
+        for attempt in range(self._max_retries + 1):
+            response = await client.post(
+                self._base_url,
+                content=envelope,
+                headers={"Content-Type": "application/soap+xml; charset=utf-8"},
+            )
+            if response.status_code in (429, 503) and attempt < self._max_retries:
+                delay = compute_retry_delay(response, attempt)
+                logger.warning(
+                    "SEFAZ CT-e webservice returned HTTP %d — retrying in %.1fs (attempt %d/%d)",
+                    response.status_code,
+                    delay,
+                    attempt + 1,
+                    self._max_retries,
+                )
+                await asyncio.sleep(delay)
+                continue
+            break
+
+        assert response is not None  # loop always runs at least once
         if not response.is_success:
             raise PlatformError(
                 response.status_code,
