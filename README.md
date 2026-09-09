@@ -316,6 +316,15 @@ mcp-nfe-br/
 - Group I fields (NCM, CFOP, ICMS/IPI/PIS/COFINS) in `BRInvoiceLine`
 - CPF/CNPJ validation (including the alphanumeric CNPJ from NT 2026.004)
 
+## Vendor neutrality
+
+This server implements the standard itself: it builds, validates, and signs the document
+locally. It is not a client for a commercial invoicing platform, and your signing keys and
+credentials never leave your own infrastructure.
+
+Invoices go directly to SEFAZ (NF-e/NFC-e) and the CT-e SEFAZ endpoint with your own digital
+certificate; no intermediary is involved.
+
 ## Contributing
 
 Contributions are welcome. Please open an issue to discuss significant changes before submitting a pull request.

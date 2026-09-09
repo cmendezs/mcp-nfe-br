@@ -8,7 +8,7 @@ export default defineConfig({
   integrations: [
     starlight({
       title: "mcp-nfe-br",
-      description: "MCP server for Brazilian electronic invoicing (NF-e / NFC-e)",
+      description: "MCP server for Brazilian electronic invoicing (NF-e / NFC-e), direct-to-SEFAZ, no intermediary",
       customCss: ["./src/styles/docs-theme.css"],
       social: [
         { icon: "github", label: "GitHub", href: "https://github.com/cmendezs/mcp-nfe-br" },
@@ -28,7 +28,7 @@ export default defineConfig({
       plugins: [
         starlightLlmsTxt({
           projectName: "mcp-nfe-br",
-          description: "MCP server for Brazilian electronic invoicing (NF-e / NFC-e)",
+          description: "MCP server for Brazilian electronic invoicing (NF-e / NFC-e), direct-to-SEFAZ, no intermediary",
           customSets: [
             {
               label: "Key links",

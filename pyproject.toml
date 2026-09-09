@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "mcp-nfe-br"
 version = "0.8.1"
-description = "MCP server for Brazilian electronic invoicing (NF-e / NFC-e)"
+description = "MCP server for Brazilian electronic invoicing (NF-e / NFC-e), direct-to-SEFAZ, no intermediary"
 readme = "README.md"
 license = { text = "Apache-2.0" }
 authors = [{ name = "Cristian Mendez", email = "cmendezs@users.noreply.github.com" }]

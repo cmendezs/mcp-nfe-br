@@ -316,6 +316,15 @@ mcp-nfe-br/
 - Campos de Grupo I (NCM, CFOP, ICMS/IPI/PIS/COFINS) em `BRInvoiceLine`
 - Validação de CPF/CNPJ (incluindo o CNPJ alfanumérico da NT 2026.004)
 
+## Neutralidade em relação a fornecedores
+
+Este servidor implementa o padrão por conta própria: ele constrói, valida e assina o documento
+localmente. Não é um cliente de nenhuma plataforma comercial de faturamento, e suas chaves de
+assinatura e credenciais nunca saem da sua própria infraestrutura.
+
+As notas fiscais vão diretamente para a SEFAZ (NF-e/NFC-e) e para o endpoint SEFAZ do CT-e com
+seu próprio certificado digital; nenhum intermediário está envolvido.
+
 ## Contribuindo
 
 Contribuições são bem-vindas. Abra uma issue para discutir mudanças significativas antes de enviar um pull request.

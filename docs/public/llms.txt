@@ -1,6 +1,6 @@
 # mcp-nfe-br
 
-> MCP server for Brazilian electronic invoicing (NF-e / NFC-e)
+> MCP server for Brazilian electronic invoicing (NF-e / NFC-e), direct-to-SEFAZ, no intermediary
 
 ## Docs
 
