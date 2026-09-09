@@ -37,6 +37,7 @@ from mcp_einvoicing_core.audit import (
     parse_audit_args,
     render_summary_table,
     run_check_core_coverage,
+    run_check_resource_paths,
     run_check_version_compatibility,
 )
 
@@ -317,6 +318,33 @@ _BR_MODULES: list[str] = [
 ]
 
 _PYPROJECT = Path(__file__).parent.parent / "pyproject.toml"
+
+# CHECK 7 configuration — every runtime resource directory this package's
+# own modules resolve at import time (CORE-1, core v1.32.0). BR resolves its
+# XSDs via importlib.resources (validators/{nfe,nfse,cte}_xsd.py's
+# _SCHEMA_PACKAGE + files()), not a __file__-relative hop count, so it is
+# architecturally immune to the CORE-1 bug class — but we still exercise the
+# real resolution here (with no resource_paths declared, CHECK 7 only
+# reports a [SKIP] WARNING, indistinguishable from "never checked";
+# declaring these makes the immunity explicit and catches a genuine
+# packaging regression, e.g. a missing package-data declaration, that
+# importlib.resources itself does not rule out).
+import importlib.resources  # noqa: E402
+
+import mcp_nfe_br  # noqa: E402
+
+_PACKAGE_ROOT = Path(mcp_nfe_br.__file__).resolve().parent
+_RESOURCE_PATHS: dict[str, Path] = {
+    "mcp_nfe_br.validators.nfe_xsd._SCHEMA_PACKAGE": Path(
+        str(importlib.resources.files("mcp_nfe_br.schemas.nfe"))
+    ),
+    "mcp_nfe_br.validators.nfse_xsd._SCHEMA_PACKAGE": Path(
+        str(importlib.resources.files("mcp_nfe_br.schemas.nfse"))
+    ),
+    "mcp_nfe_br.validators.cte_xsd._SCHEMA_PACKAGE": Path(
+        str(importlib.resources.files("mcp_nfe_br.schemas.cte"))
+    ),
+}
 
 
 # ---------------------------------------------------------------------------
@@ -1035,17 +1063,17 @@ _CORE_CAPABILITIES: list[tuple[str, str, list[str]]] = [
 _INTENTIONAL_PARALLEL_IMPLEMENTATIONS: dict[tuple[str, str], str] = {}
 
 
-def run_check_7() -> CheckResult:
-    """CHECK 7 — Parallel-implementation scan."""
+def run_check_10() -> CheckResult:
+    """CHECK 10 — Parallel-implementation scan."""
     import ast
 
-    result = CheckResult(check_id="CHECK_7", name="Parallel-implementation detector")
+    result = CheckResult(check_id="CHECK_10", name="Parallel-implementation detector")
 
     pkg_root = Path(__file__).parent.parent / "src" / "mcp_nfe_br"
     if not pkg_root.is_dir():
         result.findings.append(
             CheckFinding(
-                check_id="CHECK_7",
+                check_id="CHECK_10",
                 tag="[SKIP]",
                 severity=SEVERITY_OK,
                 symbol="mcp_nfe_br",
@@ -1074,7 +1102,7 @@ def run_check_7() -> CheckResult:
             if override_key in _INTENTIONAL_PARALLEL_IMPLEMENTATIONS:
                 result.findings.append(
                     CheckFinding(
-                        check_id="CHECK_7",
+                        check_id="CHECK_10",
                         tag="[OVERRIDE]",
                         severity=SEVERITY_OK,
                         symbol=symbol,
@@ -1090,7 +1118,7 @@ def run_check_7() -> CheckResult:
             found_any = True
             result.findings.append(
                 CheckFinding(
-                    check_id="CHECK_7",
+                    check_id="CHECK_10",
                     tag="[PARALLEL]",
                     severity=SEVERITY_WARNING,
                     symbol=symbol,
@@ -1106,7 +1134,7 @@ def run_check_7() -> CheckResult:
     if not found_any and not result.findings:
         result.findings.append(
             CheckFinding(
-                check_id="CHECK_7",
+                check_id="CHECK_10",
                 tag="[OK]",
                 severity=SEVERITY_OK,
                 symbol="*",
@@ -1476,9 +1504,15 @@ def run_audit() -> AuditReport:
     )
     report.checks.append(run_check_5())
     report.checks.append(run_check_6())
-    report.checks.append(run_check_7())
+    report.checks.append(
+        run_check_resource_paths(
+            package_root=_PACKAGE_ROOT,
+            resource_paths=_RESOURCE_PATHS,
+        )
+    )
     report.checks.append(run_check_8())
     report.checks.append(run_check_9())
+    report.checks.append(run_check_10())
 
     return report
 

@@ -1,12 +1,12 @@
 {
-  "generated_at": "2026-09-06T10:11:31.136909+00:00",
+  "generated_at": "2026-09-09T15:41:17.919808+00:00",
   "pkg_name": "mcp-nfe-br",
-  "pkg_version": "0.8.0",
-  "core_version": "1.30.0",
+  "pkg_version": "0.8.1",
+  "core_version": "1.32.0",
   "core_version_compatible": true,
   "exit_code": 1,
   "total_blocking": 0,
-  "total_warnings": 11,
+  "total_warnings": 13,
   "checks": [
     {
       "check_id": "CHECK_1",
@@ -15,7 +15,7 @@
       "skipped": false,
       "skip_reason": "",
       "blocking_count": 0,
-      "warning_count": 11,
+      "warning_count": 13,
       "findings": [
         {
           "check_id": "CHECK_1",
@@ -72,6 +72,13 @@
           "severity": "OK",
           "symbol": "mcp_einvoicing_core.base_server.BasePartyValidator",
           "message": "Intentionally overridden by mcp-nfe-br."
+        },
+        {
+          "check_id": "CHECK_1",
+          "tag": "[MISSING]",
+          "severity": "WARNING",
+          "symbol": "mcp_einvoicing_core.base_server.BaseScopeInfo",
+          "message": "Core symbol 'BaseScopeInfo' is neither imported by mcp-nfe-br nor marked as an intentional override. Add to _INTENTIONAL_OVERRIDES if this is deliberate."
         },
         {
           "check_id": "CHECK_1",
@@ -485,6 +492,13 @@
           "severity": "OK",
           "symbol": "mcp_einvoicing_core.exceptions.XSDValidationError",
           "message": "Intentionally overridden by mcp-nfe-br."
+        },
+        {
+          "check_id": "CHECK_1",
+          "tag": "[MISSING]",
+          "severity": "WARNING",
+          "symbol": "mcp_einvoicing_core.http_client.APIKeyConfig",
+          "message": "Core symbol 'APIKeyConfig' is neither imported by mcp-nfe-br nor marked as an intentional override. Add to _INTENTIONAL_OVERRIDES if this is deliberate."
         },
         {
           "check_id": "CHECK_1",
@@ -1357,7 +1371,7 @@
           "tag": "[OK]",
           "severity": "OK",
           "symbol": "mcp-einvoicing-core",
-          "message": "Installed: 1.30.0 | Declared range: >=1.13.1,<2.0.0 | Compatible: True"
+          "message": "Installed: 1.32.0 | Declared range: >=1.13.1,<2.0.0 | Compatible: True"
         }
       ]
     },
@@ -1462,7 +1476,7 @@
     },
     {
       "check_id": "CHECK_7",
-      "name": "Parallel-implementation detector",
+      "name": "Runtime resource paths",
       "passed": true,
       "skipped": false,
       "skip_reason": "",
@@ -1473,8 +1487,22 @@
           "check_id": "CHECK_7",
           "tag": "[OK]",
           "severity": "OK",
-          "symbol": "*",
-          "message": "No parallel implementations of core capabilities detected."
+          "symbol": "mcp_nfe_br.validators.nfe_xsd._SCHEMA_PACKAGE",
+          "message": "mcp_nfe_br.validators.nfe_xsd._SCHEMA_PACKAGE resolves to /Users/christophe/Documents/Claude/Projects/mcp-einvoicing/mcp-nfe-br/src/mcp_nfe_br/schemas/nfe, inside the installed package."
+        },
+        {
+          "check_id": "CHECK_7",
+          "tag": "[OK]",
+          "severity": "OK",
+          "symbol": "mcp_nfe_br.validators.nfse_xsd._SCHEMA_PACKAGE",
+          "message": "mcp_nfe_br.validators.nfse_xsd._SCHEMA_PACKAGE resolves to /Users/christophe/Documents/Claude/Projects/mcp-einvoicing/mcp-nfe-br/src/mcp_nfe_br/schemas/nfse, inside the installed package."
+        },
+        {
+          "check_id": "CHECK_7",
+          "tag": "[OK]",
+          "severity": "OK",
+          "symbol": "mcp_nfe_br.validators.cte_xsd._SCHEMA_PACKAGE",
+          "message": "mcp_nfe_br.validators.cte_xsd._SCHEMA_PACKAGE resolves to /Users/christophe/Documents/Claude/Projects/mcp-einvoicing/mcp-nfe-br/src/mcp_nfe_br/schemas/cte, inside the installed package."
         }
       ]
     },
@@ -1560,6 +1588,24 @@
           "severity": "OK",
           "symbol": "CT-e",
           "message": "CT-e: minimal document generates and validates against its bundled XSD."
+        }
+      ]
+    },
+    {
+      "check_id": "CHECK_10",
+      "name": "Parallel-implementation detector",
+      "passed": true,
+      "skipped": false,
+      "skip_reason": "",
+      "blocking_count": 0,
+      "warning_count": 0,
+      "findings": [
+        {
+          "check_id": "CHECK_10",
+          "tag": "[OK]",
+          "severity": "OK",
+          "symbol": "*",
+          "message": "No parallel implementations of core capabilities detected."
         }
       ]
     }
