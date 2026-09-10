@@ -41,6 +41,7 @@ import asyncio
 import logging
 
 from lxml import etree
+from mcp_einvoicing_core.endpoints import EndpointEnvironment, EndpointSet
 from mcp_einvoicing_core.exceptions import PlatformError
 from mcp_einvoicing_core.http_client import AuthMode, BaseEInvoicingClient, compute_retry_delay
 from mcp_einvoicing_core.xml_utils import mark_untrusted_fields, safe_fromstring
@@ -69,150 +70,150 @@ _WSDL_OPERATION = {
     "distribuicao_dfe": "nfeDistDFeInteresse",
 }
 
-# Endpoint table: autorizador key -> service -> tpAmb value -> URL.
+# Endpoint table: autorizador key -> service -> EndpointSet (sandbox = homologação, tpAmb 2).
 # Source: https://www.nfe.fazenda.gov.br/portal/webServices.aspx ("Consulta Web Services
 # Disponibilizados"), captured 2026-06-18.
 # [Unverified — source: nfe.fazenda.gov.br/portal/webServices.aspx, captured 2026-06-18]
-_SEFAZ_ENDPOINTS: dict[str, dict[str, dict[str, str]]] = {
+_SEFAZ_ENDPOINTS: dict[str, dict[str, EndpointSet]] = {
     # Ambiente Nacional — NFeDistribuicaoDFe is centralised regardless of cUFAutor.
     "AN": {
-        "distribuicao_dfe": {
-            "1": "https://www1.nfe.fazenda.gov.br/NFeDistribuicaoDFe/NFeDistribuicaoDFe.asmx",
-            "2": "https://hom1.nfe.fazenda.gov.br/NFeDistribuicaoDFe/NFeDistribuicaoDFe.asmx",
-        },
+        "distribuicao_dfe": EndpointSet(
+            production="https://www1.nfe.fazenda.gov.br/NFeDistribuicaoDFe/NFeDistribuicaoDFe.asmx",
+            sandbox="https://hom1.nfe.fazenda.gov.br/NFeDistribuicaoDFe/NFeDistribuicaoDFe.asmx",
+        ),
     },
     # SEFAZ Virtual Rio Grande do Sul (SVRS) — autorizador for AC, AL, AP, DF, ES, PA,
     # PB, RJ, RN, RO, RR, SC, SE, TO, PI, RS.
     "SVRS": {
-        "status_servico": {
-            "1": "https://nfe.svrs.rs.gov.br/ws/NfeStatusServico/NFeStatusServico4.asmx",
-            "2": "https://nfe-homologacao.svrs.rs.gov.br/ws/NfeStatusServico/NFeStatusServico4.asmx",
-        },
-        "autorizacao": {
-            "1": "https://nfe.svrs.rs.gov.br/ws/NfeAutorizacao/NFeAutorizacao4.asmx",
-            "2": "https://nfe-homologacao.svrs.rs.gov.br/ws/NfeAutorizacao/NFeAutorizacao4.asmx",
-        },
+        "status_servico": EndpointSet(
+            production="https://nfe.svrs.rs.gov.br/ws/NfeStatusServico/NFeStatusServico4.asmx",
+            sandbox="https://nfe-homologacao.svrs.rs.gov.br/ws/NfeStatusServico/NFeStatusServico4.asmx",
+        ),
+        "autorizacao": EndpointSet(
+            production="https://nfe.svrs.rs.gov.br/ws/NfeAutorizacao/NFeAutorizacao4.asmx",
+            sandbox="https://nfe-homologacao.svrs.rs.gov.br/ws/NfeAutorizacao/NFeAutorizacao4.asmx",
+        ),
     },
     # SEFAZ Virtual Ambiente Nacional (SVAN) — autorizador for MA.
     "SVAN": {
-        "status_servico": {
-            "1": "https://www.sefazvirtual.fazenda.gov.br/NFeStatusServico4/NFeStatusServico4.asmx",
-            "2": "https://hom.sefazvirtual.fazenda.gov.br/NFeStatusServico4/NFeStatusServico4.asmx",
-        },
-        "autorizacao": {
-            "1": "https://www.sefazvirtual.fazenda.gov.br/NFeAutorizacao4/NFeAutorizacao4.asmx",
-            "2": "https://hom.sefazvirtual.fazenda.gov.br/NFeAutorizacao4/NFeAutorizacao4.asmx",
-        },
+        "status_servico": EndpointSet(
+            production="https://www.sefazvirtual.fazenda.gov.br/NFeStatusServico4/NFeStatusServico4.asmx",
+            sandbox="https://hom.sefazvirtual.fazenda.gov.br/NFeStatusServico4/NFeStatusServico4.asmx",
+        ),
+        "autorizacao": EndpointSet(
+            production="https://www.sefazvirtual.fazenda.gov.br/NFeAutorizacao4/NFeAutorizacao4.asmx",
+            sandbox="https://hom.sefazvirtual.fazenda.gov.br/NFeAutorizacao4/NFeAutorizacao4.asmx",
+        ),
     },
     # São Paulo
     "SP": {
-        "status_servico": {
-            "1": "https://nfe.fazenda.sp.gov.br/ws/nfestatusservico4.asmx",
-            "2": "https://homologacao.nfe.fazenda.sp.gov.br/ws/nfestatusservico4.asmx",
-        },
-        "autorizacao": {
-            "1": "https://nfe.fazenda.sp.gov.br/ws/nfeautorizacao4.asmx",
-            "2": "https://homologacao.nfe.fazenda.sp.gov.br/ws/nfeautorizacao4.asmx",
-        },
+        "status_servico": EndpointSet(
+            production="https://nfe.fazenda.sp.gov.br/ws/nfestatusservico4.asmx",
+            sandbox="https://homologacao.nfe.fazenda.sp.gov.br/ws/nfestatusservico4.asmx",
+        ),
+        "autorizacao": EndpointSet(
+            production="https://nfe.fazenda.sp.gov.br/ws/nfeautorizacao4.asmx",
+            sandbox="https://homologacao.nfe.fazenda.sp.gov.br/ws/nfeautorizacao4.asmx",
+        ),
     },
     # Minas Gerais
     "MG": {
-        "status_servico": {
-            "1": "https://nfe.fazenda.mg.gov.br/nfe2/services/NFeStatusServico4",
-            "2": "https://hnfe.fazenda.mg.gov.br/nfe2/services/NFeStatusServico4",
-        },
-        "autorizacao": {
-            "1": "https://nfe.fazenda.mg.gov.br/nfe2/services/NFeAutorizacao4",
-            "2": "https://hnfe.fazenda.mg.gov.br/nfe2/services/NFeAutorizacao4",
-        },
+        "status_servico": EndpointSet(
+            production="https://nfe.fazenda.mg.gov.br/nfe2/services/NFeStatusServico4",
+            sandbox="https://hnfe.fazenda.mg.gov.br/nfe2/services/NFeStatusServico4",
+        ),
+        "autorizacao": EndpointSet(
+            production="https://nfe.fazenda.mg.gov.br/nfe2/services/NFeAutorizacao4",
+            sandbox="https://hnfe.fazenda.mg.gov.br/nfe2/services/NFeAutorizacao4",
+        ),
     },
     # Paraná
     "PR": {
-        "status_servico": {
-            "1": "https://nfe.fazenda.pr.gov.br/nfe/NFeStatusServico4",
-            "2": "https://homologacao.nfe.fazenda.pr.gov.br/nfe/NFeStatusServico4",
-        },
-        "autorizacao": {
-            "1": "https://nfe.fazenda.pr.gov.br/nfe/NFeAutorizacao4",
-            "2": "https://homologacao.nfe.fazenda.pr.gov.br/nfe/NFeAutorizacao4",
-        },
+        "status_servico": EndpointSet(
+            production="https://nfe.fazenda.pr.gov.br/nfe/NFeStatusServico4",
+            sandbox="https://homologacao.nfe.fazenda.pr.gov.br/nfe/NFeStatusServico4",
+        ),
+        "autorizacao": EndpointSet(
+            production="https://nfe.fazenda.pr.gov.br/nfe/NFeAutorizacao4",
+            sandbox="https://homologacao.nfe.fazenda.pr.gov.br/nfe/NFeAutorizacao4",
+        ),
     },
     # Mato Grosso do Sul
     "MS": {
-        "status_servico": {
-            "1": "https://nfe.fazenda.ms.gov.br/ws/NFeStatusServico4",
-            "2": "https://homologacao.nfe.fazenda.ms.gov.br/ws/NFeStatusServico4",
-        },
-        "autorizacao": {
-            "1": "https://nfe.fazenda.ms.gov.br/ws/NFeAutorizacao4",
-            "2": "https://homologacao.nfe.fazenda.ms.gov.br/ws/NFeAutorizacao4",
-        },
+        "status_servico": EndpointSet(
+            production="https://nfe.fazenda.ms.gov.br/ws/NFeStatusServico4",
+            sandbox="https://homologacao.nfe.fazenda.ms.gov.br/ws/NFeStatusServico4",
+        ),
+        "autorizacao": EndpointSet(
+            production="https://nfe.fazenda.ms.gov.br/ws/NFeAutorizacao4",
+            sandbox="https://homologacao.nfe.fazenda.ms.gov.br/ws/NFeAutorizacao4",
+        ),
     },
     # Mato Grosso
     "MT": {
-        "status_servico": {
-            "1": "https://nfe.sefaz.mt.gov.br/nfews/v2/services/NfeStatusServico4",
-            "2": "https://homologacao.sefaz.mt.gov.br/nfews/v2/services/NfeStatusServico4",
-        },
-        "autorizacao": {
-            "1": "https://nfe.sefaz.mt.gov.br/nfews/v2/services/NfeAutorizacao4",
-            "2": "https://homologacao.sefaz.mt.gov.br/nfews/v2/services/NfeAutorizacao4",
-        },
+        "status_servico": EndpointSet(
+            production="https://nfe.sefaz.mt.gov.br/nfews/v2/services/NfeStatusServico4",
+            sandbox="https://homologacao.sefaz.mt.gov.br/nfews/v2/services/NfeStatusServico4",
+        ),
+        "autorizacao": EndpointSet(
+            production="https://nfe.sefaz.mt.gov.br/nfews/v2/services/NfeAutorizacao4",
+            sandbox="https://homologacao.sefaz.mt.gov.br/nfews/v2/services/NfeAutorizacao4",
+        ),
     },
     # Goiás
     "GO": {
-        "status_servico": {
-            "1": "https://nfe.sefaz.go.gov.br/nfe/services/NFeStatusServico4",
-            "2": "https://homologacao.nfe.sefaz.go.gov.br/nfe/services/NFeStatusServico4",
-        },
-        "autorizacao": {
-            "1": "https://nfe.sefaz.go.gov.br/nfe/services/NFeAutorizacao4",
-            "2": "https://homologacao.nfe.sefaz.go.gov.br/nfe/services/NFeAutorizacao4",
-        },
+        "status_servico": EndpointSet(
+            production="https://nfe.sefaz.go.gov.br/nfe/services/NFeStatusServico4",
+            sandbox="https://homologacao.nfe.sefaz.go.gov.br/nfe/services/NFeStatusServico4",
+        ),
+        "autorizacao": EndpointSet(
+            production="https://nfe.sefaz.go.gov.br/nfe/services/NFeAutorizacao4",
+            sandbox="https://homologacao.nfe.sefaz.go.gov.br/nfe/services/NFeAutorizacao4",
+        ),
     },
     # Bahia
     "BA": {
-        "status_servico": {
-            "1": "https://nfe.sefaz.ba.gov.br/webservices/NFeStatusServico4/NFeStatusServico4.asmx",
-            "2": "https://hnfe.sefaz.ba.gov.br/webservices/NFeStatusServico4/NFeStatusServico4.asmx",
-        },
-        "autorizacao": {
-            "1": "https://nfe.sefaz.ba.gov.br/webservices/NFeAutorizacao4/NFeAutorizacao4.asmx",
-            "2": "https://hnfe.sefaz.ba.gov.br/webservices/NFeAutorizacao4/NFeAutorizacao4.asmx",
-        },
+        "status_servico": EndpointSet(
+            production="https://nfe.sefaz.ba.gov.br/webservices/NFeStatusServico4/NFeStatusServico4.asmx",
+            sandbox="https://hnfe.sefaz.ba.gov.br/webservices/NFeStatusServico4/NFeStatusServico4.asmx",
+        ),
+        "autorizacao": EndpointSet(
+            production="https://nfe.sefaz.ba.gov.br/webservices/NFeAutorizacao4/NFeAutorizacao4.asmx",
+            sandbox="https://hnfe.sefaz.ba.gov.br/webservices/NFeAutorizacao4/NFeAutorizacao4.asmx",
+        ),
     },
     # Ceará
     "CE": {
-        "status_servico": {
-            "1": "https://nfe.sefaz.ce.gov.br/nfe4/services/NFeStatusServico4",
-            "2": "https://nfeh.sefaz.ce.gov.br/nfe4/services/NFeStatusServico4",
-        },
-        "autorizacao": {
-            "1": "https://nfe.sefaz.ce.gov.br/nfe4/services/NFeAutorizacao4",
-            "2": "https://nfeh.sefaz.ce.gov.br/nfe4/services/NFeAutorizacao4",
-        },
+        "status_servico": EndpointSet(
+            production="https://nfe.sefaz.ce.gov.br/nfe4/services/NFeStatusServico4",
+            sandbox="https://nfeh.sefaz.ce.gov.br/nfe4/services/NFeStatusServico4",
+        ),
+        "autorizacao": EndpointSet(
+            production="https://nfe.sefaz.ce.gov.br/nfe4/services/NFeAutorizacao4",
+            sandbox="https://nfeh.sefaz.ce.gov.br/nfe4/services/NFeAutorizacao4",
+        ),
     },
     # Pernambuco
     "PE": {
-        "status_servico": {
-            "1": "https://nfe.sefaz.pe.gov.br/nfe-service/services/NFeStatusServico4",
-            "2": "https://nfehomolog.sefaz.pe.gov.br/nfe-service/services/NFeStatusServico4",
-        },
-        "autorizacao": {
-            "1": "https://nfe.sefaz.pe.gov.br/nfe-service/services/NFeAutorizacao4",
-            "2": "https://nfehomolog.sefaz.pe.gov.br/nfe-service/services/NFeAutorizacao4",
-        },
+        "status_servico": EndpointSet(
+            production="https://nfe.sefaz.pe.gov.br/nfe-service/services/NFeStatusServico4",
+            sandbox="https://nfehomolog.sefaz.pe.gov.br/nfe-service/services/NFeStatusServico4",
+        ),
+        "autorizacao": EndpointSet(
+            production="https://nfe.sefaz.pe.gov.br/nfe-service/services/NFeAutorizacao4",
+            sandbox="https://nfehomolog.sefaz.pe.gov.br/nfe-service/services/NFeAutorizacao4",
+        ),
     },
     # Amazonas
     "AM": {
-        "status_servico": {
-            "1": "https://nfe.sefaz.am.gov.br/services2/services/NFeStatusServico4",
-            "2": "https://homnfe.sefaz.am.gov.br/services2/services/NFeStatusServico4",
-        },
-        "autorizacao": {
-            "1": "https://nfe.sefaz.am.gov.br/services2/services/NFeAutorizacao4",
-            "2": "https://homnfe.sefaz.am.gov.br/services2/services/NFeAutorizacao4",
-        },
+        "status_servico": EndpointSet(
+            production="https://nfe.sefaz.am.gov.br/services2/services/NFeStatusServico4",
+            sandbox="https://homnfe.sefaz.am.gov.br/services2/services/NFeStatusServico4",
+        ),
+        "autorizacao": EndpointSet(
+            production="https://nfe.sefaz.am.gov.br/services2/services/NFeAutorizacao4",
+            sandbox="https://homnfe.sefaz.am.gov.br/services2/services/NFeAutorizacao4",
+        ),
     },
 }
 
@@ -281,13 +282,24 @@ def get_endpoint(service: str, cuf: str, tp_amb: TipoAmbiente) -> str:
         autorizador = _autorizador_for(cuf)
 
     services = _SEFAZ_ENDPOINTS.get(autorizador, {})
-    by_env = services.get(service)
-    if by_env is None or tp_amb.value not in by_env:
+    endpoint_set = services.get(service)
+    env = (
+        EndpointEnvironment.PRODUCTION
+        if tp_amb == TipoAmbiente.PRODUCAO
+        else EndpointEnvironment.SANDBOX
+    )
+    if endpoint_set is None:
         raise ValueError(
             f"No {service!r} endpoint configured for autorizador={autorizador!r}, "
             f"tpAmb={tp_amb.value!r}. [NEED: complete _SEFAZ_ENDPOINTS]"
         )
-    return by_env[tp_amb.value]
+    try:
+        return endpoint_set.resolve(env)
+    except ValueError as exc:
+        raise ValueError(
+            f"No {service!r} endpoint configured for autorizador={autorizador!r}, "
+            f"tpAmb={tp_amb.value!r}. [NEED: complete _SEFAZ_ENDPOINTS]"
+        ) from exc
 
 
 # ---------------------------------------------------------------------------
