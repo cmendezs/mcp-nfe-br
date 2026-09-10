@@ -1,5 +1,18 @@
 # mcp-nfe-br — Release Notes
 
+## v0.9.0 (2026-09-10) — Adopt core endpoint routing for SEFAZ (CORE-5)
+
+Step 9 (optional) of `audit/2026-09-audit-core.md`'s execution ladder, in the workspace root
+repo. Country-side only; core unchanged (`mcp_einvoicing_core.endpoints` has existed since core
+v1.8.0).
+
+- **[CORE-5]** The 25-entry `_SEFAZ_ENDPOINTS` nested dict (13 autorizadores x NF-e/NFC-e
+  services, keyed by tpAmb "1"/"2") replaced with `dict[str, EndpointSet]`, the same
+  `mcp_einvoicing_core.endpoints.EndpointSet`/`EndpointEnvironment` abstraction PL, IT, and ES
+  now share. Every URL verified identical to the prior table before the swap; `get_endpoint()`'s
+  observable behaviour is unchanged.
+- 305 tests passing (1 skipped, pre-existing); audit gate 0 blocking.
+
 ## v0.8.2 (2026-09-09) — SEFAZ raw-SOAP clients adopt the shared 429/503 retry policy (CORE-3)
 
 Step 6 (country wave 2) of `audit/2026-09-audit-core.md`'s execution ladder, in the workspace
