@@ -2,9 +2,8 @@
 
 ## v0.9.0 (2026-09-10) — Adopt core endpoint routing for SEFAZ (CORE-5)
 
-Step 9 (optional) of `audit/2026-09-audit-core.md`'s execution ladder, in the workspace root
-repo. Country-side only; core unchanged (`mcp_einvoicing_core.endpoints` has existed since core
-v1.8.0).
+Step 9 (optional) of the core audit's execution ladder. Country-side only; core unchanged
+(`mcp_einvoicing_core.endpoints` has existed since core v1.8.0).
 
 - **[CORE-5]** The 25-entry `_SEFAZ_ENDPOINTS` nested dict (13 autorizadores x NF-e/NFC-e
   services, keyed by tpAmb "1"/"2") replaced with `dict[str, EndpointSet]`, the same
@@ -15,8 +14,8 @@ v1.8.0).
 
 ## v0.8.2 (2026-09-09) — SEFAZ raw-SOAP clients adopt the shared 429/503 retry policy (CORE-3)
 
-Step 6 (country wave 2) of `audit/2026-09-audit-core.md`'s execution ladder, in the workspace
-root repo. Completes CORE-3's own recommended fix, which named `BaseEInvoicingClient._request`,
+Step 6 (country wave 2) of the core audit's execution ladder. Completes CORE-3's own
+recommended fix, which named `BaseEInvoicingClient._request`,
 the Peppol AS4 client, and BR's raw-SOAP path as the three adopters of a shared HTTP transport
 hardening layer.
 
@@ -97,13 +96,13 @@ Follow-up to v0.6.4: the official schema package `PL_010e_v1.02.zip` (plus `PL_0
 SEFAZ published NF-e/NFC-e XML schema package `010e_v.1.02` on 2026-07-10, bundling NT 2025.002 v1.40, NT 2026.002 v1.0, and NT 2026.003 v1.0 on top of the already-bundled PL_010d. NT 2025.002 v1.40 needs no action (superseded locally by the already-bundled v1.50). NT 2026.002 and NT 2026.003 were sourced locally and reviewed (`specs/nfe/`); the official `010e_v.1.02` schema ZIP itself was not obtained — only the two NT PDFs, whose leiaute tables gave precise, citable field-level detail for the change below.
 
 - **[BR-NFE-2026-08]** `tpImp` gains value `6` ("DANFE Simplificado Tipo 2"); `tpEmis=9` and `indPres=4` are redefined (broadened scope, same enumeration values — no XSD change needed for those two beyond documentation) by NT 2026.002 v1.00, in effect in SEFAZ production since 2026-08-03. `leiauteNFe_v4.00.xsd` and `leiauteNFe_v4.00_unsigned.xsd` refreshed to accept `tpImp=6`; both XSDs' `tpImp`/`tpEmis`/`indPres` documentation updated with inline `NT_2026.002_v1.00.pdf` citations. `BRInvoice.tp_imp`/`tp_emis`/`ind_pres` field descriptions updated to match. New regression test `test_danfe_simplificado_tipo_2_tp_imp_passes` (generate→XSD round-trip with `tpImp=6`)
-- **Not in scope for this release** (tracked in `context-library/countries/br.md` "Known gaps"): NT 2026.002's SEFAZ business-rule catalogue restricting `tpImp=6` documents (CFOP whitelist, item-group exclusions, etc.) is not enforced — `br__validate_nfe_xml` is XSD-only, consistent with the existing IBS/CBS precedent; the new `cStat=120`/`PR13` alert-message response group is not parsed by `sefaz_client.py` (its production date, 2026-10-05, has not yet arrived, and the NT does not name the exact wrapper element); NT 2026.003's printed-DANFE layout is out of scope — this package does not render DANFE PDFs
+- **Not in scope for this release**: NT 2026.002's SEFAZ business-rule catalogue restricting `tpImp=6` documents (CFOP whitelist, item-group exclusions, etc.) is not enforced — `br__validate_nfe_xml` is XSD-only, consistent with the existing IBS/CBS precedent; the new `cStat=120`/`PR13` alert-message response group is not parsed by `sefaz_client.py` (its production date, 2026-10-05, has not yet arrived, and the NT does not name the exact wrapper element); NT 2026.003's printed-DANFE layout is out of scope — this package does not render DANFE PDFs
 
 283 tests passing (up from 282); audit gate 0 blocking.
 
 ## v0.6.3 (2026-08-11) — Restore NFS-e generation (BLOCKING), CT-e/gate hardening
 
-Implements all 13 findings from the BR country audit 2026-07 (`audit/2026-07-audit-br.md`), originally scoped as three sprints (v0.6.3/v0.6.4/v0.6.5) and bundled into this single release since all were implemented together and none are breaking changes.
+Implements all 13 findings from the BR country audit 2026-07, originally scoped as three sprints (v0.6.3/v0.6.4/v0.6.5) and bundled into this single release since all were implemented together and none are breaking changes.
 
 - **[BR-NFSE-C1 BLOCKING]** `NFSeGenerator` was abstract (missing `get_format_name`/`get_country_code`), so `br__generate_nfse` raised an uncaught `TypeError` on every call — NFS-e Nacional generation had never actually worked since it shipped in v0.5.0. Now implements all three abstract methods; `br__generate_nfse`'s `except` broadened to catch model/type errors cleanly. New `tests/test_standards/test_nfse_generator.py`
 - **[BR-NFSE-C2 HIGH]** DPS `<end>` violated `TCEndereco` — missing the mandatory `endNac`/`endExt` choice wrapper, and emitted `xMun`/`UF`/`fone`/`cPais`/`xPais` which are not `TCEndereco` members at all. `_build_endereco` rewritten to emit `<endNac><cMun/><CEP/></endNac>` then `xLgr, nro, xCpl?, xBairro`; foreign addresses (`endExt`) now raise `DocumentGenerationError` since `TCEnderExt`'s required fields (`cEndPost`/`xCidade`/`xEstProvReg`) are not modeled
@@ -140,7 +139,7 @@ Implements all 13 findings from the BR country audit 2026-07 (`audit/2026-07-aud
 
 ## v0.6.0 (2026-07-03) — CT-e (modelo 57) Phase 3, v1 (BR-CTE-1..9)
 
-CT-e (Conhecimento de Transporte Eletrônico) work begins, per explicit user request (previously deferred, see `context-library/roadmap-2026.md`). v1 scope: modal rodoviário only, ICMS CST 00 (tributação normal) only, event tools deferred.
+CT-e (Conhecimento de Transporte Eletrônico) work begins, per explicit user request (previously deferred). v1 scope: modal rodoviário only, ICMS CST 00 (tributação normal) only, event tools deferred.
 
 - Spec bundle sourced from https://dfeportal.svrs.rs.gov.br/Cte/Documentos and bundled under `specs/cte/` (MOC CT-e 4.00, `PL_CTe_400.zip`, `PL_CTeDistDFe_100.zip`, 14 Notas Técnicas); XSDs extracted to `src/mcp_nfe_br/schemas/cte/`
 - **[BR-CTE-2..4]** `mcp_nfe_br.models.cte`: `BRCTeDocument(InvoiceDocument)` and CT-e party classes (`BRCteEmitente`, `BRCteRemetente`, `BRCteExpedidor`, `BRCteRecebedor`, `BRCteDestinatario`, `BRCteTomador`). Namespace `http://www.portalfiscal.inf.br/cte`, schema 4.00 `[Verified locally]`
@@ -149,7 +148,6 @@ CT-e (Conhecimento de Transporte Eletrônico) work begins, per explicit user req
 - **[BR-CTE-6]** `mcp_nfe_br.standards.cte_signer.build_cte_signer` — wraps core `XMLDSigSigner` targeting `infCte` (RSA-SHA1, confirmed against MOC CT-e Visão Geral §3.2.4)
 - **[BR-CTE-8]** `mcp_nfe_br.standards.cte_generator.CTeGenerator` — modal rodoviário only for v1 (`infModal` is `<xs:any>` in the main schema, so other modais don't break main-document validation, but their payloads are unmodeled)
 - **[BR-CTE-9]** `mcp_nfe_br.validators.cte_xsd.CTeXSDValidator` — unsigned/signed auto-select, same pattern as `NFeXSDValidator`; two new tools `br__generate_cte`, `br__validate_cte_xml` (server now exposes 17 tools)
-- `context-library/countries/br.md` CT-e section and wire-formats table resolved from `[NEED: verify]` to `[Verified locally]`
 - Cancellation success `cStat` code and `infCTeAnu`/`tpCTe=2` mapping remain `[NEED: verify]` — not found in the bundled XSD enum or MOC text search
 
 ## v0.5.4 (2026-06-30) — Hardcoded UB12-10 activation dates
@@ -163,7 +161,6 @@ CT-e (Conhecimento de Transporte Eletrônico) work begins, per explicit user req
 
 - **[BR-TL-6]** `_d2`/`_percent` in `nfe_generator.py` and `nfse_generator.py` now pass `ROUND_HALF_UP` explicitly instead of relying on core's default
   - Research finding: `ANEXO I - Leiaute e Regra de Validação - NF-e e NFC-e.pdf` footnote (*4) (not MOC v7.0 itself) requires only 2-decimal rounding with a +/- R$0.01 SEFAZ validation tolerance, no specific rounding mode is mandated
-  - `context-library/countries/br.md` markers at lines 145 and 280 cleared with this citation
   - New boundary-case regression tests in `tests/test_standards/test_rounding.py`
 - Re-synced to `mcp-einvoicing-core` v1.13.1 (BR-TL-5: `validate_br_cnpj` now rejects an all-equal-character base); lower-bound pin bumped to `>=1.13.1,<2.0.0`
 - Fixed `audit/audit_vs_core.py`: missing `SEVERITY_WARNING` import (pre-existing bug, caught by pre-flight lint)

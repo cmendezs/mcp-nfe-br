@@ -5,7 +5,7 @@ factories are provided: `build_cte_signer` targets `infCte` (the CT-e
 document itself), `build_cte_event_signer` targets `infEvento` (event
 submissions — cancelamento, CC-e, roadmap BR-CTE-14/15). RSA-SHA1/SHA-1
 confirmed for CT-e against MOC CT-e Visão Geral v4.00 §3.2.4
-`[Verified locally]` — see context-library/countries/br.md CT-e section.
+`[Verified locally]`.
 
 Only ICP-Brasil A1 (PKCS#12 file-based) certificates are supported, via
 `XMLDSigSignerConfig.cert_path`/`cert_password`. A3 (hardware token/HSM)

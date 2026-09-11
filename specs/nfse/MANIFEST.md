@@ -5,9 +5,6 @@ Nacional — ADN), schema v1.01. PDFs and XLSX annexes are gitignored (large bin
 not published) — this manifest is the checked-in index. Source: user-supplied bundle
 from `/Users/christophe/Downloads/BR/NFS-e/`, retrieved 2026-06.
 
-See [`context-library/countries/br.md`](../../../context-library/countries/br.md) for
-the distilled compliance reference derived from these files (NFS-e Nacional section).
-
 ## XSD schema package
 
 | Version | File (zip) | Status |

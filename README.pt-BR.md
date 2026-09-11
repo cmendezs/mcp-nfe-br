@@ -14,7 +14,7 @@
 
 `mcp-nfe-br` é um servidor [MCP (Model Context Protocol)](https://modelcontextprotocol.io) que fornece ferramentas para a emissão e validação de documentos fiscais eletrônicos brasileiros: **NF-e (modelo 55)**, **NFC-e (modelo 65)**, **NFS-e Nacional** (ADN) e **CT-e (modelo 57)**. Este servidor faz parte da família `mcp-einvoicing-*` / `mcp-*-*`, construída sobre [`mcp-einvoicing-core`](https://github.com/cmendezs/mcp-einvoicing-core), que fornece o modelo de dados base, utilitários HTTP/OAuth2, e a infraestrutura comum de servidores MCP.
 
-**Status atual (v0.6.5):** geração, assinatura ICP-Brasil, validação XSD e submissão gated à SEFAZ/ADN estão implementadas para NF-e/NFC-e (modelo 55/65, schema 4.00) e NFS-e Nacional (ADN, schema v1.01). NF-e/NFC-e agora também cobre o delta do schema `010e_v.1.02` (DANFE Simplificado Tipo 2 — `tpImp=6`, `cIndOp`, `ISUFEmit`, e o grupo de mensagens de alerta na resposta da SEFAZ) e o delta `010f_v.1.04` (NT 2026.007 — `emit/IE` opcional para contribuintes exclusivos de IBS/CBS, produção em 2026-11-03) sobre a base `PL_010d`. A cobertura de **CT-e (modelo 57)** — geração, assinatura, validação e submissão de eventos SEFAZ (cancelamento, Carta de Correção) — começou na v0.6.0. O escopo v1 é intencionalmente restrito: **apenas modal rodoviário**, **apenas ICMS CST 00**, e **nenhuma tabela de endpoints de webservice CT-e embutida/verificada** (toda chamada SEFAZ CT-e exige `endpoint_override` explícito). Veja a seção "Ferramentas CT-e (modelo 57)" abaixo e `context-library/countries/br.md` (no repositório de origem) para a referência completa em nível de campo.
+**Status atual (v0.6.5):** geração, assinatura ICP-Brasil, validação XSD e submissão gated à SEFAZ/ADN estão implementadas para NF-e/NFC-e (modelo 55/65, schema 4.00) e NFS-e Nacional (ADN, schema v1.01). NF-e/NFC-e agora também cobre o delta do schema `010e_v.1.02` (DANFE Simplificado Tipo 2 — `tpImp=6`, `cIndOp`, `ISUFEmit`, e o grupo de mensagens de alerta na resposta da SEFAZ) e o delta `010f_v.1.04` (NT 2026.007 — `emit/IE` opcional para contribuintes exclusivos de IBS/CBS, produção em 2026-11-03) sobre a base `PL_010d`. A cobertura de **CT-e (modelo 57)** — geração, assinatura, validação e submissão de eventos SEFAZ (cancelamento, Carta de Correção) — começou na v0.6.0. O escopo v1 é intencionalmente restrito: **apenas modal rodoviário**, **apenas ICMS CST 00**, e **nenhuma tabela de endpoints de webservice CT-e embutida/verificada** (toda chamada SEFAZ CT-e exige `endpoint_override` explícito). Veja a seção "Ferramentas CT-e (modelo 57)" abaixo para a referência completa em nível de campo.
 
 ## Instalação
 
@@ -149,7 +149,7 @@ Valida um CNPJ (Cadastro Nacional da Pessoa Jurídica), número de identificaç�
 
 Retorna um `TaxIdValidationResult` com `valid=True` e o valor limpo (14 caracteres) em caso de sucesso, ou `valid=False` com mensagem de erro em português.
 
-> ⚠️ **[Unverified]**: o algoritmo de dígito verificador para o formato alfanumérico do CNPJ foi implementado com base em fontes secundárias, pois a fonte primária ("NT Conjunta DFe 2025.001") ainda não está disponível localmente. Veja `context-library/countries/br.md` para detalhes.
+> ⚠️ **[Unverified]**: o algoritmo de dígito verificador para o formato alfanumérico do CNPJ foi implementado com base em fontes secundárias, pois a fonte primária ("NT Conjunta DFe 2025.001") ainda não está disponível localmente.
 
 ---
 
@@ -171,7 +171,7 @@ Cobertura da fase 1 para os grupos de tributos por item:
 | PIS/COFINS | CST `01`/`02` (alíquota) ou `04`-`09` (não tributado) | grupo omitido se `pis_cst`/`cofins_cst` forem `None` |
 | IPI | CST `00`/`49`/`50`/`99` (tributado) ou outro (não tributado) | grupo omitido se `ipi_cst` for `None` |
 
-`[NEED: IBS/CBS/Imposto Seletivo — Grupo UB/W03 (NT 2025.002-RTC) ainda não modelado, ver context-library/countries/br.md "Known gaps"]`.
+`[NEED: IBS/CBS/Imposto Seletivo — Grupo UB/W03 (NT 2025.002-RTC) ainda não modelado]`.
 
 ---
 

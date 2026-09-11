@@ -5,8 +5,7 @@ cNF cDV` (2+2+14+2+3+9+1+8+1 = 44 chars), `TChNFe` in `tiposBasico_v4.00.xsd`.
 
 Under PL_010c the CNPJ segment is `[0-9]{14}`; under PL_010d (NT 2026.004,
 homologation from 2026-06-01 / production from 2026-07-01) it becomes
-`[0-9A-Z]{12}[0-9]{2}` — alphanumeric. `[Verified locally]` per
-context-library/countries/br.md.
+`[0-9A-Z]{12}[0-9]{2}` — alphanumeric. `[Verified locally]`.
 
 The check-digit algorithm (mod-11, weights 2..9 cycling from the rightmost
 character, each character converted via ``ord(char) - 48``) is

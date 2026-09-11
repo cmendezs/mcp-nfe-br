@@ -6,8 +6,8 @@ only by the `mod` field. Both predate and are structurally unrelated to
 EN 16931 (CEN TC 434) — `mcp-nfe-br` therefore follows the non-EN16931
 pathway: `BRInvoice` extends `InvoiceDocument`, not `EN16931Invoice`.
 
-See context-library/countries/br.md for the verified field-level reference
-(decimal types, CNPJ/CPF formats, access-key structure, schema versions).
+See the package's own compliance reference for the verified field-level
+reference (decimal types, CNPJ/CPF formats, access-key structure, schema versions).
 
 Field-level structure (groups `ide`, `emit`, `dest`, `det`, `total`,
 `transp`, `pag`) is `[Verified locally]` against

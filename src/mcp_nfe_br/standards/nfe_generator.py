@@ -42,7 +42,7 @@ Tax-code coverage (v0.3.0):
 IBS/CBS/Imposto Seletivo (NT 2025.002-RTC): Grupo UB (`imposto_seletivo`,
 `ibs_cbs`) and Grupo W03 (`ibscbs_tot`) fields are modeled on
 `BRInvoiceLine` / `BRInvoice` but are not yet emitted by this generator
-— see BR-TL-3 in the v0.3.1 audit and roadmap-2026.md.
+— tracked as BR-TL-3.
 """
 
 from __future__ import annotations

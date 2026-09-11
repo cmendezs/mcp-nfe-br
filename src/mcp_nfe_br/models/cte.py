@@ -10,8 +10,8 @@ Field-level structure is `[Verified locally]` against the bundled schema
 package `specs/cte/PL_CTe_400.zip` (schema 4.00, namespace
 `http://www.portalfiscal.inf.br/cte`) — see
 `schemas/cte/cte_v4.00.xsd`, `schemas/cte/cteTiposBasico_v4.00.xsd`,
-`schemas/cte/tiposGeralCTe_v4.00.xsd`. See context-library/countries/br.md
-CT-e section for the full field-level reference and outstanding
+`schemas/cte/tiposGeralCTe_v4.00.xsd`. See the package's own compliance
+reference, CT-e section, for the full field-level reference and outstanding
 `[NEED: verify]` markers.
 
 Scope for this v1 model (roadmap BR-CTE-2..4, extended during BR-CTE-8/9 to
@@ -63,7 +63,7 @@ The CT-e access-key type (`TChDFe`) also changed schema-wide (same
 `[0-9]{6}[A-Z0-9]{12}[0-9]{26}` (alphanumeric-CNPJ-ready). As of BR-CTE-23
 this pattern is applied to `chave_acesso`'s validator, `build_cte_access_key`,
 and the `pag_antecipado` field alike, matching `TChDFe` in the bundled
-schema. See br.md CT-e section and roadmap-2026.md for tracking.
+schema. See the package's own compliance reference, CT-e section, for tracking.
 """
 
 from __future__ import annotations

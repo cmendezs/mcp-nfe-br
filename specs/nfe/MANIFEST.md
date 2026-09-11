@@ -5,9 +5,6 @@ PDFs and ZIPs are gitignored (large binaries, not published) — this manifest i
 checked-in index. Source: user-supplied bundle from `nfe.fazenda.gov.br` /
 `portalfiscal.inf.br`, retrieved 2026-06-12.
 
-See [`context-library/countries/br.md`](../../../context-library/countries/br.md) for
-the distilled compliance reference derived from these files.
-
 ## XSD schema packages
 
 | Directory | Package | Status | Notes |

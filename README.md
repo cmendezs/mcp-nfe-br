@@ -14,7 +14,7 @@
 
 `mcp-nfe-br` is an [MCP (Model Context Protocol)](https://modelcontextprotocol.io) server providing tools for issuing and validating Brazilian electronic fiscal documents: **NF-e (modelo 55)**, **NFC-e (modelo 65)**, **NFS-e Nacional** (ADN), and **CT-e (modelo 57)**. This server is part of the `mcp-einvoicing-*` / `mcp-*-*` family, built on [`mcp-einvoicing-core`](https://github.com/cmendezs/mcp-einvoicing-core), which provides the base data model, HTTP/OAuth2 utilities, and shared MCP server infrastructure.
 
-**Current status (v0.6.5):** NF-e/NFC-e (modelo 55/65, schema 4.00) and NFS-e Nacional (ADN, schema v1.01) generation, ICP-Brasil signing, XSD validation, and gated SEFAZ/ADN submission are implemented. NF-e/NFC-e now also covers the `010e_v.1.02` schema delta (DANFE Simplificado Tipo 2 — `tpImp=6`, `cIndOp`, `ISUFEmit`, and the SEFAZ alert-message response group) and the `010f_v.1.04` delta (NT 2026.007 — `emit/IE` optional for taxpayers exclusively subject to IBS/CBS, produção 2026-11-03) on top of the `PL_010d` base. **CT-e (modelo 57)** generation/signing/validation and SEFAZ event submission (cancelamento, Carta de Correção) were added starting v0.6.0 — v1 scope is intentionally narrow: **modal rodoviário only**, **ICMS CST 00 only**, and **no bundled/verified CT-e webservice endpoint table** (every SEFAZ CT-e call requires an explicit `endpoint_override`). See the "CT-e (modelo 57)" tools section below and `context-library/countries/br.md` (in the source repo) for the full field-level reference.
+**Current status (v0.6.5):** NF-e/NFC-e (modelo 55/65, schema 4.00) and NFS-e Nacional (ADN, schema v1.01) generation, ICP-Brasil signing, XSD validation, and gated SEFAZ/ADN submission are implemented. NF-e/NFC-e now also covers the `010e_v.1.02` schema delta (DANFE Simplificado Tipo 2 — `tpImp=6`, `cIndOp`, `ISUFEmit`, and the SEFAZ alert-message response group) and the `010f_v.1.04` delta (NT 2026.007 — `emit/IE` optional for taxpayers exclusively subject to IBS/CBS, produção 2026-11-03) on top of the `PL_010d` base. **CT-e (modelo 57)** generation/signing/validation and SEFAZ event submission (cancelamento, Carta de Correção) were added starting v0.6.0 — v1 scope is intentionally narrow: **modal rodoviário only**, **ICMS CST 00 only**, and **no bundled/verified CT-e webservice endpoint table** (every SEFAZ CT-e call requires an explicit `endpoint_override`). See the "CT-e (modelo 57)" tools section below for the full field-level reference.
 
 ## Installation
 
@@ -149,7 +149,7 @@ Validates a CNPJ (Cadastro Nacional da Pessoa Jurídica), the business taxpayer 
 
 Returns a `TaxIdValidationResult` with `valid=True` and the cleaned value (14 characters) on success, or `valid=False` with an error message in Portuguese.
 
-> ⚠️ **[Unverified]**: the check-digit algorithm for the alphanumeric CNPJ format was implemented based on secondary sources, as the primary source ("NT Conjunta DFe 2025.001") is not yet available locally. See `context-library/countries/br.md` for details.
+> ⚠️ **[Unverified]**: the check-digit algorithm for the alphanumeric CNPJ format was implemented based on secondary sources, as the primary source ("NT Conjunta DFe 2025.001") is not yet available locally.
 
 ---
 
@@ -171,7 +171,7 @@ Phase 1 coverage for per-item tax groups:
 | PIS/COFINS | CST `01`/`02` (rate-based) or `04`-`09` (non-taxed) | group omitted if `pis_cst`/`cofins_cst` are `None` |
 | IPI | CST `00`/`49`/`50`/`99` (taxed) or other (non-taxed) | group omitted if `ipi_cst` is `None` |
 
-`[NEED: IBS/CBS/Imposto Seletivo — Grupo UB/W03 (NT 2025.002-RTC) not yet modeled, see context-library/countries/br.md "Known gaps"]`.
+`[NEED: IBS/CBS/Imposto Seletivo — Grupo UB/W03 (NT 2025.002-RTC) not yet modeled]`.
 
 ---
 
