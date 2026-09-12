@@ -1,5 +1,9 @@
 # mcp-nfe-br — Release Notes
 
+## v0.9.1 (2026-09-12) — Raise core dependency floor to 1.34.1
+
+- Lower-bound pin on `mcp-einvoicing-core` raised to `>=1.34.1` (was `>=1.33.0`). This package's own CI now runs `CHECK_PUBLIC_HYGIENE`, the pre-publish audit check that blocks accidental citations of the private orchestration repo.
+
 ## v0.9.0 (2026-09-10) — Adopt core endpoint routing for SEFAZ (CORE-5)
 
 Step 9 (optional) of the core audit's execution ladder. Country-side only; core unchanged
